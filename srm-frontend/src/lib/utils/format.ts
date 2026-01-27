@@ -1,2 +1,2 @@
 ﻿export const formatDate = (date: string) => new Date(date).toLocaleDateString();
-export const formatCurrency = (amount: number) => \Rs. \\;
+export const formatCurrency = (amount: number) => "j";
