@@ -1,0 +1,23 @@
+// _typography.scss
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-family-mono: 'Courier New', Courier, monospace;
+
+:root {
+  --font-primary: #{$font-family-base};
+  --font-mono: #{$font-family-mono};
+
+  // Font Sizes (Major Second Scale)
+  --text-xs: 0.75rem;   // 12px
+  --text-sm: 0.875rem;  // 14px
+  --text-base: 1rem;    // 16px
+  --text-lg: 1.125rem;  // 18px
+  --text-xl: 1.25rem;   // 20px
+  --text-2xl: 1.5rem;   // 24px
+  --text-3xl: 1.875rem; // 30px
+}
+
+@mixin text-style($size, $weight: 400, $lh: 1.5) {
+  font-size: var(--text-#{$size});
+  font-weight: $weight;
+  line-height: $lh;
+}

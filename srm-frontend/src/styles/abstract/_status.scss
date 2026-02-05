@@ -1,0 +1,26 @@
+// _status.scss
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid;
+  font-weight: 500;
+
+  &--pending {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border-color: #F59E0B;
+  }
+  &--progress {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+    border-color: #4F46E5;
+  }
+  // Apply this class to the body for Tech users
+.theme-technician {
+  --color-primary-500: var(--color-tech-500);
+  --color-primary-600: var(--color-tech-600);
+  // This re-points the generic "primary" to the "tech" green
+}
+
+  
+}

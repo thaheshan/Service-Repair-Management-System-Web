@@ -1,0 +1,14 @@
+// 1. Load configuration (Abstracts)
+@use 'abstracts' as *;
+
+// 2. Load Base styles
+@use 'base/reset';
+@use 'base/boilerplate';
+
+// 3. Load UI Components
+@use 'components/buttons';
+@use 'components/badges';
+
+// 4. Load Themes
+@use 'themes/admin';
+@use 'themes/technician';
