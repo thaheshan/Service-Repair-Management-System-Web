@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import SplashScreen from '@/components/Splash_Screen/SplashScreen';
-import RoleSelection from '@/components/Splash_Screen/RoleSelection';
+import LoginForm from '@/app/(auth)/login/page';
 
 type AppScreen = 'splash' | 'role-selection';
 
@@ -31,7 +31,7 @@ export default function Home() {
         />
       )}
       {currentScreen === 'role-selection' && (
-        <RoleSelection onRoleSelect={handleRoleSelect} />
+        <LoginForm />
       )}
     </div>
   );
