@@ -1,0 +1,79 @@
+@import '../../styles/variables.scss';
+
+.login-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid $border-default;
+  border-radius: 8px;
+  background-color: $bg-white;
+  transition: all 0.3s ease;
+
+  &:focus-within {
+    border-color: $color-primary-500;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  &.error {
+    border-color: $color-error-500;
+    
+    &:focus-within {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  }
+}
+
+.input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  color: $color-gray-400;
+  flex-shrink: 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.login-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: $font-inter;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $color-gray-900;
+  width: 100%;
+
+  &::placeholder {
+    color: $color-gray-400;
+  }
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+.input-error {
+  font-family: $font-inter;
+  font-size: 12px;
+  color: $color-error-500;
+  margin-top: 4px;
+}

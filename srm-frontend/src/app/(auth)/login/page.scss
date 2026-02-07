@@ -1,0 +1,43 @@
+@import '../../../styles/variables.scss';
+
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  background: $bg-white;
+}
+
+.login-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+  width: 100%;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+.login-form-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  background: $bg-white;
+
+  @media (max-width: 1024px) {
+    height: auto;
+    padding: 40px 24px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  @media (max-width: 640px) {
+    padding: 24px 16px;
+  }
+}
