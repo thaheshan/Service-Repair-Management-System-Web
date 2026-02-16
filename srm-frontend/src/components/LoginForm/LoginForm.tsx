@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link'; // ← ADDED THIS
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import LoginInput from '../LoginInput/LoginInput';
 import './LoginForm.scss';
@@ -121,9 +122,9 @@ export default function LoginForm() {
       <div className="signup-prompt">
         <p>
           Don't have an account?{' '}
-          <a href="../signup" className="signup-link">
+          <Link href="../signup" className="signup-link">
             Sign up
-          </a>
+          </Link>
         </p>
       </div>
     </div>
