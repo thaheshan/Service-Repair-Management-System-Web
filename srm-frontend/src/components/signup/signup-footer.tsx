@@ -7,7 +7,7 @@ export function SignupFooter() {
         <div className="text-center">
           <p className="text-gray-600 text-sm">
             Already have an account?{' '}
-            <a href="#" className="text-indigo-600 font-semibold hover:text-indigo-700">
+            <a href="../LoginForm" className="text-indigo-600 font-semibold hover:text-indigo-700">
               Sign in
             </a>
           </p>
