@@ -6,6 +6,8 @@ import { NoAuthRoute } from '../../components/no-auth-routes';
 import SplashScreen from './SplashScreen';
 import RoleSelection from './RoleSelection';
 import  LoadingScreen  from '../../components/Splash_Screen/SplashScreen';
+import SignupPage from '@/app/(auth)/signup/page';
+
 import { useAuthStore } from '../../store/authStore';
 import './App.scss';
 
