@@ -1,4 +1,7 @@
 ﻿'use client';
+
+import { SignupPortal } from '@/components/signup/signup-portal';
+
 export default function SignupPage() {
-  return <div className="p-6"><h1>Signup Page</h1></div>;
+  return <SignupPortal />;
 }
