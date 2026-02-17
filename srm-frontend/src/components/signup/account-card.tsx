@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -9,6 +10,7 @@ interface AccountCardProps {
   color: 'indigo' | 'orange' | 'emerald'
   buttonText: string
   features: string[]
+  link: string
 }
 
 const colorConfig = {
@@ -38,11 +40,13 @@ export function AccountCard({
   color,
   buttonText,
   features,
+  link,
 }: AccountCardProps) {
   const config = colorConfig[color]
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
+      
       {/* Icon Container */}
       <div className="p-8 flex justify-center">
         <div className={`${config.bg} rounded-2xl p-4 shadow-md`}>
@@ -66,6 +70,7 @@ export function AccountCard({
       
       {/* Content */}
       <div className="px-8 pb-8">
+        
         {/* Title */}
         <h3 className="text-xl font-bold text-gray-900 mb-2">
           {title}
@@ -86,13 +91,15 @@ export function AccountCard({
           ))}
         </div>
         
-        {/* Button */}
-        <button
-          className={`w-full ${config.button} font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2`}
-        >
-          {buttonText}
-          <span className="text-lg">→</span>
-        </button>
+        {/* Button with Navigation */}
+        <Link href={link}>
+          <button
+            className={`w-full ${config.button} font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2`}
+          >
+            {buttonText}
+            <span className="text-lg">→</span>
+          </button>
+        </Link>
       </div>
     </div>
   )

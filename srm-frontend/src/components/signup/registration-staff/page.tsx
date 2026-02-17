@@ -8,7 +8,7 @@ import { RegistrationSuccess } from "@/components/signup/registration-staff/regi
 
 type Step = 1 | 2 | 3 | "success"
 
-export default function TechnicianRegistrationPage() {
+export default function RegistrationStaffPage() {
   const [currentStep, setCurrentStep] = useState<Step>(1)
   const [personalInfo, setPersonalInfo] = useState<PersonalInfoData | null>(null)
   const [shopDetails, setShopDetails] = useState<ShopDetailsData | null>(null)
@@ -55,9 +55,9 @@ export default function TechnicianRegistrationPage() {
   return (
     <RegistrationSuccess
       userData={{
-        fullName: personalInfo?.fullName || "John Michael Smith",
-        email: personalInfo?.email || "john.smith@example.com",
-        role: "Shop Manager",
+        fullName: personalInfo?.fullName || "",
+        email: personalInfo?.email || "",
+        role: "Staff/Technician",
       }}
     />
   )

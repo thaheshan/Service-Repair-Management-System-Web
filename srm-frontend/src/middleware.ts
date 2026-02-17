@@ -6,19 +6,33 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token');
   const { pathname } = request.nextUrl;
 
-  // Public routes (splash screen, login, signup)
-  const publicRoutes = ['/', '/login', '/signup'];
-  
-  if (publicRoutes.includes(pathname)) {
-    // If user has token and tries to access login/signup, redirect to dashboard
+  // ✅ ALL public routes - no token required
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/signup',
+    '/signup/admin',
+    '/signup/technician',
+    '/signup/shop',
+    '/registration-staff',
+  ];
+
+  // ✅ Check if current path matches any public route
+  const isPublicRoute = publicRoutes.some(route =>
+    pathname === route || pathname.startsWith(route + '/')
+  );
+
+  if (isPublicRoute) {
+    // If user already has token and tries to access login/signup
+    // redirect them to dashboard
     if (token && (pathname === '/login' || pathname === '/signup')) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    // Allow access to public routes
+    // Allow access to all public routes
     return NextResponse.next();
   }
 
-  // Protected routes - require token
+  // ✅ Protected routes - require token
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }

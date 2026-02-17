@@ -1,6 +1,7 @@
 "use client"
 
 import { Check, CheckCircle2, Info } from "lucide-react"
+import Link from "next/link"
 
 interface RegistrationSuccessProps {
   userData: {
@@ -11,6 +12,11 @@ interface RegistrationSuccessProps {
 }
 
 export function RegistrationSuccess({ userData }: RegistrationSuccessProps) {
+  const handleResendEmail = () => {
+    // TODO: Connect to your API to resend verification email
+    alert(`Verification email resent to ${userData.email}`)
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F4F6] px-4 py-10">
       <div className="w-full max-w-[580px] rounded-2xl bg-white px-8 py-10 shadow-lg">
@@ -35,15 +41,21 @@ export function RegistrationSuccess({ userData }: RegistrationSuccessProps) {
         <div className="mt-8 rounded-xl border border-[#E5E7EB] bg-white">
           <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
             <span className="text-sm text-[#6B7280]">Full Name</span>
-            <span className="text-sm font-semibold text-[#111827]">{userData.fullName || "John Michael Smith"}</span>
+            <span className="text-sm font-semibold text-[#111827]">
+              {userData.fullName || "John Michael Smith"}
+            </span>
           </div>
           <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
             <span className="text-sm text-[#6B7280]">Email Address</span>
-            <span className="text-sm font-semibold text-[#111827]">{userData.email || "john.smith@example.com"}</span>
+            <span className="text-sm font-semibold text-[#111827]">
+              {userData.email || "john.smith@example.com"}
+            </span>
           </div>
           <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
             <span className="text-sm text-[#6B7280]">Account Role</span>
-            <span className="text-sm font-semibold text-[#4F46E5] underline">{userData.role || "Shop Manager"}</span>
+            <span className="text-sm font-semibold text-[#4F46E5] underline">
+              {userData.role || "Shop Manager"}
+            </span>
           </div>
           <div className="flex items-center justify-between px-6 py-4">
             <span className="text-sm text-[#6B7280]">Account Status</span>
@@ -62,8 +74,11 @@ export function RegistrationSuccess({ userData }: RegistrationSuccessProps) {
             </div>
             <p className="text-sm leading-relaxed text-[#374151]">
               A verification email has been sent to{" "}
-              <span className="font-semibold text-[#111827]">{userData.email || "john.smith@example.com"}</span>.
-              {" "}Please check your inbox and verify your email address within 24 hours to activate your account fully.
+              <span className="font-semibold text-[#111827]">
+                {userData.email || "john.smith@example.com"}
+              </span>
+              . Please check your inbox and verify your email address within 24
+              hours to activate your account fully.
             </p>
           </div>
         </div>
@@ -109,12 +124,19 @@ export function RegistrationSuccess({ userData }: RegistrationSuccessProps) {
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col gap-3">
-          <button className="flex h-12 w-full items-center justify-center rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA]">
-            Go to Login
-          </button>
-          <button className="flex h-12 w-full items-center justify-center rounded-lg border-2 border-[#4F46E5] bg-white text-sm font-semibold text-[#4F46E5] transition-colors hover:bg-[#EEF2FF]">
-            Resend Verification Email
-          </button>
+          {/* ✅ Go to Login Button */}
+          <Link href="../../LoginForm">
+            <button className="flex h-12 w-full items-center justify-center rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA]">
+              Go to Login
+            </button>
+          </Link>
+
+          {/* ✅ Resend Verification Email Button */}
+          <Link href="/resend-verification">
+            <button className="flex h-12 w-full items-center justify-center rounded-lg border-2 border-[#4F46E5] bg-white text-sm font-semibold text-[#4F46E5] transition-colors hover:bg-[#EEF2FF]">
+              Resend Verification Email
+            </button>
+          </Link>
         </div>
       </div>
     </div>
