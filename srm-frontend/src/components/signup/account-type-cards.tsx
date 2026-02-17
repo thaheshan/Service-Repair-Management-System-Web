@@ -1,17 +1,18 @@
 'use client'
 
-import { Check } from 'lucide-react'
 import { AccountCard } from './account-card'
 
 export function AccountTypeCards() {
   return (
     <div className="grid md:grid-cols-3 gap-8 mb-20">
+      
       {/* Admin Card */}
       <AccountCard
         title="Admin/Manager"
         description="Full system access and business management"
         color="indigo"
         buttonText="Sign up as Admin"
+        link="/signup/admin"
         features={[
           'Manage all repairs and staff',
           'Access analytics and reports',
@@ -20,13 +21,14 @@ export function AccountTypeCards() {
           'Full customer management',
         ]}
       />
-      
+
       {/* Technician Card */}
       <AccountCard
         title="Staff/Technician"
         description="Manage assigned repairs and tasks"
         color="orange"
         buttonText="Sign up as Staff"
+        link="/signup/technician"
         features={[
           'View assigned repairs',
           'Update repair status',
@@ -35,13 +37,14 @@ export function AccountTypeCards() {
           'View personal schedule',
         ]}
       />
-      
+
       {/* Shop Owner Card */}
       <AccountCard
         title="Shop Owner"
         description="Register your repair shop business"
         color="emerald"
         buttonText="Sign up as Shop"
+        link="/signup/shop"
         features={[
           'Multi-location support',
           'Brand customization',
@@ -50,6 +53,7 @@ export function AccountTypeCards() {
           'Customer portal access',
         ]}
       />
+      
     </div>
   )
 }
