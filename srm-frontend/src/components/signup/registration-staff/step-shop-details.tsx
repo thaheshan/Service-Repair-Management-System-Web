@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Store, CreditCard, MapPin, GitBranch, Mail, ArrowLeft, Info } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep2 } from "./side-panel-step2"
 import {
@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/ui-staff/select"
 
 interface StepShopDetailsProps {
   onNext: (data: ShopDetailsData) => void

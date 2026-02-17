@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { User, Mail, Phone, CreditCard, Lock, Eye, EyeOff, ArrowRight } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
 import { PasswordStrength } from "./password-strength"

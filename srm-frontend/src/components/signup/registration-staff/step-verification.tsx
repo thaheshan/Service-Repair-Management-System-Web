@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { CreditCard, ArrowLeft, ArrowRight, Info } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep3 } from "./side-panel-step3"
 import { FileUpload } from "./file-upload"
