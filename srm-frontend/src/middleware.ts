@@ -1,5 +1,4 @@
-﻿// src/middleware.ts
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
@@ -15,6 +14,7 @@ export function middleware(request: NextRequest) {
     '/signup/technician',
     '/signup/shop',
     '/registration-staff',
+    '/signup/technician',  // ✅ Add this
   ];
 
   // ✅ Check if current path matches any public route
@@ -23,12 +23,8 @@ export function middleware(request: NextRequest) {
   );
 
   if (isPublicRoute) {
-    // If user already has token and tries to access login/signup
-    // redirect them to dashboard
-    if (token && (pathname === '/login' || pathname === '/signup')) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-    // Allow access to all public routes
+    // ✅ REMOVED the redirect logic - allow users to access /login and /signup freely
+    // even if they have a token
     return NextResponse.next();
   }
 
