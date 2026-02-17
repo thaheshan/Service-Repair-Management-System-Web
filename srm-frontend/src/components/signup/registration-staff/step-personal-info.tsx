@@ -229,7 +229,7 @@ export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
             <div className="mt-8 pb-8 text-center">
               <p className="text-sm text-[#6B7280]">
                 Already have an account?{" "}
-                <a href="../../LoginForm" className="font-semibold text-[#111827] underline hover:text-[#4F46E5]">Sign in</a>
+                <a href="/login" className="font-semibold text-[#111827] underline hover:text-[#4F46E5]">Sign in</a>
               </p>
             </div>
           </div>

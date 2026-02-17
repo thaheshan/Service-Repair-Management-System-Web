@@ -1,24 +1,51 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link'; // ← ADDED THIS
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import LoginInput from '../LoginInput/LoginInput';
 import './LoginForm.scss';
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    setError('');
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // TODO: Replace with real API call:
+      // const response = await fetch('/api/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ email, password }),
+      // });
+      // const data = await response.json();
+      // if (!response.ok) throw new Error(data.message);
+      // document.cookie = `token=${data.token}; path=/; max-age=86400`;
+
+      // ✅ Set fake token for now so middleware allows /dashboard
+      document.cookie = 'token=fake-token-123; path=/; max-age=86400';
+
+      // ✅ Navigate to dashboard after successful login
+      router.push('/admin/dashboard');
+
+    } catch (err) {
+      setError('Invalid email or password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -84,6 +111,22 @@ export default function LoginForm() {
           </a>
         </div>
 
+        {/* ✅ Error Message */}
+        {error && (
+          <div style={{
+            backgroundColor: '#FEE2E2',
+            border: '1px solid #FECACA',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            color: '#DC2626',
+            fontSize: '14px',
+            marginBottom: '10px'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* ✅ Sign in button */}
         <button
           type="submit"
           disabled={isLoading}
@@ -122,7 +165,7 @@ export default function LoginForm() {
       <div className="signup-prompt">
         <p>
           Don't have an account?{' '}
-          <Link href="../signup" className="signup-link">
+          <Link href="/signup" className="signup-link">
             Sign up
           </Link>
         </p>
