@@ -1,0 +1,396 @@
+// Variables
+$primary-gradient-start: #3a0ca3;
+$primary-gradient-mid: #4a1fb8;
+$primary-gradient-end: #7b5ea7;
+$primary-button: #7c6bc4;
+$primary-button-hover: #6a58b5;
+$text-dark: #1a1a2e;
+$text-muted: #6b7280;
+$text-light: #9ca3af;
+$border-color: #e5e7eb;
+$input-bg: #f9fafb;
+$white: #ffffff;
+$required-color: #e74c3c;
+$sidebar-width: 380px;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.registration {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+
+    // ─── LEFT SIDEBAR ───────────────────────────────────────
+    &__sidebar {
+        width: $sidebar-width;
+        min-height: 100vh;
+        background: linear-gradient(180deg,
+                #2d0a72 0%,
+                #3a1199 20%,
+                #4a1fb8 45%,
+                #6b4fad 75%,
+                #8b6fbb 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 50px 40px 35px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    // ─── STEPPER ────────────────────────────────────────────
+    &__stepper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+    }
+
+    &__step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+
+        &--active {
+            opacity: 1;
+        }
+    }
+
+    &__step-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.08);
+        transition: all 0.3s ease;
+
+        .registration__step--active & {
+            border-color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    &__step-label {
+        color: $white;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+
+    &__step-line {
+        width: 2px;
+        height: 45px;
+        background: rgba(255, 255, 255, 0.3);
+        margin: 6px 0;
+    }
+
+    // ─── SIDEBAR ILLUSTRATION ──────────────────────────────
+    &__sidebar-illustration {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+    }
+
+    &__illustration-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 18px;
+        padding: 20px 28px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    &__illustration-image {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    &__illustration-text {
+        color: $white;
+        font-size: 12px;
+        font-weight: 500;
+        opacity: 0.85;
+    }
+
+    &__illustration-progress {
+        width: 110px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    &__illustration-progress-bar {
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+        border-radius: 10px;
+        animation: progress-pulse 2s ease-in-out infinite;
+    }
+
+    &__sidebar-tagline {
+        color: $white;
+        font-size: 13px;
+        opacity: 0.75;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    // ─── MAIN RIGHT SECTION ────────────────────────────────
+    &__main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 60px;
+        background: $white;
+    }
+
+    &__form {
+        width: 100%;
+        max-width: 460px;
+    }
+
+    &__step-indicator {
+        font-size: 12px;
+        color: $text-light;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    &__title {
+        font-size: 26px;
+        font-weight: 700;
+        color: $text-dark;
+        margin-bottom: 4px;
+        letter-spacing: -0.5px;
+    }
+
+    &__subtitle {
+        font-size: 14px;
+        color: $text-muted;
+        margin-bottom: 28px;
+    }
+
+    // ─── FORM FIELDS ───────────────────────────────────────
+    &__field {
+        margin-bottom: 18px;
+    }
+
+    &__label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: $text-dark;
+        margin-bottom: 7px;
+    }
+
+    &__required {
+        color: $required-color;
+        margin-left: 2px;
+    }
+
+    &__input-wrapper {
+        display: flex;
+        align-items: center;
+        border: 1.5px solid $border-color;
+        border-radius: 10px;
+        padding: 0 14px;
+        background: $input-bg;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+
+        &:focus-within {
+            border-color: $primary-button;
+            box-shadow: 0 0 0 3px rgba(124, 107, 196, 0.1);
+            background: $white;
+        }
+    }
+
+    &__input-icon {
+        display: flex;
+        align-items: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    &__input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 12px 0;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        color: $text-dark;
+        background: transparent;
+
+        &::placeholder {
+            color: $text-light;
+        }
+    }
+
+    &__toggle-password {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 4px;
+        margin-left: 8px;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    &__helper {
+        display: block;
+        font-size: 11px;
+        color: $text-light;
+        margin-top: 5px;
+        padding-left: 2px;
+    }
+
+    // ─── PASSWORD STRENGTH ─────────────────────────────────
+    &__strength {
+        margin-bottom: 22px;
+        margin-top: 2px;
+    }
+
+    &__strength-label {
+        font-size: 12px;
+        color: $primary-button;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    &__strength-bar {
+        width: 100%;
+        height: 3px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    &__strength-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.4s ease, background-color 0.4s ease;
+    }
+
+    // ─── SUBMIT BUTTON ─────────────────────────────────────
+    &__submit {
+        width: 100%;
+        padding: 13px;
+        background: $primary-button;
+        color: $white;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+        margin-bottom: 18px;
+
+        &:hover {
+            background: $primary-button-hover;
+            box-shadow: 0 4px 15px rgba(124, 107, 196, 0.35);
+            transform: translateY(-1px);
+        }
+
+        &:active {
+            transform: translateY(0);
+        }
+    }
+
+    // ─── LOGIN LINK ────────────────────────────────────────
+    &__login-link {
+        text-align: center;
+        font-size: 13px;
+        color: $text-muted;
+
+        a {
+            color: $primary-button;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+
+            &:hover {
+                color: $primary-gradient-start;
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+// ─── ANIMATIONS ────────────────────────────────────────
+@keyframes progress-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+// ─── RESPONSIVE ────────────────────────────────────────
+@media (max-width: 900px) {
+    .registration {
+        flex-direction: column;
+
+        &__sidebar {
+            width: 100%;
+            min-height: auto;
+            padding: 30px 20px;
+            flex-direction: row;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        &__stepper {
+            flex-direction: row;
+            gap: 0;
+        }
+
+        &__step-line {
+            width: 40px;
+            height: 2px;
+            margin: 0 8px;
+        }
+
+        &__sidebar-illustration {
+            display: none;
+        }
+
+        &__main {
+            padding: 30px 20px;
+        }
+    }
+}
