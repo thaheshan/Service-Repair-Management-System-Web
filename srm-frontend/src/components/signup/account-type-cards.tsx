@@ -44,7 +44,7 @@ export function AccountTypeCards() {
         description="Register your repair shop business"
         color="emerald"
         buttonText="Sign up as Shop"
-        link="/signup/shop"
+        link="/shop"
         features={[
           'Multi-location support',
           'Brand customization',

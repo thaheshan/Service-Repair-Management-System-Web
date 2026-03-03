@@ -13,6 +13,7 @@ export function middleware(request: NextRequest) {
     '/signup/admin',
     '/signup/technician',
     '/signup/shop',
+    '/shop',
     '/registration-staff',
     '/signup/technician',  // ✅ Add this
   ];
