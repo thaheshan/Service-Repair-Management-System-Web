@@ -10,6 +10,9 @@ const publicRoutes = [
   '/signup/shop',
   '/shop',
   '/registration-staff',
+  '/forgot-password',
+  '/reset-password',
+  '/reset-success',
 ];
 
 export function middleware(request: NextRequest) {
