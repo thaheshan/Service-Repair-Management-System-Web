@@ -8,14 +8,6 @@ interface ProtectedRouteProps {
   requiredRoles?: string[];
 }
 
-/**
- * ProtectedRoute Component
- * Protects routes that require authentication
- * - If loading: shows loading screen
- * - If not authenticated: redirects to login
- * - If authenticated but wrong role: shows unauthorized
- * - Otherwise: allows access
- */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRoles
