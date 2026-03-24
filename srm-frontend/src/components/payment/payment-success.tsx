@@ -3,10 +3,10 @@
 import { CheckCircle2, Gift, Mail, ArrowRight, Headphones } from "lucide-react"
 
 interface PaymentSuccessProps {
-  onGoToDashboard: () => void
+  handleLogin: () => void
 }
 
-export function PaymentSuccess({ onGoToDashboard }: PaymentSuccessProps) {
+export function PaymentSuccess({ handleLogin }: PaymentSuccessProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-start py-12 px-4 bg-[#FFFFFF]">
       {/* Success Icon */}
@@ -83,10 +83,10 @@ export function PaymentSuccess({ onGoToDashboard }: PaymentSuccessProps) {
 
       {/* Go to Dashboard Button */}
       <button
-        onClick={onGoToDashboard}
+        onClick={handleLogin}
         className="w-full max-w-lg flex items-center justify-center gap-2 rounded-xl bg-[#4F46E5] px-6 py-4 text-sm font-semibold text-[#FFFFFF] hover:bg-[#4338CA] transition-colors"
       >
-        Go to Dashboard
+        Back to Login
         <ArrowRight className="h-4 w-4" />
       </button>
 

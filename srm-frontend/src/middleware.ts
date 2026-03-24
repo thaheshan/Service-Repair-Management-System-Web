@@ -13,6 +13,7 @@ const publicRoutes = [
   '/forgot-password',
   '/reset-password',
   '/reset-success',
+  '/payment',
 ];
 
 export function middleware(request: NextRequest) {

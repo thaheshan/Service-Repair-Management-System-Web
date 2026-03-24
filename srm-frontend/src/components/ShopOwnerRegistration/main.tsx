@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RegistrationProvider } from './registration-context';
 import { StepAccount, AccountData } from './step-1-account-new';
 import { StepShopDetails, ShopDetailsData } from './step-2-shop-details-new';
@@ -10,6 +11,7 @@ export default function RegistrationPage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [accountData, setAccountData] = useState<AccountData | null>(null);
   const [shopDetailsData, setShopDetailsData] = useState<ShopDetailsData | null>(null);
+  const router = useRouter();
 
   const handleStep1Complete = (data: AccountData) => {
     setAccountData(data);
@@ -22,15 +24,13 @@ export default function RegistrationPage() {
   };
 
   const handleStep3Complete = (plan: string) => {
-    // Final submission — all data collected
     console.log('Registration complete:', {
       account: accountData,
       shopDetails: shopDetailsData,
       selectedPlan: plan,
     });
 
-    // TODO: replace with your API call / redirect
-    alert(`Account created! Plan selected: ${plan}`);
+    router.push('/payment'); 
   };
 
   return (
@@ -38,14 +38,12 @@ export default function RegistrationPage() {
       {currentStep === 1 && (
         <StepAccount onNext={handleStep1Complete} />
       )}
-
       {currentStep === 2 && (
         <StepShopDetails
           onNext={handleStep2Complete}
           onBack={() => setCurrentStep(1)}
         />
       )}
-
       {currentStep === 3 && (
         <StepChoosePlan
           onNext={handleStep3Complete}
