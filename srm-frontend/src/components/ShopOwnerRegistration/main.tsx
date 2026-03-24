@@ -30,7 +30,7 @@ export default function RegistrationPage() {
       selectedPlan: plan,
     });
 
-    router.push('/payment'); 
+    router.push('/request'); 
   };
 
   return (
