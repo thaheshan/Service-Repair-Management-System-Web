@@ -12,7 +12,7 @@ export function AccountTypeCards() {
         description="Full system access and business management"
         color="indigo"
         buttonText="Sign up as Admin"
-        link="/signup/admin"
+        link="/signup/technician"
         features={[
           'Manage all repairs and staff',
           'Access analytics and reports',

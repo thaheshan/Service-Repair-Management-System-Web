@@ -1,0 +1,72 @@
+"use client"
+
+import { MapPin, Users, CreditCard } from "lucide-react"
+
+export function SidePanelStep2() {
+  return (
+    <div className="relative flex h-full flex-col overflow-hidden bg-gradient-to-br from-[#6366F1] via-[#4F46E5] to-[#4338CA] px-10 py-10 text-white">
+      {/* Background decorative circles */}
+      <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/5" />
+      <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-white/5" />
+
+      {/* Logo */}
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+          <CreditCard className="h-6 w-6 text-white" />
+        </div>
+        <span className="text-xl font-bold">RepairShop</span>
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 mt-12">
+        <h1 className="text-3xl font-bold leading-tight text-balance">
+          Shop Details Matter
+        </h1>
+        <p className="mt-4 text-base leading-relaxed text-white/80">
+          Help us understand your business better
+        </p>
+      </div>
+
+      {/* Feature list */}
+      <div className="relative z-10 mt-12 flex flex-col gap-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+            <MapPin className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Location Information</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-white/70">
+              We'll help you reach local customers
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+            <Users className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Service Types</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-white/70">
+              Tell us what repairs you specialize in
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+            <CreditCard className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Billing Details</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-white/70">
+              Secure payment processing for your services
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1" />
+    </div>
+  )
+}
