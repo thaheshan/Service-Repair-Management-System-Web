@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 
 import "@/app/globals.css" 
@@ -11,6 +11,7 @@ import { RevenueTrend } from "@/components/admin/dashboard/revenue-trend"
 import { RepairStatusChart } from "@/components/admin/dashboard/repair-status-chart"
 import { RecentActivity } from "@/components/admin/dashboard/recent-activity"
 import { TopTechnicians } from "@/components/admin/dashboard/top-technicians"
+import { DashboardFooter } from "@/components/admin/dashboard/footer"
 
 export default function DashboardPage() {
   return (
@@ -24,45 +25,52 @@ export default function DashboardPage() {
         <DashboardHeader />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="flex flex-col gap-6">
+        <main className="flex-1 overflow-y-auto w-full">
+          <div className="flex flex-col gap-6 p-6 mb-12">
 
-            {/* Page Title */}
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-sm text-muted-foreground">
-                Welcome back! Here's what's happening today.
-              </p>
+            {/* Page Title & Actions Header (Stacked) */}
+            <div className="flex flex-col gap-6 mb-2">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+                <p className="text-sm text-muted-foreground">
+                  Welcome back! Here's what's happening today.
+                </p>
+              </div>
+              <div className="w-full">
+                <ActionButtons />
+              </div>
             </div>
 
             {/* Stat Cards */}
             <StatCards />
 
-            {/* Action Buttons */}
-            <ActionButtons />
-
-            {/* Charts Row */}
+            {/* Row 2: Recent Repairs & Revenue Trend */}
             <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-2">
+              <div className="col-span-1 h-full">
+                <RecentRepairs />
+              </div>
+              <div className="col-span-2 h-full">
                 <RevenueTrend />
               </div>
-              <div className="col-span-1">
+            </div>
+
+            {/* Row 3: Top Techs & Status Chart */}
+            <div className="grid grid-cols-3 gap-6">
+              <div className="col-span-1 h-full">
+                <TopTechnicians />
+              </div>
+              <div className="col-span-2 h-full">
                 <RepairStatusChart />
               </div>
             </div>
 
-            {/* Bottom Row */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-2">
-                <RecentRepairs />
-              </div>
-              <div className="col-span-1 flex flex-col gap-6">
-                <TopTechnicians />
-                <RecentActivity />
-              </div>
+            {/* Bottom Row: Recent Activity */}
+            <div>
+              <RecentActivity />
             </div>
 
           </div>
+          <DashboardFooter />
         </main>
       </div>
     </div>

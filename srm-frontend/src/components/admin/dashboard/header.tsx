@@ -55,7 +55,9 @@ export function DashboardHeader() {
           <DropdownMenuTrigger asChild>
             <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted focus:outline-none">
               <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-[#EF4444] ring-2 ring-card" />
+              <span className="absolute right-1.5 top-1.5 flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[#EF4444] text-[9px] font-bold text-white ring-2 ring-card">
+                2
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
@@ -90,7 +92,7 @@ export function DashboardHeader() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-muted focus:outline-none">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin" alt="Admin User" />
+                <AvatarImage src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80" alt="Admin User" className="object-cover" />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">AU</AvatarFallback>
               </Avatar>
               <div className="flex items-center gap-1">

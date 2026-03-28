@@ -49,32 +49,32 @@ export function StatCards() {
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className={`flex items-center justify-between rounded-xl border border-border border-l-4 ${stat.borderColor} bg-card p-4`}
+          className="flex h-full items-center justify-between rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
         >
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">{stat.title}</span>
-            <span className="text-2xl font-bold text-foreground">{stat.value}</span>
+            <span className="text-sm font-medium text-muted-foreground">{stat.title}</span>
+            <span className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</span>
             {stat.changeDirection === "up" ? (
-              <span className="text-xs font-medium text-[#10B981]">
+              <span className="text-xs font-semibold text-[#10B981] pt-1">
                 {"↑ "}{stat.change}
               </span>
             ) : stat.changeDirection === "down" ? (
-              <span className="text-xs font-medium text-muted-foreground">
+              <span className="text-xs font-semibold text-muted-foreground pt-1">
                 {"↓ "}{stat.change}
               </span>
             ) : (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 pt-1">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className="h-3 w-3 fill-[#F59E0B] text-[#F59E0B]" />
+                    <Star key={s} className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B]" />
                   ))}
                 </div>
                 <span className="text-xs text-muted-foreground">{stat.change}</span>
               </div>
             )}
           </div>
-          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${stat.iconBg}`}>
-            <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] ${stat.iconBg}`}>
+            <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
           </div>
         </div>
       ))}
