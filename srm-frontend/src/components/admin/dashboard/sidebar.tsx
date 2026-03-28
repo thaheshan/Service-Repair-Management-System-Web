@@ -36,12 +36,12 @@ const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: Wrench, label: "Repairs", href: "/admin/repairs", aliases: ["/admin/schedule"] },
   { icon: Users, label: "Customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
-  { icon: Smartphone, label: "Devices", href: "#" },
-  { icon: FileText, label: "Invoices", href: "#" },
-  { icon: Package, label: "Inventory", href: "#" },
-  { icon: BarChart3, label: "Reports", href: "#" },
+  { icon: Smartphone, label: "Devices", href: "/admin/devices", aliases: ["/admin/devices/"] },
+  { icon: FileText, label: "Invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"] },
+  { icon: Package, label: "Inventory", href: "/admin/inventory", aliases: ["/admin/inventory/"] },
+  { icon: BarChart3, label: "Reports", href: "/admin/reports" },
   { icon: UserCircle, label: "Staff", href: "/admin/staff", aliases: ["/admin/staff/"] },
-  { icon: Settings, label: "Settings", href: "#" },
+  { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
 
 const branches = [

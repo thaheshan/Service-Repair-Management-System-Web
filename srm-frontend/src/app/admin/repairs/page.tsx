@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { RepairsHeader } from "@/components/admin/repairs/repairs-header"
 import { RepairsFilterSidebar, RepairFilters } from "@/components/admin/repairs/repairs-filters-sidebar"
@@ -205,12 +206,13 @@ export default function RepairsPage() {
 
 
   return (
-    <div className="flex bg-muted text-foreground">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
       <DashboardSidebar />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col ml-[200px] min-h-screen bg-background relative">
+      <div className="flex flex-1 flex-col ml-[200px] min-w-0 bg-background relative">
+        <DashboardHeader />
         
         {/* Top Header Background matching the mockup */}
         <div className="bg-background px-6 pt-6 pb-4">
@@ -223,8 +225,8 @@ export default function RepairsPage() {
         </div>
 
         {/* Main Card Wrapper */}
-        <main className="flex-1 flex flex-col px-6 pb-6 pt-0 m-0 w-full min-h-[calc(100vh-180px)]">
-          <div className="flex-1 flex flex-col bg-card rounded-xl border border-border shadow-sm overflow-hidden min-h-[600px]">
+        <main className="flex-1 flex flex-col px-6 pb-0 pt-0 m-0 w-full overflow-y-auto">
+          <div className="flex-1 flex flex-col bg-card rounded-xl border border-border shadow-sm overflow-hidden min-h-[600px] mb-6">
              
             {/* Action Bar / Searching */}
             <RepairsHeader 
@@ -268,9 +270,8 @@ export default function RepairsPage() {
             </div>
 
           </div>
+          <DashboardFooter />
         </main>
-        
-        <DashboardFooter />
 
         {/* Global Modal Layer */}
         <StatusUpdateModal 

@@ -3,9 +3,11 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Calendar, Search, ChevronDown, Check, Camera, Image as ImageIcon, Plus, X, Download } from "lucide-react"
+import { Calendar, Search, ChevronDown, Check, Camera, Image as ImageIcon, Plus, X, Download, History, Info, ChevronRight } from "lucide-react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { DashboardHeader } from "@/components/admin/dashboard/header"
+import { DashboardFooter } from "@/components/admin/dashboard/footer"
 
 // Mock device icons
 const PhoneIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -222,15 +224,15 @@ export default function CreateRepairPage() {
   }
 
   return (
-    <div className="flex bg-muted text-foreground h-screen overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex bg-background h-screen overflow-hidden">
       <DashboardSidebar />
+      
+      <div className="flex-1 ml-[200px] flex flex-col min-w-0">
+        <DashboardHeader />
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 flex-col ml-[200px] bg-[#F8FAFC] relative h-full overflow-hidden">
-        
-        {/* Header Background */}
-        <div className="bg-white px-8 pt-6 pb-2 border-b border-border shadow-sm z-10">
+        <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-[#F8FAFC]" onScroll={handleScroll}>
+          {/* Dashboard Context Header - Secondary below global Header */}
+          <div className="bg-white px-8 pt-6 pb-2 border-b border-border shadow-sm z-10 shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
               <Link href="/admin/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
@@ -702,7 +704,7 @@ export default function CreateRepairPage() {
         </main>
         
         {/* Sticky App Footer */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-border p-4 px-8 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-20 flex justify-between items-center">
+        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-border p-4 px-8 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-20 flex justify-between items-center shrink-0">
            <button onClick={() => router.push('/admin/repairs')} className="h-11 px-8 rounded-xl border border-border text-[14px] font-semibold text-foreground hover:bg-muted transition-colors focus:outline-none bg-white">
              Cancel
            </button>
@@ -721,6 +723,13 @@ export default function CreateRepairPage() {
              </button>
            </div>
         </div>
+
+        <div className="h-12" /> {/* Layout Spacer */}
+        <DashboardFooter />
+        
+      </main>
+
+      {/* Modals outside the scroll flow */}
 
         {/* Create Customer Global Modal */}
         {isCustomerModalOpen && (
