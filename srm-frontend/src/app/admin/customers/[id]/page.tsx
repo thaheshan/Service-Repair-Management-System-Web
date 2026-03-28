@@ -7,13 +7,26 @@ import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import {
   ChevronRight, ArrowLeft, Copy, Phone, PhoneCall, Mail, MessageSquare, Calendar,
   Wrench, DollarSign, Star, X, Check, MoreVertical, MapPin, 
-  Trash2, CopyPlus, Plus
+  Trash2, CopyPlus, Plus, Search
 } from "lucide-react"
 
 export default function CustomerDetailedPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [internalNote, setInternalNote] = useState("")
+  
+  // Modal states
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [communicationModalType, setCommunicationModalType] = useState<'Phone' | 'Mail' | 'SMS' | null>(null)
+  
+  const customerEmail = "kamal@example.com"
+  const customerPhone = "+94 77 123 4567"
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text)
+    alert("Copied to clipboard: " + text)
+  }
   
   const [notes, setNotes] = useState([
     { id: 1, author: "Admin User", avatar: "1", time: "Jan 10, 2026 at 2:30 PM", text: "Customer prefers email communication. Very satisfied with previous repairs." },
@@ -98,9 +111,9 @@ export default function CustomerDetailedPage({ params }: { params: { id: string 
                       <div className="flex items-center justify-between group">
                          <div className="flex items-center gap-3">
                            <Mail className="h-[18px] w-[18px] text-muted-foreground" />
-                           <span className="text-[14px] font-medium text-[#0F172A]">kamal@example.com</span>
+                           <span className="text-[14px] font-medium text-[#0F172A]">{customerEmail}</span>
                          </div>
-                         <button className="flex items-center gap-1.5 text-[12px] font-bold text-[#4F46E5] opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none">
+                         <button onClick={() => handleCopy(customerEmail)} className="flex items-center gap-1.5 text-[12px] font-bold text-[#4F46E5] opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none">
                            <Copy className="h-3.5 w-3.5" /> Copy
                          </button>
                       </div>
@@ -108,10 +121,10 @@ export default function CustomerDetailedPage({ params }: { params: { id: string 
                       <div className="flex items-center justify-between group">
                          <div className="flex items-center gap-3">
                            <Phone className="h-[18px] w-[18px] text-muted-foreground" />
-                           <span className="text-[14px] font-medium text-[#0F172A]">+94 77 123 4567</span>
+                           <span className="text-[14px] font-medium text-[#0F172A]">{customerPhone}</span>
                          </div>
-                         <button className="flex items-center gap-1.5 text-[12px] font-bold text-[#4F46E5] opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none">
-                           <PhoneCall className="h-3.5 w-3.5" /> Call
+                         <button onClick={() => handleCopy(customerPhone)} className="flex items-center gap-1.5 text-[12px] font-bold text-[#4F46E5] opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none">
+                           <Copy className="h-3.5 w-3.5" /> Copy
                          </button>
                       </div>
 
@@ -279,19 +292,19 @@ export default function CustomerDetailedPage({ params }: { params: { id: string 
                     <h3 className="text-[14px] font-bold text-[#0F172A] mb-5">Quick Actions</h3>
                     
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => alert("Calling +94 77 123 4567...")} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
+                      <button onClick={() => setCommunicationModalType('Phone')} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
                         <PhoneCall className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         <span className="text-[11px] font-bold text-[#0F172A]">Call</span>
                       </button>
-                      <button onClick={() => alert("Drafting Email...")} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
+                      <button onClick={() => setCommunicationModalType('Mail')} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
                         <Mail className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         <span className="text-[11px] font-bold text-[#0F172A]">Email</span>
                       </button>
-                      <button onClick={() => alert("Drafting SMS...")} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
+                      <button onClick={() => setCommunicationModalType('SMS')} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
                         <MessageSquare className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         <span className="text-[11px] font-bold text-[#0F172A]">SMS</span>
                       </button>
-                      <button onClick={() => alert("Opening Scheduler for new task from Customer profile!")} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
+                      <button onClick={() => alert("Scheduled!")} className="flex flex-col items-center justify-center gap-2 h-[72px] rounded-lg border border-border bg-white text-muted-foreground hover:bg-muted hover:text-[#4F46E5] hover:border-[#4F46E5]/30 transition-all focus:outline-none shadow-sm group">
                         <Calendar className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         <span className="text-[11px] font-bold text-[#0F172A]">Schedule</span>
                       </button>
@@ -385,10 +398,10 @@ export default function CustomerDetailedPage({ params }: { params: { id: string 
                  <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 flex flex-col gap-3">
                     <h3 className="text-[14px] font-bold text-red-600 mb-2">Danger Zone</h3>
                     
-                    <button onClick={() => alert("Merge Dialogue...")} className="flex justify-center items-center gap-2 h-9 rounded-lg border border-border bg-white text-[12px] font-bold text-[#0F172A] hover:bg-muted transition-colors focus:outline-none shadow-sm">
+                    <button onClick={() => setIsMergeModalOpen(true)} className="flex justify-center items-center gap-2 h-9 rounded-lg border border-border bg-white text-[12px] font-bold text-[#0F172A] hover:bg-muted transition-colors focus:outline-none shadow-sm">
                        <CopyPlus className="h-3.5 w-3.5" /> Merge with Another Customer
                     </button>
-                    <button onClick={() => alert("Delete Confirmation Dialogue...")} className="flex justify-center items-center gap-2 h-9 rounded-lg border border-red-200 bg-red-50 text-[12px] font-bold text-red-600 hover:bg-red-100 transition-colors focus:outline-none shadow-sm">
+                    <button onClick={() => setIsDeleteModalOpen(true)} className="flex justify-center items-center gap-2 h-9 rounded-lg border border-red-200 bg-red-50 text-[12px] font-bold text-red-600 hover:bg-red-100 transition-colors focus:outline-none shadow-sm">
                        <Trash2 className="h-3.5 w-3.5" /> Delete Customer
                     </button>
                  </div>
@@ -406,6 +419,158 @@ export default function CustomerDetailedPage({ params }: { params: { id: string 
 
         </div>
       </main>
+
+      {/* ===================== MODALS ===================== */}
+
+      {/* 1. Delete Customer Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200 p-4">
+           <div className="bg-white w-full max-w-[440px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-red-100">
+              <div className="flex flex-col items-center justify-center p-8 pb-6 text-center">
+                 <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-5">
+                    <Trash2 className="h-8 w-8" />
+                 </div>
+                 <h2 className="text-[20px] font-black text-[#0F172A] mb-2 tracking-tight">Delete Customer Account?</h2>
+                 <p className="text-[14px] text-muted-foreground leading-relaxed">
+                   Are you sure you want to completely erase the record for <span className="font-bold text-[#0F172A]">Kamal Perera</span>? This action is permanent and will orphan 8 historical repair records.
+                 </p>
+              </div>
+              <div className="px-8 pb-8 flex flex-col gap-4">
+                 <div>
+                   <label className="block text-[12px] font-bold text-red-600 mb-2">Type "DELETE" below to confirm</label>
+                   <input type="text" placeholder="DELETE" className="w-full h-11 rounded-lg border border-red-200 bg-red-50/50 px-4 text-[14px] font-black tracking-widest text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-center uppercase" />
+                 </div>
+                 <div className="flex w-full gap-3 mt-2">
+                    <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">
+                      Go Back
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsDeleteModalOpen(false)
+                        alert("Customer Deleted Successfully!")
+                        router.push("/admin/customers")
+                      }} 
+                      className="flex-1 h-11 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-md transition-colors focus:outline-none"
+                    >
+                      Delete Forever
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* 2. Merge Customer Modal */}
+      {isMergeModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200 p-4">
+           <div className="bg-white w-full max-w-[500px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
+                <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2">
+                  <CopyPlus className="h-5 w-5 text-[#4F46E5]" /> Merge Customer Profiles
+                </h2>
+                <button onClick={() => setIsMergeModalOpen(false)} className="h-8 w-8 rounded-full bg-white border border-border flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-[#0F172A] transition-colors focus:outline-none shadow-sm">
+                   <ChevronRight className="h-4 w-4 rotate-45" /> {/* Use rotate-45 hack + chevron for X equivalent */}
+                   <span className="sr-only">Close</span>
+                </button>
+              </div>
+              
+              <div className="p-6">
+                 <p className="text-[13px] text-muted-foreground mb-6">
+                   Select the destination profile. All repair histories, devices, and communications from <span className="font-bold text-[#0F172A]">Kamal Perera</span> will be migrated over.
+                 </p>
+              
+                 <div className="mb-8">
+                   <label className="block text-[12px] font-bold text-[#0F172A] mb-2">Search target customer</label>
+                   <div className="relative">
+                     <input type="text" placeholder="Search by name, email, or phone..." className="w-full h-11 pl-4 pr-10 rounded-xl border border-border bg-white text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
+                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                   </div>
+                   
+                   <div className="mt-3 p-4 border border-border rounded-xl bg-[#F8FAFC]">
+                      <span className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Target Overview</span>
+                      <p className="text-[13px] text-muted-foreground">Select a customer above to preview destination profile.</p>
+                   </div>
+                 </div>
+
+                 <div className="flex w-full gap-3">
+                    <button onClick={() => setIsMergeModalOpen(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">
+                      Cancel
+                    </button>
+                    <button onClick={() => alert("Merge Request Initialized")} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none">
+                      Initiate Merge
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* 3. Communication Modal */}
+      {communicationModalType && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200 p-4">
+           <div className="bg-white w-full max-w-[480px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between p-6 border-b border-border bg-[#F8FAFC]">
+                 <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 flex items-center justify-center rounded-full bg-[#EEF2FF] text-[#4F46E5]">
+                       {communicationModalType === 'Phone' ? <PhoneCall className="h-5 w-5" /> : communicationModalType === 'Mail' ? <Mail className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+                    </div>
+                    <div>
+                      <h2 className="text-[16px] font-black text-[#0F172A] leading-tight">
+                        {communicationModalType === 'Phone' ? "Initiate Call" : communicationModalType === 'Mail' ? "Send Email" : "Send SMS"}
+                      </h2>
+                      <p className="text-[12px] font-bold text-[#4F46E5]">To: Kamal Perera</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setCommunicationModalType(null)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-[#0F172A] transition-colors focus:outline-none">
+                   <ChevronRight className="h-5 w-5 rotate-45" />
+                 </button>
+              </div>
+
+              <div className="p-6">
+                <div className="bg-[#F8FAFC] border border-border rounded-xl p-4 mb-5">
+                   {communicationModalType === 'Phone' || communicationModalType === 'SMS' ? (
+                     <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-bold text-muted-foreground">Main Line</span>
+                        <span className="text-[14px] font-black text-[#0F172A] font-mono">{customerPhone}</span>
+                     </div>
+                   ) : (
+                     <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-bold text-muted-foreground">Primary Address</span>
+                        <span className="text-[14px] font-black text-[#0F172A]">{customerEmail}</span>
+                     </div>
+                   )}
+                </div>
+
+                {communicationModalType !== 'Phone' && (
+                  <div className="mb-6">
+                    <label className="block text-[12px] font-bold text-[#0F172A] mb-2">Message Payload</label>
+                    <textarea 
+                      rows={5} 
+                      placeholder={`Draft your ${communicationModalType} message here...`}
+                      className="w-full p-4 rounded-xl border border-border text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] resize-none"
+                    />
+                  </div>
+                )}
+
+                <div className="flex w-full gap-3">
+                   <button onClick={() => setCommunicationModalType(null)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">
+                     Abort
+                   </button>
+                   <button 
+                     onClick={() => {
+                       setCommunicationModalType(null)
+                       alert(`${communicationModalType} Dispatch logged dynamically!`)
+                     }} 
+                     className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
+                   >
+                     {communicationModalType === 'Phone' ? "Connect Dial" : "Transmit Data"}
+                   </button>
+                </div>
+              </div>
+           </div>
+        </div>
+      )}
+
     </div>
   )
 }

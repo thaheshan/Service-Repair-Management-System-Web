@@ -1,6 +1,7 @@
 "use client"
 
 import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 import {
   DropdownMenu,
@@ -36,6 +37,15 @@ const notifications = [
 ]
 
 export function DashboardHeader() {
+  const router = useRouter()
+
+  const handleLogout = () => {
+    // Clear the auth cookie
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    // Redirect to login
+    router.push("/login")
+  }
+
   return (
     <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-border bg-card px-6">
       {/* Search Bar */}
@@ -104,11 +114,11 @@ export function DashboardHeader() {
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
               <User className="h-4 w-4" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
               <Settings className="h-4 w-4" />
               Settings
             </DropdownMenuItem>
@@ -117,7 +127,10 @@ export function DashboardHeader() {
               Billing
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-[#EF4444] focus:text-[#EF4444]">
+            <DropdownMenuItem 
+              className="cursor-pointer text-[#EF4444] focus:text-[#EF4444]"
+              onClick={handleLogout}
+            >
               <LogOut className="h-4 w-4" />
               Log out
             </DropdownMenuItem>
