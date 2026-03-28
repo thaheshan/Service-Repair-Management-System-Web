@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ChevronDown, AlertTriangle } from "lucide-react"
+import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 import {
   DropdownMenu,
@@ -9,16 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/ui-admin-dashboard/alert-dialog"
+import { StatusUpdateModal } from "@/components/admin/repairs/status-update-modal"
 
 type RepairStatus = "In Progress" | "Completed" | "Pending"
 
@@ -50,35 +42,35 @@ const initialRepairs: Repair[] = [
     device: "iPhone 13 - Screen Replacement",
     status: "In Progress",
     amount: "Rs. 2,500",
-    avatar: "john",
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&q=80",
   },
   {
     name: "Sarah Johnson",
     device: "Samsung S21 - Battery Issue",
     status: "Completed",
     amount: "Rs. 1,800",
-    avatar: "sarah",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80",
   },
   {
     name: "Mike Davis",
     device: "iPad Pro - Water Damage",
     status: "Pending",
     amount: "Rs. 4,200",
-    avatar: "mike",
+    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop&q=80",
   },
   {
     name: "Emily Wilson",
     device: "MacBook Air - Keyboard Fix",
     status: "In Progress",
     amount: "Rs. 3,500",
-    avatar: "emily",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&q=80",
   },
   {
     name: "Robert Brown",
     device: "OnePlus 9 - Charging Port",
     status: "Completed",
     amount: "Rs. 1,200",
-    avatar: "robert",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&q=80",
   },
 ]
 
@@ -125,7 +117,7 @@ export function RecentRepairs() {
     )
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = (autoUpdateCustomer: boolean, newStatus: string) => {
     if (confirmDialog.repairIndex !== null && confirmDialog.targetStatus) {
       applyStatusChange(confirmDialog.repairIndex, confirmDialog.targetStatus)
     }
@@ -152,11 +144,11 @@ export function RecentRepairs() {
 
   return (
     <>
-      <div className="flex flex-col rounded-xl border border-border bg-card">
+      <div className="flex flex-col h-full rounded-xl border border-border bg-card">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
           <h3 className="text-base font-semibold text-foreground">Recent Repairs</h3>
-          <button className="text-sm font-medium text-primary hover:underline">View All</button>
+          <Link href="/admin/repairs" className="text-sm font-medium text-primary hover:underline">View All</Link>
         </div>
 
         {/* Repair List */}
@@ -171,8 +163,9 @@ export function RecentRepairs() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-9 w-9">
                   <AvatarImage
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${repair.avatar}`}
+                    src={repair.avatar}
                     alt={repair.name}
+                    className="object-cover"
                   />
                   <AvatarFallback className="bg-muted text-xs text-muted-foreground">
                     {repair.name
@@ -186,12 +179,12 @@ export function RecentRepairs() {
                   <span className="text-xs text-muted-foreground">{repair.device}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end gap-1.5">
                 {/* Status Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary ${statusStyles[repair.status]}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-primary ${statusStyles[repair.status]}`}
                     >
                       {repair.status}
                       <ChevronDown className="h-3 w-3" />
@@ -212,62 +205,19 @@ export function RecentRepairs() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <span className="text-sm font-semibold text-foreground">{repair.amount}</span>
+                <span className="text-sm font-bold text-foreground">{repair.amount}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Confirmation Dialog - triggers when reverting a "Completed" repair */}
-      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && handleCancel()}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#FEF3C7]">
-              <AlertTriangle className="h-6 w-6 text-[#D97706]" />
-            </div>
-            <AlertDialogTitle className="text-center text-foreground">
-              Are you sure?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              You are about to change the status of{" "}
-              <span className="font-medium text-foreground">{confirmDialog.repairName}</span>
-              {"'s"} repair (
-              <span className="text-muted-foreground">{confirmDialog.repairDevice}</span>) from{" "}
-              {confirmDialog.fromStatus && (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[confirmDialog.fromStatus]}`}
-                >
-                  {confirmDialog.fromStatus}
-                </span>
-              )}{" "}
-              to{" "}
-              {confirmDialog.targetStatus && (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[confirmDialog.targetStatus]}`}
-                >
-                  {confirmDialog.targetStatus}
-                </span>
-              )}
-              . Are you sure you want to proceed?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-2 sm:justify-center">
-            <AlertDialogCancel
-              onClick={handleCancel}
-              className="rounded-lg border-border"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirm}
-              className="rounded-lg bg-[#D97706] text-[#FFFFFF] hover:bg-[#B45309]"
-            >
-              Yes, Change Status
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <StatusUpdateModal 
+        isOpen={confirmDialog.open}
+        onClose={handleCancel}
+        onConfirm={handleConfirm as any}
+        pendingStatus={confirmDialog.targetStatus as any}
+      />
     </>
   )
 }

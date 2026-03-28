@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Wrench,
@@ -23,16 +25,23 @@ import {
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { useState } from "react"
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", active: true },
-  { icon: Wrench, label: "Repairs", active: false },
-  { icon: Users, label: "Customers", active: false },
-  { icon: Smartphone, label: "Devices", active: false },
-  { icon: FileText, label: "Invoices", active: false },
-  { icon: Package, label: "Inventory", active: false },
-  { icon: BarChart3, label: "Reports", active: false },
-  { icon: UserCircle, label: "Staff", active: false },
-  { icon: Settings, label: "Settings", active: false },
+interface NavItem {
+  icon: any
+  label: string
+  href: string
+  aliases?: string[]
+}
+
+const navItems: NavItem[] = [
+  { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
+  { icon: Wrench, label: "Repairs", href: "/admin/repairs", aliases: ["/admin/schedule"] },
+  { icon: Users, label: "Customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
+  { icon: Smartphone, label: "Devices", href: "#" },
+  { icon: FileText, label: "Invoices", href: "#" },
+  { icon: Package, label: "Inventory", href: "#" },
+  { icon: BarChart3, label: "Reports", href: "#" },
+  { icon: UserCircle, label: "Staff", href: "/admin/staff", aliases: ["/admin/staff/"] },
+  { icon: Settings, label: "Settings", href: "#" },
 ]
 
 const branches = [
@@ -44,6 +53,7 @@ const branches = [
 export function DashboardSidebar() {
   const [selectedBranch, setSelectedBranch] = useState("main")
   const currentBranch = branches.find((b) => b.id === selectedBranch)
+  const pathname = usePathname()
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-[200px] flex-col border-r border-border bg-card">
@@ -84,21 +94,30 @@ export function DashboardSidebar() {
       {/* Navigation */}
       <nav className="mt-2 flex-1 px-3">
         <ul className="flex flex-col gap-0.5">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <button
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  item.active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className="h-[18px] w-[18px]" />
-                <span>{item.label}</span>
-              </button>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            // Determine if the current path matches the item's href or aliases
+            const isActive = 
+              pathname === item.href || 
+              (item.href !== "#" && pathname?.startsWith(item.href)) ||
+              (item.aliases && item.aliases.some((alias: string) => pathname?.startsWith(alias)))
+            
+            return (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-[18px] w-[18px]" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       </nav>
     </aside>

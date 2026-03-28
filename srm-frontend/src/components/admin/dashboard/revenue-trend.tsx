@@ -49,7 +49,7 @@ export function RevenueTrend() {
   const data = dataByRange[selectedRange]
 
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card">
+    <div className="flex h-full flex-col rounded-xl border border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
         <h3 className="text-base font-semibold text-foreground">Revenue Trend</h3>
@@ -75,8 +75,8 @@ export function RevenueTrend() {
       </div>
 
       {/* Chart */}
-      <div className="px-5 pb-3">
-        <div className="h-[220px] w-full">
+      <div className="flex-1 px-5 pb-3 min-h-[220px]">
+        <div className="h-full w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
               <defs>
@@ -101,7 +101,7 @@ export function RevenueTrend() {
                 dx={-5}
               />
               <Tooltip
-                formatter={(value: number) => [`Rs. ${value.toLocaleString()}`, "Revenue"]}
+                formatter={(value: any) => [`Rs. ${Number(value).toLocaleString()}`, "Revenue"]}
                 contentStyle={{
                   borderRadius: "8px",
                   border: "1px solid #E5E7EB",

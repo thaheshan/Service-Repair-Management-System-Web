@@ -2,11 +2,11 @@ import { Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 
 const technicians = [
-  { name: "David Chen", rating: 4.9, avatar: "david" },
-  { name: "James Miller", rating: 4.8, avatar: "james" },
-  { name: "Alex Kumar", rating: 4.7, avatar: "alex" },
-  { name: "Ryan Thomas", rating: 4.6, avatar: "ryan" },
-  { name: "Kevin Lee", rating: 4.8, avatar: "kevin" },
+  { name: "David Chen", rating: 4.9, avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&q=80" },
+  { name: "James Miller", rating: 4.8, avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&q=80" },
+  { name: "Alex Kumar", rating: 4.7, avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80" },
+  { name: "Ryan Thomas", rating: 4.6, avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&h=150&fit=crop&q=80" },
+  { name: "Kevin Lee", rating: 4.8, avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80" },
 ]
 
 function StarRating({ rating }: { rating: number }) {
@@ -30,7 +30,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export function TopTechnicians() {
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card">
+    <div className="flex h-full flex-col rounded-xl border border-border bg-card">
       {/* Header */}
       <div className="px-5 pt-5 pb-3">
         <h3 className="text-base font-semibold text-foreground">Top Technicians This Week</h3>
@@ -53,7 +53,7 @@ export function TopTechnicians() {
           >
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${tech.avatar}`} alt={tech.name} />
+                <AvatarImage src={tech.avatar} alt={tech.name} className="object-cover" />
                 <AvatarFallback className="bg-muted text-xs text-muted-foreground">
                   {tech.name.split(" ").map(n => n[0]).join("")}
                 </AvatarFallback>

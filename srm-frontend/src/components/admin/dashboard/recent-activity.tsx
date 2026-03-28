@@ -30,8 +30,8 @@ const activities = [
   },
   {
     icon: ClipboardCheck,
-    iconBg: "bg-[#FEE2E2]",
-    iconColor: "text-[#EF4444]",
+    iconBg: "bg-[#F3E8FF]",
+    iconColor: "text-[#A855F7]",
     title: "Diagnostic completed for",
     highlight: "Meera Joshi",
     description: "OnePlus 11 - Water damage assessment",
@@ -71,6 +71,11 @@ export function RecentActivity() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Footer Link */}
+      <div className="mt-auto border-t border-border px-5 py-3 text-center">
+        <button className="text-sm font-medium text-primary hover:underline">View all</button>
       </div>
     </div>
   )
