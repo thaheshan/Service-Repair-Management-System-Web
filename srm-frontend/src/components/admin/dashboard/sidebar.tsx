@@ -58,7 +58,7 @@ export function DashboardSidebar() {
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-[200px] flex-col border-r border-border bg-card">
       {/* Logo */}
-      <div className="flex h-[60px] items-center gap-2.5 border-b border-border px-5">
+      <div className="flex h-[64px] items-center gap-2.5 border-b border-border px-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <Wrench className="h-4 w-4 text-primary-foreground" />
         </div>

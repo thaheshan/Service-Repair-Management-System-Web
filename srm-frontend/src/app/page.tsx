@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import SplashScreen from '@/components/Splash_Screen/SplashScreen';
-import LoginForm from '@/app/(auth)/login/page';
 import SRMMarketingPage from '@/components/marketing/marketing-page';
 
 type AppScreen = 'splash' | 'role-selection';
