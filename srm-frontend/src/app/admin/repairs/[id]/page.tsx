@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
-import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import {
   Calendar, Clock, User, Bell, MapPin, 
   Wrench, ShieldCheck, CheckCircle2, Box, PenTool,
@@ -252,7 +251,6 @@ function TaskDetailsPage({ params }: { params: { id: string } }) {
           </div>
           
           <div className="h-12" /> {/* Layout Spacer */}
-          <DashboardFooter />
         </main>
       </div>
 
