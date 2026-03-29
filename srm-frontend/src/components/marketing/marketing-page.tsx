@@ -6,21 +6,25 @@ import FeaturesSection from './features-section';
 import HowItWorks from './how-it-works';
 import PricingSection from './pricing-section';
 import TestimonialsSection from './testimonials-section';
+import SecuritySection from './security-section';
 import FAQSection from './faq-section';
 import CTASection from './cta-section';
 import Footer from './footer';
 
 export default function SRMMarketingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 font-sans tracking-normal selection:bg-blue-200">
       <Header />
-      <HeroSection />
-      <FeaturesSection />
-      <HowItWorks />
-      <PricingSection />
-      <TestimonialsSection />
-      <FAQSection />
-      <CTASection />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <HowItWorks />
+        <PricingSection />
+        <TestimonialsSection />
+        <SecuritySection />
+        <FAQSection />
+        <CTASection />
+      </main>
       <Footer />
     </div>
   );

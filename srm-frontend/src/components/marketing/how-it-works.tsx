@@ -1,52 +1,54 @@
-'use client';
+import { UserPlus, Layers, ClipboardList, Rocket } from 'lucide-react';
 
 const steps = [
   {
-    number: '01',
-    title: 'Register Your Business',
-    description: 'Create an account and set up your repair shop profile in minutes'
+    icon: <UserPlus className="w-8 h-8 text-blue-600" />,
+    title: 'Register Business',
+    description: 'Create an account and set up your shop details in minutes.'
   },
   {
-    number: '02',
-    title: 'Add Your Team',
-    description: 'Invite technicians and staff members with custom role permissions'
+    icon: <Layers className="w-8 h-8 text-blue-600" />,
+    title: 'Add Services',
+    description: 'Define your services, pricing, and initial inventory.'
   },
   {
-    number: '03',
-    title: 'Start Managing Repairs',
-    description: 'Create repair orders and assign them to your technicians'
+    icon: <ClipboardList className="w-8 h-8 text-blue-600" />,
+    title: 'Create First Repair',
+    description: 'Log a customer issue and start tracking the progress.'
   },
   {
-    number: '04',
-    title: 'Track & Optimize',
-    description: 'Monitor progress and optimize your business operations in real-time'
-  },
+    icon: <Rocket className="w-8 h-8 text-blue-600" />,
+    title: 'Manage & Grow',
+    description: 'Track analytics, manage team, and scale your business.'
+  }
 ];
 
 export default function HowItWorks() {
   return (
-    <section className="py-16 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
+    <section className="py-24 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">
             How SRM Works in 4 Simple<br />Steps
           </h2>
-          <p className="text-gray-600">Get up and running in less than an hour</p>
+          <p className="text-lg text-gray-500">
+            From setting up your business to managing daily operations, it's that easy.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step, index) => (
-            <div key={index} className="relative">
-              {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-12 left-1/2 w-full h-0.5 bg-purple-200"></div>
-              )}
-              <div className="relative z-10 bg-white">
-                <div className="w-24 h-24 rounded-full bg-purple-600 text-white flex items-center justify-center text-3xl font-bold mb-4 mx-auto">
-                  {step.number}
+            <div key={index} className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm text-center transform transition duration-300 hover:shadow-md hover:-translate-y-1">
+              <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-6 relative">
+                {step.icon}
+                <div className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-gray-100 shadow-sm rounded-full flex items-center justify-center text-sm font-bold text-gray-400">
+                  {index + 1}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">{step.title}</h3>
-                <p className="text-gray-600 text-sm text-center">{step.description}</p>
               </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">{step.title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {step.description}
+              </p>
             </div>
           ))}
         </div>

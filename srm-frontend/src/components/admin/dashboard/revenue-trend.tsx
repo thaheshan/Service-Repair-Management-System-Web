@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import {
   Area,
@@ -19,27 +20,30 @@ import {
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 
 const dataByRange: Record<string, { day: string; revenue: number }[]> = {
-  "Last 7 days": [
-    { day: "Mon", revenue: 25000 },
-    { day: "Tue", revenue: 32000 },
-    { day: "Wed", revenue: 28000 },
-    { day: "Thu", revenue: 40000 },
-    { day: "Fri", revenue: 35000 },
-  ],
-  "Last 14 days": [
-    { day: "Mon", revenue: 18000 },
-    { day: "Tue", revenue: 22000 },
-    { day: "Wed", revenue: 30000 },
-    { day: "Thu", revenue: 26000 },
-    { day: "Fri", revenue: 35000 },
-  ],
-  "Last 30 days": [
-    { day: "Mon", revenue: 20000 },
-    { day: "Tue", revenue: 28000 },
-    { day: "Wed", revenue: 32000 },
-    { day: "Thu", revenue: 38000 },
-    { day: "Fri", revenue: 42000 },
-  ],
+  "Last 7 days": Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (6 - i))
+    return {
+      day: d.toLocaleDateString("en-US", { weekday: 'short' }),
+      revenue: Math.floor(Math.random() * 20000) + 20000
+    }
+  }),
+  "Last 14 days": Array.from({ length: 14 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (13 - i))
+    return {
+      day: d.toLocaleDateString("en-US", { month: 'short', day: 'numeric' }),
+      revenue: Math.floor(Math.random() * 25000) + 18000
+    }
+  }),
+  "Last 30 days": Array.from({ length: 30 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (29 - i))
+    return {
+      day: d.toLocaleDateString("en-US", { month: 'short', day: 'numeric' }),
+      revenue: Math.floor(Math.random() * 30000) + 15000
+    }
+  }),
 }
 
 const rangeOptions = ["Last 7 days", "Last 14 days", "Last 30 days"]
@@ -122,8 +126,8 @@ export function RevenueTrend() {
       </div>
 
       {/* Footer Link */}
-      <div className="border-t border-border px-5 py-3 text-center">
-        <button className="text-sm font-medium text-primary hover:underline">View all trend</button>
+      <div className="border-t border-border px-5 py-3 text-center flex items-center justify-center">
+        <Link href="/admin/reports" className="text-sm font-medium text-primary hover:underline">View all trend</Link>
       </div>
     </div>
   )

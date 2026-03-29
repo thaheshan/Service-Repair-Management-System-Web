@@ -1,70 +1,87 @@
-'use client';
-
-import { Users, Wrench, BarChart3, Lock, Clock, AlertCircle } from 'lucide-react';
+import { Users, Wrench, Package, CreditCard, BarChart2, Calendar, CheckCircle2 } from 'lucide-react';
 
 const features = [
   {
-    icon: Users,
-    title: 'Client Customer Management',
-    description: 'Manage all customer information, service history, and preferences in one centralized location.',
-    color: 'bg-blue-100 text-blue-600'
+    icon: <Users className="w-6 h-6 text-blue-600" />,
+    title: 'Customer Management',
+    description: 'Build detailed customer profiles and manage relationships seamlessly.',
+    features: ['Add customers', 'Track history', 'SMS notifications'],
+    color: 'bg-blue-50'
   },
   {
-    icon: Wrench,
-    title: 'Repair and Maintenance',
-    description: 'Track repair requests, assign technicians, and manage service schedules efficiently.',
-    color: 'bg-green-100 text-green-600'
+    icon: <Wrench className="w-6 h-6 text-green-600" />,
+    title: 'Repair Tracking',
+    description: 'Track devices through every stage of the repair process with ease.',
+    features: ['Status updates', 'Parts ordering', 'Time tracking'],
+    color: 'bg-green-50'
   },
   {
-    icon: BarChart3,
-    title: 'Revenue Reports',
-    description: 'Get real-time insights into revenue, profitability, and business performance metrics.',
-    color: 'bg-orange-100 text-orange-600'
+    icon: <Package className="w-6 h-6 text-amber-500" />,
+    title: 'Inventory Control',
+    description: 'Keep track of your parts, accessories, and products in real-time.',
+    features: ['Low stock alerts', 'Vendor management', 'Barcode scanning'],
+    color: 'bg-amber-50'
   },
   {
-    icon: Clock,
-    title: 'Smart Scheduling',
-    description: 'Optimize technician schedules and reduce idle time with intelligent scheduling.',
-    color: 'bg-pink-100 text-pink-600'
+    icon: <CreditCard className="w-6 h-6 text-pink-600" />,
+    title: 'POS & Invoicing',
+    description: 'Process transactions quickly, create detailed invoices, and manage payments.',
+    features: ['Tax calculation', 'Custom receipts', 'Email/SMS invoices'],
+    color: 'bg-pink-50'
   },
   {
-    icon: Lock,
-    title: 'Role-Based Management',
-    description: 'Control access levels and permissions for different team members and roles.',
-    color: 'bg-purple-100 text-purple-600'
+    icon: <BarChart2 className="w-6 h-6 text-blue-500" />,
+    title: 'Analytics & Reports',
+    description: 'Make data-driven decisions with comprehensive performance insights.',
+    features: ['Revenue tracking', 'Employee performance', 'Popular repairs'],
+    color: 'bg-blue-50'
   },
   {
-    icon: AlertCircle,
-    title: 'Service Alerts',
-    description: 'Get instant notifications for pending repairs, completed jobs, and important updates.',
-    color: 'bg-indigo-100 text-indigo-600'
-  },
+    icon: <Calendar className="w-6 h-6 text-purple-600" />,
+    title: 'Booking System',
+    description: 'Let customers book repair appointments online automatically.',
+    features: ['Online booking', 'Automated reminders', 'Calendar sync'],
+    color: 'bg-purple-50'
+  }
 ];
 
 export default function FeaturesSection() {
   return (
-    <section className="py-16 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
-            Powerful Features Built for<br />Repair Shops
+    <section id="features" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-4xl font-extrabold text-[#1E293B] mb-4">
+            Powerful Features Built for<br className="hidden md:block" /> Repair Shops
           </h2>
-          <p className="text-gray-600">Everything you need to run a successful repair business</p>
+          <p className="text-xl text-gray-500">
+            Everything you need to run your repair business efficiently and profitably.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <div key={index} className="p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition">
-                <div className={`w-12 h-12 rounded-lg ${feature.color} flex items-center justify-center mb-4`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.description}</p>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature, index) => (
+            <div
+              key={index}
+              className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+            >
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ${feature.color}`}>
+                {feature.icon}
               </div>
-            );
-          })}
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+              <p className="text-gray-500 mb-8 leading-relaxed h-14">
+                {feature.description}
+              </p>
+              
+              <ul className="space-y-3">
+                {feature.features.map((item, i) => (
+                  <li key={i} className="flex items-center text-sm font-medium text-gray-700">
+                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </section>

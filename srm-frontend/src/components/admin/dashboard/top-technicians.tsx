@@ -1,4 +1,5 @@
 import { Star } from "lucide-react"
+import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 
 const technicians = [
@@ -66,8 +67,8 @@ export function TopTechnicians() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border px-5 py-3 text-center">
-        <button className="text-sm font-medium text-primary hover:underline">View all staff</button>
+      <div className="border-t border-border px-5 py-3 text-center flex items-center justify-center">
+        <Link href="/admin/staff" className="text-sm font-medium text-primary hover:underline">View all staff</Link>
       </div>
     </div>
   )

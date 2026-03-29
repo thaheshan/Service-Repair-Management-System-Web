@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { ScheduleHeader } from "@/components/admin/schedule/schedule-header"
 import { ScheduleCalendar } from "@/components/admin/schedule/schedule-calendar"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
@@ -184,6 +185,8 @@ export default function SchedulePage() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col ml-[200px] bg-background">
+        <DashboardHeader />
+        
         {/* Top Header & Navigation */}
         <ScheduleHeader 
           onApplyFilters={handleApplyFilters} 
