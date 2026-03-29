@@ -1,10 +1,12 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import Link from "next/link"
+import html2canvas from "html2canvas"
+import jsPDF from "jspdf"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
-import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart } from "lucide-react"
+import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight } from "lucide-react"
 import { INITIAL_DEVICES, Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, BRANDS } from "./device-data"
 
 type SortKey = "name-az"|"name-za"|"repairs-desc"|"repairs-asc"|"brand-az"|"newest"|"oldest"
@@ -72,6 +74,60 @@ export default function DevicesPage() {
   const [statusChange, setStatusChange] = useState<{id:string, status:DeviceStatus}|null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string|null>(null)
   const [form, setForm] = useState({name:"",brand:"Apple",type:"Mobile Phone" as DeviceType,imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active" as WarrantyStatus,warrantyExpiry:"",status:"Available" as DeviceStatus,price:0})
+
+  const hiddenDevicesReportRef = useRef<HTMLDivElement>(null)
+
+  const handleDownloadPDF = async () => {
+    setIsExporting(true)
+    try {
+      const element = hiddenDevicesReportRef.current
+      if (!element) return
+
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        backgroundColor: "#ffffff",
+        onclone: (clonedDoc) => {
+          // Robust Fix for "lab()" / "oklch()" color parsing errors
+          const elements = clonedDoc.getElementsByTagName("*");
+          for (let i = 0; i < elements.length; i++) {
+            const el = elements[i] as HTMLElement;
+            const style = window.getComputedStyle(el);
+            
+            const colorProps = ['color', 'backgroundColor', 'borderColor', 'outlineColor', 'textDecorationColor', 'stopColor', 'fill', 'stroke'];
+            colorProps.forEach(prop => {
+              const val = (style as any)[prop];
+              if (val && (val.includes('oklch') || val.includes('lab') || val.includes('color-mix'))) {
+                if (prop === 'backgroundColor') el.style.backgroundColor = '#ffffff';
+                else if (prop === 'color') el.style.color = '#000000';
+                else el.style[prop as any] = 'transparent';
+              }
+            });
+
+            const shadow = style.boxShadow;
+            if (shadow && (shadow.includes('oklch') || shadow.includes('lab') || shadow.includes('color-mix'))) {
+              el.style.boxShadow = 'none';
+            }
+          }
+        }
+      })
+      
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const imgProps = pdf.getImageProperties(imgData)
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`Devices_Inventory_Report_${new Date().toISOString().slice(0,10)}.pdf`)
+    } catch (err) {
+      console.error("PDF generation failed:", err)
+      alert("Error: Could not generate PDF. Please try again.")
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const toggleFilter = <T extends string>(val:T, arr:T[], setter:(f:(p:T[])=>T[])=>void) =>
     setter(p => p.includes(val) ? p.filter(x=>x!==val) : [...p,val])
@@ -148,29 +204,8 @@ export default function DevicesPage() {
     a.download="devices.csv"; a.click()
   }
 
-  const handleExportPDF = async () => {
-    setIsExporting(true)
-    try {
-      const {default:jsPDF} = await import("jspdf")
-      const {default:autoTable} = await import("jspdf-autotable")
-      const doc = new jsPDF({orientation:"landscape"})
-      doc.setFillColor(79,70,229); doc.rect(0,0,297,16,"F")
-      doc.setTextColor(255,255,255); doc.setFontSize(12); doc.setFont("helvetica","bold")
-      doc.text("Devices Report",14,11)
-      doc.setFontSize(8); doc.setFont("helvetica","normal")
-      doc.text(`Generated: ${new Date().toLocaleString()}`,210,11)
-      doc.setTextColor(30,30,30)
-      autoTable(doc,{
-        startY:20,
-        head:[["Device","Brand","Type","IMEI","Owner","Phone","Warranty","Status","Repairs"]],
-        body:filtered.map(d=>[d.name,d.brand,d.type,d.imei,d.owner.name,d.owner.phone,d.warranty.status,d.status,d.totalRepairs]),
-        headStyles:{fillColor:[79,70,229],textColor:255,fontStyle:"bold",fontSize:8},
-        bodyStyles:{fontSize:8,cellPadding:3},
-        alternateRowStyles:{fillColor:[245,247,255]},
-      })
-      doc.save(`devices_${new Date().toISOString().slice(0,10)}.pdf`)
-    } catch(e){alert("Export failed")} finally {setIsExporting(false)}
-  }
+  // (Note: handleDownloadPDF was implemented above with the high-fidelity render target)
+  const handleExportPDF = handleDownloadPDF;
 
   const hasFilters = filterTypes.length||filterStatuses.length||filterWarranties.length||filterBrand||filterRepairsMax<10
 
@@ -571,36 +606,113 @@ export default function DevicesPage() {
           </div>
         </div>
       )}
-      {/* STATUS CHANGE CONFIRMATION MODAL */}
-      {statusChange && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-[3px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[420px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center bg-[#F8FAFC] p-8 border-b border-border">
-              <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 shadow-md ${statusChange.status === "Sold" ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"}`}>
-                <AlertCircle className="h-8 w-8" />
-              </div>
-              <h2 className="text-[18px] font-black text-[#0F172A] text-center">Confirm Status Change?</h2>
-              <p className="text-[14px] text-muted-foreground text-center mt-2 px-4 font-medium">
-                Are you sure you want to change the status of this device to <span className="font-black text-[#4F46E5]">"{statusChange.status}"</span>?
-              </p>
+      {/* 🛠️ INVISIBLE PDF RENDER TARGET FOR DEVICES REPORT */}
+      <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+         <div 
+           ref={hiddenDevicesReportRef}
+           className="w-[1000px] bg-white p-16 flex flex-col min-h-[1400px]"
+         >
+            {/* BRANDING HEADER */}
+            <div className="flex justify-between items-start mb-16">
+                <div>
+                   <div className="flex items-center gap-3 mb-3">
+                     <div className="h-12 w-12 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-2xl">S</div>
+                     <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                   </div>
+                   <div className="text-[12px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                      <p className="flex items-center gap-2 text-[#4F46E5]"><Smartphone className="h-4 w-4" /> Global Device Inventory</p>
+                      <p>Automated Stock Report</p>
+                      <p>Internal Record #DEV-{new Date().getFullYear()}</p>
+                   </div>
+                </div>
+                <div className="text-right text-[12px] text-slate-400 font-black uppercase tracking-widest leading-relaxed pt-2">
+                      <p>Premium Service Center</p>
+                      <p>Colombo 07, Sri Lanka</p>
+                      <p className="text-[#4F46E5] mt-1 italic underline underline-offset-4 decoration-slate-200">Generated: {new Date().toLocaleString()}</p>
+                </div>
             </div>
-            <div className="p-5 flex gap-3">
-              <button 
-                onClick={() => setStatusChange(null)} 
-                className="flex-1 h-12 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleStatusUpdate} 
-                className={`flex-1 h-12 rounded-xl text-white font-bold shadow-lg transition-all transform hover:scale-[1.02] focus:outline-none ${statusChange.status === 'Sold' ? 'bg-[#4F46E5] hover:bg-[#4338CA]' : 'bg-[#10B981] hover:bg-[#059669]'}`}
-              >
-                Confirm Update
-              </button>
+
+            {/* SUMMARY STATS GRID */}
+            <div className="grid grid-cols-4 gap-6 mb-12">
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Total Assets</p>
+                    <p className="text-[28px] font-black text-[#0F172A]">{filtered.length}</p>
+                </div>
+                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+                    <p className="text-[10px] text-emerald-600/70 font-black uppercase tracking-widest mb-1">Available Stocks</p>
+                    <p className="text-[28px] font-black text-emerald-700">{filtered.filter(d=>d.status==='Available').length}</p>
+                </div>
+                <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                    <p className="text-[10px] text-orange-600/70 font-black uppercase tracking-widest mb-1">In Review</p>
+                    <p className="text-[28px] font-black text-orange-700">{filtered.filter(d=>d.status==='In Review').length}</p>
+                </div>
+                <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                    <p className="text-[10px] text-indigo-600/70 font-black uppercase tracking-widest mb-1">Sold / Collected</p>
+                    <p className="text-[28px] font-black text-indigo-700">{filtered.filter(d=>['Sold','Collected'].includes(d.status)).length}</p>
+                </div>
             </div>
-          </div>
-        </div>
-      )}
+
+            {/* DATA TABLE */}
+            <div className="flex-1">
+                <table className="w-full text-left border-collapse border-t-2 border-[#0F172A]">
+                    <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Device Details</th>
+                            <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Identifier / IMEI</th>
+                            <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Ownership</th>
+                            <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                            <th className="px-5 py-4 text-right text-[11px] font-black text-slate-500 uppercase tracking-widest">Value (LKR)</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {filtered.map((d) => (
+                          <tr key={d.id} className="bg-white">
+                             <td className="px-5 py-4">
+                                <p className="text-[14px] font-black text-[#0F172A] mb-0.5">{d.name}</p>
+                                <p className="text-[11px] text-slate-400 font-bold uppercase">{d.brand} • {d.type}</p>
+                             </td>
+                             <td className="px-5 py-4">
+                                <p className="text-[13px] font-bold text-[#0F172A] font-mono">{d.imei}</p>
+                             </td>
+                             <td className="px-5 py-4">
+                                <p className="text-[13px] font-bold text-[#0F172A]">{d.owner.name}</p>
+                                <p className="text-[11px] text-slate-400">{d.owner.phone}</p>
+                             </td>
+                             <td className="px-5 py-4">
+                               <span 
+                                 className="text-[10px] font-black px-2.5 py-1 rounded-lg border uppercase tracking-widest"
+                                 style={{
+                                   backgroundColor: d.status === 'Available' ? '#ecfdf5' : d.status === 'In Review' ? '#fffbeb' : '#f8fafc',
+                                   color: d.status === 'Available' ? '#047857' : d.status === 'In Review' ? '#b45309' : '#0f172a',
+                                   borderColor: d.status === 'Available' ? '#a7f3d0' : d.status === 'In Review' ? '#fde68a' : '#e2e8f0',
+                                 }}
+                               >
+                                 {d.status}
+                               </span>
+                             </td>
+                             <td className="px-5 py-4 text-right font-black text-[#0F172A]">
+                                Rs. {(d.price || 0).toLocaleString()}
+                             </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* FOOTER */}
+            <div className="mt-20 pt-12 border-t border-slate-100 border-dashed">
+                <div className="flex justify-between items-center">
+                    <p className="text-[12px] font-black text-[#0F172A] flex items-center gap-2">
+                       <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" /> 
+                       SRM Solutions Inventory Management System • {new Date().getFullYear()}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                       Classification: Highly Confidential
+                    </p>
+                </div>
+            </div>
+         </div>
+      </div>
     </div>
   )
 }
