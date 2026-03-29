@@ -483,11 +483,11 @@ export default function CustomerManagementPage() {
                    <label className="block text-[12px] font-bold text-[#0F172A] mb-3">Customer Tags</label>
                    <div className="flex gap-4">
                       <label className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground cursor-pointer group px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">
-                        <input type="checkbox" className="h-4 w-4 rounded border-border text-[#4F46E5] focus:ring-[#4F46E5]" />
+                        <input type="checkbox" className="h-4 w-4 rounded border-border text-[#4F46E5] focus:ring-[#4F46E5] accent-[#4F46E5]" />
                         <span className="group-hover:text-[#0F172A] transition-colors">VIP</span>
                       </label>
                       <label className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground cursor-pointer group px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">
-                        <input type="checkbox" className="h-4 w-4 rounded border-border text-[#4F46E5] focus:ring-[#4F46E5]" />
+                        <input type="checkbox" className="h-4 w-4 rounded border-border text-[#4F46E5] focus:ring-[#4F46E5] accent-[#4F46E5]" />
                         <span className="group-hover:text-[#0F172A] transition-colors">Corporate</span>
                       </label>
                    </div>

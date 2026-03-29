@@ -1,7 +1,19 @@
-import { CheckCircle2, Wrench, Package, ClipboardCheck } from "lucide-react"
+"use client"
 
-const activities = [
+import { useState, useMemo } from "react"
+import { CheckCircle2, Wrench, Package, ClipboardCheck, Download, Filter, ArrowUpDown, X } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/ui-admin-dashboard/dialog"
+
+// Expanded mock data
+const allActivities = [
   {
+    id: 1,
+    type: "Repair",
     icon: CheckCircle2,
     iconBg: "bg-[#D1FAE5]",
     iconColor: "text-[#10B981]",
@@ -9,8 +21,11 @@ const activities = [
     highlight: "Priya Sharma",
     description: "iPhone 13 Pro - Screen Replacement • Rs. 8,500",
     time: "2 hours ago",
+    timestamp: new Date(Date.now() - 2 * 3600 * 1000).getTime(),
   },
   {
+    id: 2,
+    type: "Repair",
     icon: Wrench,
     iconBg: "bg-[#DBEAFE]",
     iconColor: "text-[#3B82F6]",
@@ -18,8 +33,11 @@ const activities = [
     highlight: "Vikram Singh",
     description: "MacBook Pro - Keyboard Replacement",
     time: "3 hours ago",
+    timestamp: new Date(Date.now() - 3 * 3600 * 1000).getTime(),
   },
   {
+    id: 3,
+    type: "Inventory",
     icon: Package,
     iconBg: "bg-[#FEF3C7]",
     iconColor: "text-[#F59E0B]",
@@ -27,8 +45,11 @@ const activities = [
     highlight: "Arjun Patel",
     description: "Samsung Galaxy S23 - Battery replacement part",
     time: "5 hours ago",
+    timestamp: new Date(Date.now() - 5 * 3600 * 1000).getTime(),
   },
   {
+    id: 4,
+    type: "Diagnostic",
     icon: ClipboardCheck,
     iconBg: "bg-[#F3E8FF]",
     iconColor: "text-[#A855F7]",
@@ -36,47 +57,212 @@ const activities = [
     highlight: "Meera Joshi",
     description: "OnePlus 11 - Water damage assessment",
     time: "Yesterday at 4:30 PM",
+    timestamp: new Date(Date.now() - 24 * 3600 * 1000).getTime(),
+  },
+  {
+    id: 5,
+    type: "System",
+    icon: CheckCircle2,
+    iconBg: "bg-muted",
+    iconColor: "text-muted-foreground",
+    title: "System Update",
+    highlight: "v2.1.4",
+    description: "Security patches and performance improvements applied.",
+    time: "Yesterday at 1:00 PM",
+    timestamp: new Date(Date.now() - 28 * 3600 * 1000).getTime(),
+  },
+  {
+    id: 6,
+    type: "Inventory",
+    icon: Package,
+    iconBg: "bg-[#FEF3C7]",
+    iconColor: "text-[#F59E0B]",
+    title: "Low stock alert",
+    highlight: "iPhone Batteries",
+    description: "iPhone 12 & 13 batteries dropped below 5 units.",
+    time: "2 days ago",
+    timestamp: new Date(Date.now() - 48 * 3600 * 1000).getTime(),
+  },
+  {
+    id: 7,
+    type: "Repair",
+    icon: Wrench,
+    iconBg: "bg-[#DBEAFE]",
+    iconColor: "text-[#3B82F6]",
+    title: "Repair paused",
+    highlight: "David Chen",
+    description: "Awaiting customer approval for motherboard repair.",
+    time: "2 days ago",
+    timestamp: new Date(Date.now() - 50 * 3600 * 1000).getTime(),
   },
 ]
 
 export function RecentActivity() {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [filterType, setFilterType] = useState("All")
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+
+  // For the dashboard widget, always show only the 4 newest
+  const widgetActivities = allActivities.slice(0, 4)
+
+  // For the modal, apply filters and sort
+  const filteredActivities = useMemo(() => {
+    let result = [...allActivities]
+    
+    // Filter
+    if (filterType !== "All") {
+      result = result.filter(a => a.type === filterType)
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortOrder === "newest") return b.timestamp - a.timestamp
+      return a.timestamp - b.timestamp
+    })
+
+    return result
+  }, [filterType, sortOrder])
+
+  const handleDownloadPdf = () => {
+    alert("Downloading Activity Report PDF...")
+  }
+
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-4">
-        <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
-      </div>
+    <>
+      <div className="flex flex-col rounded-xl border border-border bg-card h-full">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4">
+          <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
+        </div>
 
-      {/* Activity List */}
-      <div className="flex flex-col px-5 pb-5">
-        {activities.map((activity, index) => (
-          <div
-            key={activity.highlight}
-            className={`flex gap-3.5 py-3.5 ${
-              index !== activities.length - 1 ? "border-b border-border" : ""
-            }`}
+        {/* Activity List */}
+        <div className="flex flex-col px-5 pb-5">
+          {widgetActivities.map((activity, index) => (
+            <div
+              key={activity.id}
+              className={`flex gap-3.5 py-3.5 ${
+                index !== widgetActivities.length - 1 ? "border-b border-border" : ""
+              }`}
+            >
+              {/* Icon */}
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity.iconBg}`}>
+                <activity.icon className={`h-4.5 w-4.5 ${activity.iconColor}`} />
+              </div>
+              {/* Content */}
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm text-foreground">
+                  {activity.title}{" "}
+                  <span className="font-semibold">{activity.highlight}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">{activity.description}</p>
+                <p className="text-xs text-muted-foreground">{activity.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer Link */}
+        <div className="mt-auto border-t border-border px-5 py-3 text-center flex items-center justify-center">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="text-sm font-medium text-primary hover:underline focus:outline-none"
           >
-            {/* Icon */}
-            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity.iconBg}`}>
-              <activity.icon className={`h-4.5 w-4.5 ${activity.iconColor}`} />
-            </div>
-            {/* Content */}
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm text-foreground">
-                {activity.title}{" "}
-                <span className="font-semibold">{activity.highlight}</span>
-              </p>
-              <p className="text-xs text-muted-foreground">{activity.description}</p>
-              <p className="text-xs text-muted-foreground">{activity.time}</p>
-            </div>
-          </div>
-        ))}
+            View all activity
+          </button>
+        </div>
       </div>
 
-      {/* Footer Link */}
-      <div className="mt-auto border-t border-border px-5 py-3 text-center">
-        <button className="text-sm font-medium text-primary hover:underline">View all</button>
-      </div>
-    </div>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+          
+          <DialogHeader className="p-6 pb-4 border-b border-border bg-[#F8FAFC]">
+            <div className="flex items-center justify-between mb-4 pr-8">
+              <DialogTitle className="text-xl font-bold text-[#0F172A]">Activity Log</DialogTitle>
+              <button 
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors focus:outline-none shadow-sm"
+              >
+                <Download className="h-4 w-4" /> Download PDF
+              </button>
+            </div>
+
+            {/* Controls Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+                </div>
+                <select 
+                  className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="All">All Categories</option>
+                  <option value="Repair">Repairs</option>
+                  <option value="Inventory">Inventory</option>
+                  <option value="Diagnostic">Diagnostics</option>
+                  <option value="System">System</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Sort By:</span>
+                </div>
+                <select 
+                  className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as any)}
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                </select>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto w-full p-2 bg-[#F8FAFC]/50">
+            {filteredActivities.length === 0 ? (
+               <div className="flex flex-col items-center justify-center h-full py-12 text-center text-muted-foreground">
+                 <Filter className="h-10 w-10 mb-4 opacity-20" />
+                 <p className="text-sm font-medium">No activity found for this category.</p>
+               </div>
+            ) : (
+              <div className="flex flex-col">
+                {filteredActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex gap-4 p-4 hover:bg-muted/50 transition-colors border-b border-border/40 last:border-0 rounded-lg mx-2"
+                  >
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${activity.iconBg} shadow-sm border border-border/5`}>
+                      <activity.icon className={`h-5 w-5 ${activity.iconColor}`} />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1 w-full relative pt-0.5">
+                      <div className="flex items-start justify-between gap-4">
+                        <p className="text-[14px] text-foreground">
+                          {activity.title}{" "}
+                          <span className="font-bold text-[#0F172A]">{activity.highlight}</span>
+                        </p>
+                        <span className="text-[12px] font-semibold text-muted-foreground whitespace-nowrap bg-white px-2 py-0.5 rounded-full border border-border shadow-sm">
+                          {activity.time}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-muted-foreground max-w-[90%]">{activity.description}</p>
+                      
+                      <span className="absolute left-0 -bottom-2 translate-y-full text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                        {activity.type}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
