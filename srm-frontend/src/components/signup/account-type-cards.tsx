@@ -4,30 +4,14 @@ import { AccountCard } from './account-card'
 
 export function AccountTypeCards() {
   return (
-    <div className="grid md:grid-cols-3 gap-8 mb-20">
+    <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-12 mb-20 max-w-4xl mx-auto">
       
-      {/* Admin Card */}
+      {/* Technician/Staff Card */}
       <AccountCard
-        title="Admin/Manager"
-        description="Full system access and business management"
-        color="indigo"
-        buttonText="Sign up as Admin"
-        link="/signup/technician"
-        features={[
-          'Manage all repairs and staff',
-          'Access analytics and reports',
-          'Configure system settings',
-          'Manage inventory and pricing',
-          'Full customer management',
-        ]}
-      />
-
-      {/* Technician Card */}
-      <AccountCard
-        title="Staff/Technician"
+        title="Staff/Manager"
         description="Manage assigned repairs and tasks"
         color="orange"
-        buttonText="Sign up as Staff"
+        buttonText="Sign up as Member"
         link="/signup/technician"
         features={[
           'View assigned repairs',

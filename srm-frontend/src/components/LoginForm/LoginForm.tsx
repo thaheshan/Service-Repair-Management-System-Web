@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import LoginInput from '../LoginInput/LoginInput';
-import './LoginForm.scss';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -22,25 +20,9 @@ export default function LoginForm() {
     setError('');
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // TODO: Replace with real API call:
-      // const response = await fetch('/api/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password }),
-      // });
-      // const data = await response.json();
-      // if (!response.ok) throw new Error(data.message);
-      // document.cookie = `token=${data.token}; path=/; max-age=86400`;
-
-      // ✅ Set fake token for now so middleware allows /dashboard
       document.cookie = 'token=fake-token-123; path=/; max-age=86400';
-
-      // ✅ Navigate to dashboard after successful login
       router.push('/admin/dashboard');
-
     } catch (err) {
       setError('Invalid email or password. Please try again.');
     } finally {
@@ -49,101 +31,111 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="login-form-container">
-      <div className="form-header">
-        <h1 className="form-title">Welcome back</h1>
-        <p className="form-subtitle">Sign in to your account to continue</p>
+    <div className="w-full">
+      <div className="mb-8">
+        <h1 className="text-[32px] font-bold text-[#1a1c29] tracking-tight mb-2">Welcome back</h1>
+        <p className="text-[15px] text-[#6b7280]">Sign in to your account to continue</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="login-form">
-        <div className="form-group">
-          <label htmlFor="email" className="form-label">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        
+        {/* Email Field */}
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-[13px] font-bold text-[#374151]">
             Email address
           </label>
-          <LoginInput
-            id="email"
-            type="email"
-            placeholder="Email"
-            icon={<Mail />}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Mail className="h-4 w-4 text-[#9ca3af]" />
+            </div>
+            <input
+              id="email"
+              type="email"
+              placeholder="Email"
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#e5e7eb] bg-white text-[14px] text-[#1f2937] focus:outline-none focus:ring-2 focus:ring-[#8B8DF2]/50 focus:border-[#8B8DF2] transition-colors"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="password" className="form-label">
+        {/* Password Field */}
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-[13px] font-bold text-[#374151]">
             Password
           </label>
-          <div className="password-input-wrapper">
-            <LoginInput
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Lock className="h-4 w-4 text-[#9ca3af]" />
+            </div>
+            <input
               id="password"
               type={showPassword ? 'text' : 'password'}
               placeholder="Password"
-              icon={<Lock />}
+              className="w-full pl-11 pr-12 py-3 rounded-xl border border-[#e5e7eb] bg-white text-[14px] text-[#1f2937] focus:outline-none focus:ring-2 focus:ring-[#8B8DF2]/50 focus:border-[#8B8DF2] transition-colors"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
             <button
               type="button"
-              className="toggle-password-btn"
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#9ca3af] hover:text-[#6b7280] focus:outline-none"
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </div>
 
-        <div className="form-actions">
-          <label className="checkbox-label">
+        {/* Options */}
+        <div className="flex items-center justify-between pt-1">
+          <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="checkbox-input"
+              className="w-4 h-4 rounded border-[#d1d5db] text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
             />
-            <span>Remember me</span>
+            <span className="text-[13px] font-medium text-[#6b7280] group-hover:text-[#4b5563] transition-colors">Remember me</span>
           </label>
-          <a href="/forgot-password" className="forgot-password-link">
+          <a href="/forgot-password" className="text-[13px] font-semibold text-[#6366f1] hover:text-[#4f46e5] hover:underline transition-colors">
             Forgot password?
           </a>
         </div>
 
-        {/* ✅ Error Message */}
+        {/* Error State */}
         {error && (
-          <div style={{
-            backgroundColor: '#FEE2E2',
-            border: '1px solid #FECACA',
-            borderRadius: '8px',
-            padding: '10px 14px',
-            color: '#DC2626',
-            fontSize: '14px',
-            marginBottom: '10px'
-          }}>
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm font-medium">
             {error}
           </div>
         )}
 
-        {/* ✅ Sign in button */}
+        {/* Submit */}
         <button
           type="submit"
           disabled={isLoading}
-          className={`sign-in-btn ${isLoading ? 'loading' : ''}`}
+          className="w-full py-3.5 mt-2 rounded-[10px] bg-[#6F6AF2] hover:bg-[#5f5ce2] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-md shadow-[#6F6AF2]/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Signing in...' : 'Sign in'}
-          <ArrowRight size={20} />
+           <ArrowRight className="w-4 h-4" />
         </button>
       </form>
 
-      <div className="divider">
-        <span>or continue with</span>
+      {/* Social Divider */}
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#e5e7eb]"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-white text-[13px] font-medium text-[#9ca3af]">or continue with</span>
+        </div>
       </div>
 
-      <div className="social-login">
-        <button type="button" className="social-btn google">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      {/* Social Providers */}
+      <div className="grid grid-cols-2 gap-4">
+        <button type="button" className="flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl border border-[#e5e7eb] bg-white hover:bg-[#f9fafb] text-[#374151] text-[13px] font-semibold transition-colors">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -151,8 +143,8 @@ export default function LoginForm() {
           </svg>
           Google
         </button>
-        <button type="button" className="social-btn microsoft">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <button type="button" className="flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl border border-[#e5e7eb] bg-white hover:bg-[#f9fafb] text-[#374151] text-[13px] font-semibold transition-colors">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <rect x="1" y="1" width="9" height="9" fill="#F25022" />
             <rect x="14" y="1" width="9" height="9" fill="#00A4EF" />
             <rect x="1" y="14" width="9" height="9" fill="#7FBA00" />
@@ -162,10 +154,10 @@ export default function LoginForm() {
         </button>
       </div>
 
-      <div className="signup-prompt">
-        <p>
+      <div className="mt-8 text-center">
+        <p className="text-[13px] font-medium text-[#6b7280]">
           Don't have an account?{' '}
-          <Link href="/signup" className="signup-link">
+          <Link href="/signup" className="text-[#6366f1] font-bold hover:underline transition-all">
             Sign up
           </Link>
         </p>

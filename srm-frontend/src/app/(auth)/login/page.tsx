@@ -2,28 +2,28 @@
 
 import LoginForm from '@/components/LoginForm/LoginForm';
 import LoginSidebar from '@/components/LoginSidebar/LoginSidebar';
-import './page.scss';
+
+import img1 from '../../../../public/login img 1.jpeg';
+import img2 from '../../../../public/login img 2.png';
+import img3 from '../../../../public/login img 3.png';
 
 export default function LoginPage() {
-  // Sample carousel slides
+  // Provided local assets for the carousel via Static Imports to resolve spaces
   const carouselSlides = [
     {
       id: 'slide-1',
-      imageUrl:
-        'https://images.unsplash.com/photo-1537694712202-7d88fb184338?w=600&h=600&fit=crop',
-      alt: 'Service professional',
+      imageUrl: img1,
+      alt: 'Hardware Technician Workspace',
     },
     {
       id: 'slide-2',
-      imageUrl:
-        'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=600&fit=crop',
-      alt: 'Repair business',
+      imageUrl: img2,
+      alt: 'System Customization',
     },
     {
       id: 'slide-3',
-      imageUrl:
-        'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=600&fit=crop',
-      alt: 'Customer service',
+      imageUrl: img3,
+      alt: 'System Architecture',
     },
   ];
 
@@ -32,21 +32,27 @@ export default function LoginPage() {
       '"ServicePro has transformed how we manage repairs. Our efficiency increased by 40% in just 3 months!"',
     author: 'Michael Chen',
     company: 'TechFix Solutions',
+    // Using a reliable ui-avatars fallback that generates a beautiful colored initial profile
     imageUrl:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Michael+Chen&background=6366f1&color=fff&size=128',
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
+    <div className="flex h-screen w-full bg-white overflow-hidden">
+      {/* Dynamic Visual Sidebar (Hidden on Small Screens) */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
         <LoginSidebar
-          logoUrl="https://api.dicebear.com/7.x/initials/svg?seed=SP&backgroundColor=6366f1&textColor=ffffff&scale=80"
+          logoUrl="" // Will use pure Icon inside component
           carouselSlides={carouselSlides}
           testimonial={testimonial}
           heading="Streamline Your Repair Business"
           subheading="Manage repairs, track inventory, and delight customers all in one place"
         />
-        <div className="login-form-wrapper">
+      </div>
+      
+      {/* Authentication Form Half */}
+      <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white relative">
+        <div className="w-full max-w-[420px]">
           <LoginForm />
         </div>
       </div>

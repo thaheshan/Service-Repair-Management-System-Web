@@ -190,37 +190,51 @@ export function EnterCardDetails({ onBack, onPay }: EnterCardDetailsProps) {
 
           {/* Save Card */}
           <div className="mb-4">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={saveCard}
-                onChange={(e) => setSaveCard(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-[#D1D5DB] text-[#4F46E5] focus:ring-[#4F46E5]"
-              />
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="relative mt-0.5 flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={saveCard}
+                  onChange={(e) => setSaveCard(e.target.checked)}
+                  className="peer h-[18px] w-[18px] appearance-none rounded border-2 border-[#D1D5DB] bg-white checked:border-[#4F46E5] checked:bg-[#4F46E5] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30 focus:ring-offset-1 transition-all cursor-pointer"
+                />
+                <svg
+                  className="pointer-events-none absolute left-[2px] top-[2px] h-[14px] w-[14px] text-white opacity-0 peer-checked:opacity-100 transition-opacity"
+                  fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2 7l4 4 6-6" />
+                </svg>
+              </div>
               <div>
-                <p className="text-sm font-medium text-[#111827]">Save this card for future purchases</p>
-                <p className="text-xs text-[#9CA3AF]">Your card details will be securely stored for faster checkout next time</p>
+                <p className="text-sm font-semibold text-[#111827]">Save this card for future purchases</p>
+                <p className="text-xs text-[#6B7280] mt-0.5">Your card details will be securely stored for faster checkout next time</p>
               </div>
             </label>
           </div>
 
           {/* Terms */}
           <div className="mb-6">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-[#D1D5DB] text-[#4F46E5] focus:ring-[#4F46E5]"
-              />
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="relative mt-0.5 flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="peer h-[18px] w-[18px] appearance-none rounded border-2 border-[#D1D5DB] bg-white checked:border-[#4F46E5] checked:bg-[#4F46E5] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30 focus:ring-offset-1 transition-all cursor-pointer"
+                />
+                <svg
+                  className="pointer-events-none absolute left-[2px] top-[2px] h-[14px] w-[14px] text-white opacity-0 peer-checked:opacity-100 transition-opacity"
+                  fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2 7l4 4 6-6" />
+                </svg>
+              </div>
               <div>
-                <p className="text-sm text-[#111827]">
+                <p className="text-sm text-[#374151]">
                   I agree to the{" "}
-                  <button className="font-medium text-[#4F46E5] hover:underline">Terms & Conditions</button>
-                </p>
-                <p className="text-sm text-[#111827]">
-                  and{" "}
-                  <button className="font-medium text-[#4F46E5] hover:underline">Privacy Policy</button>
+                  <button type="button" className="font-semibold text-[#4F46E5] hover:underline">Terms & Conditions</button>
+                  {" "}and{" "}
+                  <button type="button" className="font-semibold text-[#4F46E5] hover:underline">Privacy Policy</button>
                 </p>
               </div>
             </label>
