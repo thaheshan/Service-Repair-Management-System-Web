@@ -13,7 +13,7 @@ export function ProcessingPayment({ onComplete }: ProcessingPaymentProps) {
   useEffect(() => {
     const dotInterval = setInterval(() => {
       setActiveDot((prev) => (prev + 1) % 3)
-    }, 500)
+    }, 600)
 
     const completeTimeout = setTimeout(() => {
       onComplete(true)
@@ -26,39 +26,60 @@ export function ProcessingPayment({ onComplete }: ProcessingPaymentProps) {
   }, [onComplete])
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED]">
-      {/* Title */}
-      <h1 className="text-3xl lg:text-4xl font-bold text-[#FFFFFF] mb-3">Processing Payment</h1>
-      <p className="text-sm lg:text-base text-[#FFFFFF]/70 mb-12">
-        Please wait while we securely process your payment...
-      </p>
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#312E81] via-[#4338CA] to-[#3730A3]">
+      {/* Subtle radial glow in center */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(99,102,241,0.35) 0%, transparent 70%)",
+        }}
+      />
 
-      {/* Lock Icon */}
-      <div className="flex h-24 w-24 lg:h-28 lg:w-28 items-center justify-center rounded-full bg-[#FFFFFF]/15 mb-8">
-        <Lock className="h-10 w-10 lg:h-12 lg:w-12 text-[#FFFFFF]/70" />
-      </div>
+      {/* Content — sits above the glow */}
+      <div className="relative z-10 flex flex-col items-center text-center px-6">
 
-      {/* SSL Badge */}
-      <div className="flex items-center gap-2 rounded-full border border-[#FFFFFF]/20 bg-[#FFFFFF]/10 px-5 py-2.5 mb-6">
-        <ShieldCheck className="h-4 w-4 text-[#FFFFFF]/70" />
-        <span className="text-sm text-[#FFFFFF]/80 font-medium">256-bit SSL Encrypted</span>
-      </div>
+        {/* Title */}
+        <h1 className="text-[32px] lg:text-[36px] font-bold text-white mb-3 tracking-tight">
+          Processing Payment
+        </h1>
+        <p className="text-[15px] text-white/65 mb-14">
+          Please wait while we securely process your payment...
+        </p>
 
-      {/* Warning Text */}
-      <p className="text-sm text-[#FFFFFF]/60 mb-8">Do not close or refresh this page</p>
+        {/* Lock circle — matches Figma: medium-large frosted circle */}
+        <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-white/[0.12] mb-8 shadow-[0_0_40px_rgba(99,102,241,0.4)]">
+          <Lock className="h-[38px] w-[38px] text-white" strokeWidth={2} />
+        </div>
 
-      {/* Animated Dots */}
-      <div className="flex items-center gap-3">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className={`rounded-full transition-all duration-300 ${
-              activeDot === i
-                ? "h-3.5 w-3.5 bg-[#FFFFFF]"
-                : "h-2.5 w-2.5 bg-[#FFFFFF]/40"
-            }`}
-          />
-        ))}
+        {/* SSL Badge pill */}
+        <div className="flex items-center gap-2.5 rounded-full border border-white/25 bg-white/[0.10] px-6 py-2.5 mb-5 backdrop-blur-sm">
+          <ShieldCheck className="h-[16px] w-[16px] text-white/80" strokeWidth={2} />
+          <span className="text-[13px] font-semibold text-white/85 tracking-wide">
+            256-bit SSL Encrypted
+          </span>
+        </div>
+
+        {/* Do not close warning */}
+        <p className="text-[13px] text-white/55 mb-10">
+          Do not close or refresh this page
+        </p>
+
+        {/* Animated dots — exact Figma style: 3 dots, active one is larger & brighter */}
+        <div className="flex items-center gap-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-full transition-all duration-500"
+              style={{
+                width:  activeDot === i ? 12 : 9,
+                height: activeDot === i ? 12 : 9,
+                backgroundColor: activeDot === i ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.30)",
+                transitionProperty: "width, height, background-color",
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )

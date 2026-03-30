@@ -1,14 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Check, ArrowLeft, ArrowRight } from "lucide-react"
+import { Check, ArrowLeft } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep3 } from "./side-panel-step3"
-
-interface PlanFeatures {
-  [key: string]: string[]
-}
 
 interface Step3ChoosePlanProps {
   onNext: (plan: string) => void
@@ -18,11 +14,12 @@ interface Step3ChoosePlanProps {
 export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
   const [selectedPlan, setSelectedPlan] = useState<string>("")
   const [agreeTerms, setAgreeTerms] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const plans = [
     {
       id: "starter",
-      name: "Starter",
+      name: "Single Shop",
       price: "Rs. 5,400",
       period: "/month",
       description: "Perfect for individual repair shops",
@@ -36,11 +33,11 @@ export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
         "Basic reporting",
       ],
       buttonText: "Start Free Trial",
-      buttonStyle: "border",
+      buttonStyle: "outline",
     },
     {
       id: "professional",
-      name: "Professional",
+      name: "Small Business",
       price: "Rs. 13,750",
       period: "/month",
       description: "Best for growing businesses",
@@ -75,17 +72,23 @@ export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
         "SLA guarantee",
       ],
       buttonText: "Contact Sales",
-      buttonStyle: "border",
+      buttonStyle: "outline",
     },
   ]
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {}
+    if (!selectedPlan) newErrors.plan = "Please select a subscription plan to continue."
+    if (!agreeTerms) newErrors.terms = "You must agree to the Terms of Service and Privacy Policy."
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedPlan || !agreeTerms) {
-      alert("Please select a plan and agree to terms")
-      return
+    if (validate()) {
+      onNext(selectedPlan)
     }
-    onNext(selectedPlan)
   }
 
   return (
@@ -98,20 +101,10 @@ export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
       </div>
 
       {/* Right side form */}
-      <div className="flex flex-1 flex-col">
-        {/* Back button */}
-        <div className="px-6 pt-6 lg:px-16">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium text-[#4F46E5] hover:text-[#4338CA]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
-        </div>
-
-        <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-6 lg:px-16">
-          <div className="w-full max-w-[1200px]">
+      <div className="flex flex-1 flex-col bg-white">
+        <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-10 lg:px-14">
+          <div className="w-full max-w-[900px]">
+            
             {/* Stepper */}
             <div className="mb-8">
               <RegistrationStepper
@@ -122,117 +115,133 @@ export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
 
             {/* Header */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#111827]">Choose your plan</h2>
-              <p className="mt-2 text-sm text-[#6B7280]">Select the best plan for your business needs</p>
+              <h2 className="text-[30px] font-bold text-[#111827] tracking-tight">Choose your plan</h2>
+              <p className="mt-1.5 text-[15px] text-[#6B7280]">Select the best plan for your business needs</p>
             </div>
 
             {/* Pricing Cards */}
-            <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
               {plans.map((plan) => (
                 <div
                   key={plan.id}
-                  className={`relative rounded-xl border-2 p-6 transition-all ${
-                    selectedPlan === plan.id
-                      ? "border-[#4F46E5] bg-[#F8F6FF]"
-                      : "border-[#E5E7EB] bg-white hover:border-[#4F46E5]/50"
+                  className={`relative flex flex-col rounded-[20px] p-7 transition-all duration-300 ${
+                    plan.popular
+                      ? "border border-transparent bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-10"
+                      : "border border-[#E5E7EB] bg-white hover:border-[#D1D5DB]"
+                  } ${
+                    selectedPlan === plan.id && !plan.popular
+                      ? "border-[#4F46E5] ring-1 ring-[#4F46E5]"
+                      : ""
+                  } ${
+                    selectedPlan === plan.id && plan.popular
+                      ? "ring-2 ring-[#4F46E5]"
+                      : ""
                   }`}
                 >
                   {/* Popular Badge */}
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#F59E0B] px-4 py-1 text-xs font-bold text-white">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#F59E0B] px-4 py-1 text-[11px] font-bold text-white tracking-widest shadow-sm">
                       POPULAR
                     </div>
                   )}
 
                   {/* Plan Header */}
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold text-[#111827]">{plan.name}</h3>
-                    <p className="mt-1 text-xs text-[#6B7280]">{plan.description}</p>
+                  <div className="mb-3">
+                    <h3 className="text-[15px] font-bold text-[#111827]">{plan.name}</h3>
                   </div>
 
                   {/* Price */}
-                  <div className="mb-6">
-                    <span className="text-3xl font-bold text-[#111827]">{plan.price}</span>
-                    {plan.period && <span className="text-sm text-[#6B7280]">{plan.period}</span>}
+                  <div className="mb-4 flex items-baseline">
+                    <span className="text-[32px] font-bold text-[#111827] tracking-tight">{plan.price}</span>
+                    {plan.period && <span className="text-[14px] text-[#9CA3AF] ml-1">{plan.period}</span>}
                   </div>
 
-                  {/* Select Button */}
+                  {/* Description & Divider */}
+                  <p className="text-[13px] text-[#6B7280] mb-5">{plan.description}</p>
+                  
+                  <div className="h-[1px] w-full bg-[#E5E7EB] mb-6"></div>
+
+                  {/* Features List */}
+                  <div className="space-y-3.5 flex-1 mb-8">
+                    {plan.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <Check className="h-[18px] w-[18px] shrink-0 text-[#10B981]" strokeWidth={2.5} />
+                        <span className="text-[13px] font-medium text-[#4B5563]">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Select Button — single clean ternary, no conflicting overrides */}
                   <button
+                    type="button"
                     onClick={() => setSelectedPlan(plan.id)}
-                    className={`w-full rounded-lg py-2 px-4 text-sm font-semibold transition-colors mb-6 ${
-                      plan.buttonStyle === "primary"
-                        ? "bg-[#4F46E5] text-white hover:bg-[#4338CA]"
-                        : "border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB]"
-                    } ${
+                    className={`mt-auto w-full rounded-xl py-3.5 px-4 text-[14px] font-semibold ${
                       selectedPlan === plan.id
-                        ? plan.buttonStyle === "primary"
-                          ? "ring-2 ring-[#4F46E5] ring-offset-2"
-                          : "ring-2 ring-[#4F46E5] ring-offset-2"
-                        : ""
+                        ? "bg-[#4F46E5] text-white border border-transparent shadow-md"
+                        : plan.buttonStyle === "primary"
+                        ? "bg-[#4F46E5] text-white border border-transparent shadow-md hover:bg-[#4338CA]"
+                        : "border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB] hover:border-[#C7D2FE]"
                     }`}
                   >
                     {selectedPlan === plan.id ? "✓ Selected" : plan.buttonText}
                   </button>
-
-                  {/* Features List */}
-                  <div className="space-y-3 border-t border-[#E5E7EB] pt-6">
-                    {plan.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <Check className="h-4 w-4 shrink-0 text-[#10B981] mt-0.5" />
-                        <span className="text-sm text-[#374151]">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               ))}
             </div>
+            {errors.plan && <p className="mb-6 text-sm text-[#EF4444] font-medium text-center">{errors.plan}</p>}
 
-            {/* Form */}
+            {/* Form Container */}
             <form onSubmit={handleSubmit}>
-              {/* Terms */}
-              <div className="mb-8 flex items-start gap-2">
-                <Checkbox
-                  checked={agreeTerms}
-                  onCheckedChange={(checked) => setAgreeTerms(checked === true)}
-                  className="mt-0.5"
-                  id="terms-step3"
-                />
-                <label htmlFor="terms-step3" className="text-sm leading-relaxed text-[#374151]">
-                  I agree to the{" "}
-                  <a href="#" className="font-medium text-[#4F46E5] hover:underline">Terms of Service</a>
-                  {" "}and{" "}
-                  <a href="#" className="font-medium text-[#4F46E5] hover:underline">Privacy Policy</a>
-                </label>
+              {/* Terms Checkbox */}
+              <div className="mb-10 border-t border-[#E5E7EB] pt-8">
+                <div className="flex items-start gap-3">
+                  <div className="pt-0.5">
+                    <Checkbox
+                      checked={agreeTerms}
+                      onCheckedChange={(checked) => {
+                        setAgreeTerms(checked === true)
+                        if (errors.terms) setErrors({})
+                      }}
+                      id="terms-step3"
+                      className={errors.terms ? "border-[#EF4444] data-[state=checked]:bg-[#EF4444]" : ""}
+                    />
+                  </div>
+                  <label htmlFor="terms-step3" className={`text-sm font-medium leading-relaxed ${errors.terms ? "text-[#EF4444]" : "text-[#4B5563]"}`}>
+                    I agree to the{" "}
+                    <a href="#" className="text-[#4F46E5] hover:underline">Terms of Service</a>
+                    {" "}and{" "}
+                    <a href="#" className="text-[#4F46E5] hover:underline">Privacy Policy</a>
+                  </label>
+                </div>
+                {errors.terms && <p className="mt-1 text-xs text-[#EF4444] font-medium">{errors.terms}</p>}
               </div>
 
-              {/* Buttons */}
+              {/* Bottom Buttons */}
               <div className="flex gap-4">
                 <button
                   type="button"
                   onClick={onBack}
-                  className="flex h-12 flex-1 items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-sm font-semibold text-[#374151] transition-colors hover:bg-[#F9FAFB]"
+                  className="flex h-12 flex-1 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[15px] font-semibold text-[#374151] hover:bg-[#F9FAFB] transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`flex h-12 flex-1 items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-300 ${
+                    !selectedPlan || !agreeTerms
+                      ? "bg-[#CBD5E1] text-[#64748B] cursor-not-allowed"
+                      : "bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-md"
+                  }`}
                   disabled={!selectedPlan || !agreeTerms}
                 >
                   Create Account
-                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
             </form>
 
-            {/* Sign in link */}
-            <div className="mt-8 pb-8 text-center">
-              <p className="text-sm text-[#6B7280]">
-                Already have an account?{" "}
-                <a href="/login" className="font-semibold text-[#111827] underline hover:text-[#4F46E5]">Sign in</a>
-              </p>
-            </div>
+            {/* Empty space block if required to match scroll bounds */}
+            <div className="pb-10"></div>
           </div>
         </div>
       </div>
