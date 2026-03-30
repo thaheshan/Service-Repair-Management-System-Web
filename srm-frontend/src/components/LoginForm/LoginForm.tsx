@@ -90,18 +90,32 @@ export default function LoginForm() {
 
         {/* Options */}
         <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-[#d1d5db] text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-            />
+          <label className="flex items-center gap-2.5 cursor-pointer group">
+            <div className="relative flex items-center">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="peer h-[18px] w-[18px] appearance-none rounded border-2 border-[#D1D5DB] bg-white checked:border-[#4F46E5] checked:bg-[#4F46E5] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30 focus:ring-offset-1 transition-all cursor-pointer"
+              />
+              <svg
+                className="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 left-[2px] top-[2px] transition-opacity"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
             <span className="text-[13px] font-medium text-[#6b7280] group-hover:text-[#4b5563] transition-colors">Remember me</span>
           </label>
-          <a href="/forgot-password" className="text-[13px] font-semibold text-[#6366f1] hover:text-[#4f46e5] hover:underline transition-colors">
+          <Link href="/forgot-password" data-ignore className="text-[13px] font-semibold text-[#4F46E5] hover:text-[#4338CA] hover:underline transition-colors">
             Forgot password?
-          </a>
+          </Link>
         </div>
 
         {/* Error State */}
@@ -115,7 +129,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3.5 mt-2 rounded-[10px] bg-[#6F6AF2] hover:bg-[#5f5ce2] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-md shadow-[#6F6AF2]/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full py-3.5 mt-2 rounded-[10px] bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-md shadow-[#4F46E5]/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Signing in...' : 'Sign in'}
            <ArrowRight className="w-4 h-4" />
@@ -157,7 +171,7 @@ export default function LoginForm() {
       <div className="mt-8 text-center">
         <p className="text-[13px] font-medium text-[#6b7280]">
           Don't have an account?{' '}
-          <Link href="/signup" className="text-[#6366f1] font-bold hover:underline transition-all">
+          <Link href="/signup" className="text-[#4F46E5] font-bold hover:underline transition-all">
             Sign up
           </Link>
         </p>

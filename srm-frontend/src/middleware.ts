@@ -1,42 +1,51 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicRoutes = [
-  '/',
+// Define paths that require authentication
+const protectedPrefixes = [
+  '/admin',
+  '/technician',
+  '/shop',
+  '/manager',
+  '/customer' // The specific dashboards for different roles
+];
+
+// Define paths that are strictly accessible BEFORE login (auth pages)
+const authPrefixes = [
   '/login',
   '/signup',
-  '/signup/admin',
-  '/signup/technician',
-  '/signup/shop',
-  '/shop',
-  '/registration-staff',
   '/forgot-password',
   '/reset-password',
-  '/reset-success',
-  '/payment',
-  '/request',
+  '/reset-success'
 ];
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
-  const isPublicRoute = publicRoutes.some((route) => {
-    if (route === '/') return pathname === '/';
-    return pathname === route || pathname.startsWith(`${route}/`);
-  });
+  const isProtectedRoute = protectedPrefixes.some(prefix => pathname.startsWith(prefix));
+  const isAuthRoute = authPrefixes.some(prefix => pathname.startsWith(prefix));
 
-  if (isPublicRoute) {
-    return NextResponse.next();
+  // 1. If trying to access a protected route without a token -> Redirect to login
+  if (isProtectedRoute && !token) {
+    const loginUrl = new URL('/login', request.url);
+    // Optionally preserve the attempted URL to redirect back after login
+    // loginUrl.searchParams.set('callbackUrl', encodeURI(pathname));
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // 2. If trying to access an auth route (like /login) WITH a token -> Redirect to dashboard
+  if (isAuthRoute && token) {
+    // Note: We don't know the exact role purely from the generic token cookie here easily unless it's a decoded JWT.
+    // For now, redirect to a generic landing or the admin dashboard. The client can redirect if wrong role.
+    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
 
+  // 3. Otherwise, allow the request to proceed (e.g., marketing pages, public assets)
   return NextResponse.next();
 }
 
 export const config = {
+  // Matcher ignores _next/static, _next/image, favicon.ico, and api routes.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
