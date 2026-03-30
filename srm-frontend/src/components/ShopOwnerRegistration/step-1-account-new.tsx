@@ -5,7 +5,7 @@ import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
-import { PasswordStrength } from "./password-strength"
+import { PasswordStrength } from "@/components/common/inputs/password-strength"
 
 interface StepAccountProps {
   onNext: (data: AccountData) => void

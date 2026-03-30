@@ -25,7 +25,7 @@ export default function Home() {
   return (
     <div className="app">
       {currentScreen === 'splash' && (
-        <SplashScreen 
+        <SplashScreen
           onComplete={handleSplashComplete}
           duration={3000}
         />

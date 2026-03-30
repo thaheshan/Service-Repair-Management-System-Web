@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Wrench } from 'lucide-react';
 
 interface LoginSidebarProps {
@@ -47,12 +48,12 @@ export default function LoginSidebar({
       <div className="pointer-events-none absolute bottom-40 right-10 h-40 w-40 rounded-full bg-white/5" />
 
       {/* Top Header Logo Component */}
-      <div className="relative z-10 flex items-center gap-3">
-        <div className="flex items-center justify-center p-2 bg-white rounded-lg shadow-sm">
+      <Link href="/" className="relative z-10 flex items-center gap-3 w-fit group">
+        <div className="flex items-center justify-center p-2 bg-white rounded-lg shadow-sm group-hover:scale-105 transition-transform">
           <Wrench className="w-5 h-5 text-[#3b3887]" />
         </div>
         <span className="text-xl font-bold text-white tracking-tight">ServicePro</span>
-      </div>
+      </Link>
 
       {/* Main Content Area (Vertically Centered Stack) */}
       <div className="relative z-10 flex flex-col items-center justify-center flex-1 w-full max-w-[460px] mx-auto mt-6">

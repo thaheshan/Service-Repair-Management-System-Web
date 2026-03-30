@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { ResetCard } from './reset-card';
 import { IconBadge } from './icon-badge';
-import { PasswordStrength } from './password-strength';
+import { PasswordStrength } from '@/components/common/inputs/password-strength';
 
 interface ResetPasswordProps {
   onSubmit?: (password: string, confirmPassword: string) => Promise<void>;

@@ -5,7 +5,7 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ChevronDown } from "lucide-r
 import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
-import { PasswordStrength } from "./password-strength"
+import { PasswordStrength } from "@/components/common/inputs/password-strength"
 
 interface StepPersonalInfoProps {
   onNext: (data: PersonalInfoData) => void

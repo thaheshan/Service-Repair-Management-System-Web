@@ -1,6 +1,7 @@
 "use client"
 
 import { CheckCircle2, Zap, Building2 } from "lucide-react"
+import Link from "next/link"
 
 export function SidePanelStep1() {
   return (
@@ -10,12 +11,12 @@ export function SidePanelStep1() {
       <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-white/5" />
 
       {/* Logo */}
-      <div className="relative z-10 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+      <Link href="/" className="relative z-10 flex items-center gap-3 w-fit group">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 group-hover:scale-105 transition-transform">
           <Building2 className="h-6 w-6 text-white" />
         </div>
         <span className="text-xl font-bold">RepairShop</span>
-      </div>
+      </Link>
 
       {/* Main content */}
       <div className="relative z-10 mt-12">
