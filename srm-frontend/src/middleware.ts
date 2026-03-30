@@ -5,7 +5,6 @@ import type { NextRequest } from 'next/server';
 const protectedPrefixes = [
   '/admin',
   '/technician',
-  '/shop',
   '/manager',
   '/customer' // The specific dashboards for different roles
 ];
@@ -14,6 +13,7 @@ const protectedPrefixes = [
 const authPrefixes = [
   '/login',
   '/signup',
+  '/shop',
   '/forgot-password',
   '/reset-password',
   '/reset-success'
