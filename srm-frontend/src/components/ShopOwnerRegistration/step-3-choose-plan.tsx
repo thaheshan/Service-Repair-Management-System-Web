@@ -18,7 +18,7 @@ interface PlanDetails {
   popular?: boolean;
   features: string[];
   buttonText: string;
-  buttonVariant: 'primary' | 'outline';
+  buttonVariant: 'default' | 'outline';
 }
 
 const plans: PlanDetails[] = [
@@ -56,7 +56,7 @@ const plans: PlanDetails[] = [
       'Priority support',
     ],
     buttonText: 'Start Free Trial',
-    buttonVariant: 'primary',
+    buttonVariant: 'default',
   },
   {
     id: 'enterprise',
@@ -145,7 +145,7 @@ export function Step3ChoosePlan({ onContinue, onBack }: Step3Props) {
               type="button"
               variant={plan.buttonVariant}
               className={`w-full h-10 rounded-lg font-medium ${
-                plan.buttonVariant === 'primary'
+                plan.buttonVariant === 'default'
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border border-border bg-white text-foreground hover:bg-secondary'
               }`}
