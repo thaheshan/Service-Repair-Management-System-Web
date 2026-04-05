@@ -8,6 +8,7 @@ import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight } from "lucide-react"
 import { INITIAL_DEVICES, Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, BRANDS } from "./device-data"
+import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
 
 type SortKey = "name-az"|"name-za"|"repairs-desc"|"repairs-asc"|"brand-az"|"newest"|"oldest"
 const SORT_OPTIONS: {value:SortKey;label:string}[] = [
@@ -71,7 +72,8 @@ export default function DevicesPage() {
   const [editDevice, setEditDevice] = useState<Device|null>(null)
   const [deleteDevice, setDeleteDevice] = useState<Device|null>(null)
   const [viewDevice, setViewDevice] = useState<Device|null>(null)
-  const [statusChange, setStatusChange] = useState<{id:string, status:DeviceStatus}|null>(null)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{id:string, status:DeviceStatus}|null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string|null>(null)
   const [form, setForm] = useState({name:"",brand:"Apple",type:"Mobile Phone" as DeviceType,imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active" as WarrantyStatus,warrantyExpiry:"",status:"Available" as DeviceStatus,price:0})
 
@@ -177,10 +179,11 @@ export default function DevicesPage() {
     setForm({name:"",brand:"Apple",type:"Mobile Phone",imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active",warrantyExpiry:"",status:"Available",price:0})
   }
 
-  const handleStatusUpdate = () => {
-    if (!statusChange) return
-    setDevices(p => p.map(d => d.id===statusChange.id ? {...d, status: statusChange.status} : d))
-    setStatusChange(null)
+  const handleStatusUpdate = (autoNotify: boolean, newStatus: DeviceStatus) => {
+    if (!pendingStatusUpdate) return
+    setDevices(p => p.map(d => d.id===pendingStatusUpdate.id ? {...d, status: newStatus} : d))
+    setIsStatusModalOpen(false)
+    setPendingStatusUpdate(null)
     setActiveDropdown(null)
   }
 
@@ -386,7 +389,7 @@ export default function DevicesPage() {
                         {activeDropdown===d.id && (
                           <div className="absolute bottom-full left-0 mb-2 w-36 bg-white border border-border rounded-xl shadow-xl z-[60] py-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
                             {STATUSES.map(st => (
-                              <button key={st} onClick={()=>{setStatusChange({id:d.id, status:st}); setActiveDropdown(null)}} className={`w-full px-4 py-2 text-left text-[11px] font-bold hover:bg-[#F8FAFC] transition-colors ${d.status===st?"text-[#4F46E5] bg-[#EEF2FF]":"text-[#0F172A]"}`}>{st}</button>
+                              <button key={st} onClick={()=>{setPendingStatusUpdate({id:d.id, status:st}); setIsStatusModalOpen(true); setActiveDropdown(null)}} className={`w-full px-4 py-2.5 text-left text-[11px] font-bold hover:bg-[#F8FAFC] transition-colors ${d.status===st?"text-[#4F46E5] bg-[#EEF2FF]":"text-[#0F172A]"}`}>{st}</button>
                             ))}
                           </div>
                         )}
@@ -436,7 +439,7 @@ export default function DevicesPage() {
                             {activeDropdown===d.id && (
                               <div className="absolute top-full left-0 mt-2 w-36 bg-white border border-border rounded-xl shadow-2xl z-[60] py-1 animate-in fade-in slide-in-from-top-2 duration-150">
                                 {STATUSES.map(st => (
-                                  <button key={st} onClick={()=>{setStatusChange({id:d.id, status:st}); setActiveDropdown(null)}} className={`w-full px-4 py-2.5 text-left text-[11px] font-bold hover:bg-[#F8FAFC] transition-colors ${d.status===st?"text-[#4F46E5] bg-[#EEF2FF]":"text-[#0F172A]"}`}>{st}</button>
+                                  <button key={st} onClick={()=>{setPendingStatusUpdate({id:d.id, status:st}); setIsStatusModalOpen(true); setActiveDropdown(null)}} className={`w-full px-4 py-2.5 text-left text-[11px] font-bold hover:bg-[#F8FAFC] transition-colors ${d.status===st?"text-[#4F46E5] bg-[#EEF2FF]":"text-[#0F172A]"}`}>{st}</button>
                                 ))}
                               </div>
                             )}
@@ -606,6 +609,15 @@ export default function DevicesPage() {
           </div>
         </div>
       )}
+
+      {/* STATUS UPDATE MODAL */}
+      <DeviceStatusUpdateModal 
+        isOpen={isStatusModalOpen} 
+        onClose={() => { setIsStatusModalOpen(false); setPendingStatusUpdate(null) }} 
+        onConfirm={handleStatusUpdate} 
+        pendingStatus={pendingStatusUpdate?.status || null} 
+      />
+
       {/* 🛠️ INVISIBLE PDF RENDER TARGET FOR DEVICES REPORT */}
       <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
          <div 

@@ -2,12 +2,11 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,
   experimental: {
-    turbopack: false,
+    reactCompiler: true,
   },
   turbopack: {
-    root: path.resolve(__dirname),  // ← tells Next.js the correct root
+    root: path.resolve(__dirname),
   },
   images: {
     remotePatterns: [
