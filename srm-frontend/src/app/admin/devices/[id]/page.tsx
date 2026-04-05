@@ -32,7 +32,8 @@ import {
 } from "lucide-react"
 
 export default function DeviceDetailPage() {
-  const { id } = useParams()
+  const params = useParams()
+  const id = params?.id as string
   const router = useRouter()
   const [noteText, setNoteText] = useState("")
 

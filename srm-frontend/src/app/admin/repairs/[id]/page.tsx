@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, useParams } from "next/navigation"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import {
@@ -11,12 +11,13 @@ import {
   Paperclip, Trash2, Plus, Image as ImageIcon, CheckCircle, ChevronRight, X, ChevronDown
 } from "lucide-react"
 
-export default function TaskDetailsPageWrapper({ params }: { params: { id: string } }) {
-  // We wrap the component in a Suspense-friendly way by just providing a shell if needed, but since it's a page component we just directly use it.
-  return <TaskDetailsPage params={params} />
+export default function TaskDetailsPageWrapper() {
+  return <TaskDetailsPage />
 }
 
-function TaskDetailsPage({ params }: { params: { id: string } }) {
+function TaskDetailsPage() {
+  const params = useParams()
+  const id = params?.id as string
   const router = useRouter()
   const searchParams = useSearchParams()
   const from = searchParams?.get('from')
@@ -96,7 +97,7 @@ function TaskDetailsPage({ params }: { params: { id: string } }) {
                   <span>/</span>
                 </>
               )}
-              <span className="text-[#0F172A] font-semibold">Task #{params.id}</span>
+              <span className="text-[#0F172A] font-semibold">Task #{id}</span>
             </div>
 
             {/* Main Top Header */}

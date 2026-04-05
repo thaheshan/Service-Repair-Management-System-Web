@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Calendar, Search, ChevronDown, Check, Camera, Image as ImageIcon, Plus, X, Download } from "lucide-react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
@@ -14,7 +14,9 @@ const LaptopIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="n
 const WatchIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/></svg>
 const ConsoleIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><circle cx="16" cy="15" r="1"/><circle cx="14" cy="13" r="1"/><path d="M6 11v4"/><path d="M4 13h4"/></svg>
 
-export default function EditRepairPage({ params }: { params: { id: string } }) {
+export default function EditRepairPage() {
+  const params = useParams()
+  const id = params?.id as string
   const router = useRouter()
 
   // Form States
@@ -237,12 +239,12 @@ export default function EditRepairPage({ params }: { params: { id: string } }) {
               <span>&gt;</span>
               <Link href="/admin/repairs" className="hover:text-foreground transition-colors">Repairs</Link>
               <span>&gt;</span>
-              <span className="text-[#4F46E5] font-semibold">Edit Repair #{params.id}</span>
+              <span className="text-[#4F46E5] font-semibold">Edit Repair #{id}</span>
             </div>
           </div>
 
           <div className="pb-4">
-             <h1 className="text-[28px] font-bold text-foreground tracking-tight leading-none">Edit Repair #{params.id}</h1>
+             <h1 className="text-[28px] font-bold text-foreground tracking-tight leading-none">Edit Repair #{id}</h1>
           </div>
           
           {/* Stepper */}

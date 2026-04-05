@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import {
   ChevronRight, ArrowLeft, Copy, Phone, PhoneCall, Mail, MessageSquare, Calendar,
@@ -10,7 +10,9 @@ import {
   Trash2, CopyPlus, Plus, Search
 } from "lucide-react"
 
-export default function CustomerDetailedPage({ params }: { params: { id: string } }) {
+export default function CustomerDetailedPage() {
+  const params = useParams()
+  const id = params?.id as string
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [internalNote, setInternalNote] = useState("")
