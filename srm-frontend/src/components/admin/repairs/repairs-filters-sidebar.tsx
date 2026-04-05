@@ -89,7 +89,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
     selectedTechnicians.length + (selectedDateRange ? 1 : 0)
 
   return (
-    <div className="w-[280px] shrink-0 pr-6 pt-2 flex flex-col gap-6 h-full overflow-y-auto pb-8 custom-scrollbar">
+    <div className="w-full sm:w-[280px] shrink-0 pr-6 pt-2 flex flex-col gap-6 h-full overflow-y-auto pb-8 custom-scrollbar">
 
       {/* Header */}
       <div className="flex items-center justify-between">

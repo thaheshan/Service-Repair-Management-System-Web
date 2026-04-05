@@ -226,14 +226,14 @@ export default function CreateRepairPage() {
     <div className="flex bg-background h-screen overflow-hidden">
       <DashboardSidebar />
       
-      <div className="flex-1 ml-[200px] flex flex-col min-w-0">
+      <div className="flex-1 lg:ml-[200px] ml-0 flex flex-col min-w-0">
         <DashboardHeader />
 
         <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-[#F8FAFC]" onScroll={handleScroll}>
           {/* Dashboard Context Header - Secondary below global Header */}
           <div className="bg-white px-8 pt-6 pb-2 border-b border-border shadow-sm z-10 shrink-0">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
                 <Link href="/admin/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
                 <span>&gt;</span>
                 <Link href="/admin/repairs" className="hover:text-foreground transition-colors">Repairs</Link>
@@ -243,7 +243,7 @@ export default function CreateRepairPage() {
             </div>
 
             <div className="pb-4">
-               <h1 className="text-[28px] font-bold text-foreground tracking-tight leading-none">Create New Repair</h1>
+               <h1 className="text-[24px] sm:text-[28px] font-bold text-foreground tracking-tight leading-none">Create New Repair</h1>
             </div>
             
             {/* Stepper */}
@@ -266,7 +266,7 @@ export default function CreateRepairPage() {
                   <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-300 ${isActive ? 'bg-[#4F46E5] text-white ring-4 ring-indigo-50' : 'bg-white border-2 border-border text-muted-foreground'}`}>
                     {step.num}
                   </div>
-                  <span className={`text-[11px] font-bold transition-colors duration-300 ${isActive ? 'text-[#4F46E5]' : 'text-muted-foreground'} uppercase tracking-wider`}>{step.label}</span>
+                  <span className={`hidden sm:block text-[11px] font-bold transition-colors duration-300 ${isActive ? 'text-[#4F46E5]' : 'text-muted-foreground'} uppercase tracking-wider`}>{step.label}</span>
                 </div>
               )})}
             </div>
@@ -274,7 +274,7 @@ export default function CreateRepairPage() {
 
           {/* Scrollable Form Content */}
           <div className="flex-1 overflow-y-auto w-full pb-32 scroll-smooth">
-            <div className="max-w-4xl mx-auto py-8 px-8 flex flex-col gap-8">
+            <div className="max-w-4xl mx-auto py-8 px-4 sm:px-8 flex flex-col gap-8">
               
               {/* 1. Basic Information */}
               <section ref={section1Ref} className="bg-white rounded-xl shadow-sm border border-border p-6 scroll-mt-6">
@@ -282,7 +282,7 @@ export default function CreateRepairPage() {
                 
                 <div className="mb-6">
                   <label className="block text-[13px] font-bold text-foreground mb-3">Repair Category <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-3">
                     {[
                       {name: "Mobile Phone", icon: PhoneIcon},
                       {name: "Tablet", icon: TabletIcon},
@@ -302,7 +302,7 @@ export default function CreateRepairPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-[13px] font-bold text-foreground mb-1.5 flex items-center gap-1">Priority <span className="text-red-500">*</span></label>
                     <div className="relative">
@@ -369,7 +369,7 @@ export default function CreateRepairPage() {
               <section className="bg-white rounded-xl shadow-sm border border-border p-6">
                  <h2 className="text-lg font-bold text-foreground mb-6">Device Information</h2>
 
-                 <div className="grid grid-cols-2 gap-6 mb-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">Device Type <span className="text-red-500">*</span></label>
                       <div className="relative">
@@ -403,7 +403,7 @@ export default function CreateRepairPage() {
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 col-span-1 sm:col-span-2">
                        <div className="flex-1">
                          <label className="block text-[13px] font-bold text-foreground mb-1.5">Color (Optional)</label>
                          <div className="relative">
@@ -441,7 +441,7 @@ export default function CreateRepairPage() {
                    </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-6 mb-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">Serial Number (Optional)</label>
                       <input type="text" placeholder="Enter Serial" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" />
@@ -459,7 +459,7 @@ export default function CreateRepairPage() {
 
                  <div className="mb-6">
                    <label className="block text-[13px] font-bold text-foreground mb-3">Device Accessories Included (Optional)</label>
-                   <div className="flex flex-wrap items-center gap-6">
+                   <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
                      {["Charger", "Battery", "Case", "Original Box", "Mouse / Keyboard", "SD Card / SIM Tray", "Other"].map((acc) => {
                        const isChecked = accessories.includes(acc)
                        return (
@@ -553,7 +553,7 @@ export default function CreateRepairPage() {
                  
                  <div className="p-6 bg-[#F8FAFC] border border-border rounded-xl">
                    
-                   <div className="grid grid-cols-2 gap-6 pb-6 border-b border-border mb-6">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-border mb-6">
                      <div>
                        <label className="block text-[13px] font-bold text-foreground mb-1.5">Labor Cost</label>
                        <div className="relative">
@@ -605,7 +605,7 @@ export default function CreateRepairPage() {
                      )}
                    </div>
 
-                   <div className="grid grid-cols-2 gap-6 mb-6">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                      <div>
                        <label className="block text-[13px] font-bold text-foreground mb-1.5">Tax %</label>
                        <div className="relative">
@@ -635,7 +635,7 @@ export default function CreateRepairPage() {
                    </div>
 
                    {/* Price Summary Row */}
-                   <div className="flex items-center justify-between bg-[#EEF2FF] rounded-xl border border-[#C7D2FE] p-4">
+                   <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-between bg-[#EEF2FF] rounded-xl border border-[#C7D2FE] p-4 gap-y-4 gap-x-2">
                       <div className="flex flex-col">
                         <span className="text-[11px] font-bold text-[#6366F1] uppercase tracking-wide">Labor</span>
                         <span className="text-[13px] font-bold text-foreground">Rs. {parseFloat(laborCost || "0").toLocaleString()}</span>
@@ -656,8 +656,8 @@ export default function CreateRepairPage() {
                            <span className="text-[13px] font-bold text-foreground">+{tax}%</span>
                          </div>
                       )}
-                      <div className="h-10 w-px bg-[#C7D2FE] mx-2" />
-                      <div className="flex flex-col items-end">
+                      <div className="hidden lg:block h-10 w-px bg-[#C7D2FE] mx-2" />
+                      <div className="flex flex-col items-start lg:items-end col-span-2 lg:col-span-1 pt-2 lg:pt-0 border-t lg:border-0 border-[#C7D2FE]">
                         <span className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wide">Total Quote</span>
                         <span className="text-[20px] font-black text-[#3730A3]">Rs. {pricingTotal.toLocaleString()}</span>
                       </div>
@@ -669,7 +669,7 @@ export default function CreateRepairPage() {
               {/* 6. Assignment & Workflow */}
               <section className="bg-white rounded-xl shadow-sm border border-border p-6 mb-8">
                  <h2 className="text-lg font-bold text-foreground mb-6">Assignment & Workflow</h2>
-                 <div className="grid grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">Assign Technician (Optional)</label>
                       <div className="relative">
@@ -703,23 +703,24 @@ export default function CreateRepairPage() {
           </div>
 
           {/* Sticky App Footer */}
-          <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-border p-4 px-8 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-20 flex justify-between items-center shrink-0">
-             <button onClick={() => router.push('/admin/repairs')} className="h-11 px-8 rounded-xl border border-border text-[14px] font-semibold text-foreground hover:bg-muted transition-colors focus:outline-none bg-white">
-               Cancel
-             </button>
-             <div className="flex flex-col items-center">
-               <div className="flex items-center gap-2">
-                 <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#4F46E5] cursor-pointer" id="send-email" />
-                 <label htmlFor="send-email" className="text-[12px] font-medium text-muted-foreground cursor-pointer">Send Email Confirmation to Customer</label>
-               </div>
+          <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-border p-4 px-4 sm:px-8 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-20 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+             <div className="flex items-center gap-2 order-2 md:order-none">
+                <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#4F46E5] cursor-pointer" id="send-email" />
+                <label htmlFor="send-email" className="text-[12px] font-medium text-muted-foreground cursor-pointer">Send Email Confirmation to Customer</label>
              </div>
-             <div className="flex gap-4">
-               <button onClick={handleSaveDraft} className="h-11 px-8 rounded-xl bg-muted/50 text-[14px] font-semibold text-foreground hover:bg-muted transition-colors focus:outline-none">
-                 Save as Draft
-               </button>
-               <button onClick={() => setIsConfirmModalOpen(true)} className="h-11 px-8 rounded-xl bg-[#4F46E5] text-[14px] font-semibold text-white hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none">
-                 Create Repair
-               </button>
+             
+             <div className="flex flex-col-reverse sm:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-none">
+                <button onClick={() => router.push('/admin/repairs')} className="h-11 w-full sm:w-auto px-8 rounded-xl border border-border text-[14px] font-semibold text-foreground hover:bg-muted transition-colors focus:outline-none bg-white">
+                  Cancel
+                </button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <button onClick={handleSaveDraft} className="flex-1 sm:flex-none h-11 sm:px-8 rounded-xl bg-muted/50 text-[14px] font-semibold text-foreground hover:bg-muted transition-colors focus:outline-none">
+                    Save as Draft
+                  </button>
+                  <button onClick={() => setIsConfirmModalOpen(true)} className="flex-1 sm:flex-none h-11 sm:px-8 rounded-xl bg-[#4F46E5] text-[14px] font-semibold text-white hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none">
+                    Create Repair
+                  </button>
+                </div>
              </div>
           </div>
         </main>

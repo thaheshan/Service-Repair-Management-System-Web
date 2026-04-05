@@ -150,7 +150,7 @@ export default function CustomerManagementPage() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <DashboardSidebar />
-      <div className="flex flex-1 flex-col ml-[200px] min-w-0">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 min-w-0">
         <DashboardHeader />
         <main className="flex-1 flex flex-col overflow-y-auto">
           <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col flex-1">

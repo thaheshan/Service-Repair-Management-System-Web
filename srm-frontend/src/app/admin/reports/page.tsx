@@ -313,11 +313,11 @@ export default function ReportsPage() {
     <div className="flex bg-background h-screen overflow-hidden">
       <DashboardSidebar />
       
-      <div className="flex flex-1 flex-col ml-[200px] min-w-0">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 min-w-0">
         <DashboardHeader />
 
         <main className="flex-1 flex flex-col pt-0 overflow-y-auto">
-          <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col">
+          <div className="w-full max-w-[1280px] px-4 lg:px-8 py-6 lg:py-8 mx-auto flex flex-col">
             
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">

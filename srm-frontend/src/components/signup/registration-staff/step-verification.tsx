@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep3 } from "./side-panel-step3"
 import { FileUpload } from "./file-upload"
+import { AuthLogo } from "@/components/common/auth-logo"
 
 interface StepVerificationProps {
   onSubmit: (data: VerificationData) => void
@@ -39,18 +40,23 @@ export function StepVerification({ onSubmit, onBack }: StepVerificationProps) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left side panel */}
-      <div className="hidden w-[480px] shrink-0 lg:block">
-        <div className="sticky top-0 h-screen">
+    <div className="flex flex-col lg:flex-row min-h-screen w-full">
+      {/* Left side panel - Hidden on Mobile/Tablet */}
+      <div className="hidden lg:block lg:w-[480px] shrink-0">
+        <div className="lg:sticky lg:top-0 h-full lg:h-screen">
           <SidePanelStep3 />
         </div>
       </div>
 
       {/* Right side form */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col bg-white overflow-y-auto">
         <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-10 lg:px-16">
           <div className="w-full max-w-[520px]">
+            {/* Logo at the top for Mobile/Tablet */}
+            <div className="lg:hidden mb-10 flex justify-center">
+               <AuthLogo />
+            </div>
+
             {/* Stepper */}
             <div className="mb-8">
               <RegistrationStepper
@@ -60,7 +66,10 @@ export function StepVerification({ onSubmit, onBack }: StepVerificationProps) {
             </div>
 
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-6 text-center lg:text-left">
+              <div className="hidden lg:block mb-8 text-center">
+                <AuthLogo />
+              </div>
               <h2 className="text-2xl font-bold text-[#111827]">{"Verification & Documents"}</h2>
               <p className="mt-1 text-sm text-[#6B7280]">Upload required documents for account verification</p>
             </div>

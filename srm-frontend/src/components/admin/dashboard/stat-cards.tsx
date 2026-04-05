@@ -45,11 +45,11 @@ const stats = [
 
 export function StatCards() {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className="flex h-full items-center justify-between rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
+          className="flex h-full items-center justify-between rounded-2xl border border-border/60 bg-card p-4 sm:p-6 shadow-sm"
         >
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-muted-foreground">{stat.title}</span>

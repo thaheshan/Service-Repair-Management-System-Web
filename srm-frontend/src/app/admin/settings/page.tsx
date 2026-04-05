@@ -128,11 +128,11 @@ export default function SettingsView() {
     <div className="flex bg-background h-screen overflow-hidden">
       <DashboardSidebar />
 
-      <div className="flex flex-1 flex-col ml-[200px] min-w-0">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 min-w-0">
         <DashboardHeader />
         
         <main className="flex-1 flex flex-col pt-0 overflow-y-auto">
-          <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col">
+          <div className="w-full max-w-[1280px] px-4 lg:px-8 py-6 lg:py-8 mx-auto flex flex-col">
             
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -606,26 +606,27 @@ export default function SettingsView() {
 
                       <div className="space-y-4">
                          {teamMembers.map((member) => (
-                           <div key={member.email} className="flex items-center justify-between p-5 rounded-2xl border border-border hover:shadow-md transition-all group bg-white">
+                           <div key={member.email} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 rounded-2xl border border-border hover:shadow-md transition-all group bg-white gap-4 sm:gap-0">
                               <div className="flex items-center gap-4">
-                                 <img src={`https://i.pravatar.cc/150?u=${member.name}`} className="h-12 w-12 rounded-xl object-cover shadow-sm bg-muted" alt="" />
-                                 <div className="flex flex-col">
-                                    <span className="text-[15px] font-black text-[#0F172A]">{member.name}</span>
-                                    <span className="text-[12px] text-muted-foreground font-medium">{member.email}</span>
+                                 <img src={`https://i.pravatar.cc/150?u=${member.name}`} className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover shadow-sm bg-muted shrink-0" alt="" />
+                                 <div className="flex flex-col min-w-0 pr-2">
+                                    <span className="text-[14px] sm:text-[15px] font-black text-[#0F172A] truncate">{member.name}</span>
+                                    <span className="text-[11px] sm:text-[12px] text-muted-foreground font-medium truncate">{member.email}</span>
                                  </div>
                               </div>
-                              <div className="flex items-center gap-8">
-                                 <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase mb-1">System Role</span>
-                                    <span className="text-[13px] font-bold text-primary">{member.role}</span>
+                              
+                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 sm:gap-8 bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none">
+                                 <div className="flex flex-col items-start sm:items-end">
+                                    <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">System Role</span>
+                                    <span className="text-[12px] sm:text-[13px] font-bold text-primary">{member.role}</span>
                                  </div>
-                                 <div className="flex flex-col items-end min-w-[80px]">
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase mb-1">Status</span>
-                                    <span className={`text-[12px] font-bold ${member.status === 'Active' ? 'text-emerald-600' : 'text-amber-500'}`}>{member.status}</span>
+                                 <div className="flex flex-col items-start sm:items-end min-w-[70px] sm:min-w-[80px]">
+                                    <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">Status</span>
+                                    <span className={`text-[11px] sm:text-[12px] font-bold ${member.status === 'Active' ? 'text-emerald-600' : 'text-amber-500'}`}>{member.status}</span>
                                  </div>
                                  <button 
                                    onClick={() => setActiveEditMember(member)}
-                                   className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors focus:outline-none"
+                                   className="h-9 w-9 rounded-lg border border-border bg-white sm:bg-transparent flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors focus:outline-none shadow-sm sm:shadow-none"
                                  >
                                     <Settings className="h-4 w-4" />
                                  </button>

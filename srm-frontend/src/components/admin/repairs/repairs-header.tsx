@@ -122,10 +122,10 @@ export function RepairsHeader({
   }
 
   return (
-    <div className="flex flex-col gap-6 px-6 py-6 border-transparent bg-card">
+    <div className="flex flex-col gap-6 px-4 md:px-6 py-6 border-transparent bg-card">
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <span className="text-sm font-semibold text-[#4F46E5]">{totalRepairs} Repairs</span>
           
           {hasActiveFilters ? (
@@ -147,7 +147,7 @@ export function RepairsHeader({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted focus:outline-none shadow-sm">
@@ -190,8 +190,8 @@ export function RepairsHeader({
       </div>
 
       {/* Search and View Toggles Bar */}
-      <div className="flex items-center justify-between">
-        <div className="relative w-full max-w-[320px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative w-full max-w-full sm:max-w-[320px]">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input 
             type="text"

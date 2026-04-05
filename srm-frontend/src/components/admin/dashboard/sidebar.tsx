@@ -15,6 +15,8 @@ import {
   ChevronDown,
   Store,
   Check,
+  Menu,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -52,18 +54,45 @@ const branches = [
 
 export function DashboardSidebar() {
   const [selectedBranch, setSelectedBranch] = useState("main")
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const currentBranch = branches.find((b) => b.id === selectedBranch)
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-[200px] flex-col border-r border-border bg-card">
-      {/* Logo */}
-      <div className="flex h-[64px] items-center gap-2.5 border-b border-border px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <Wrench className="h-4 w-4 text-primary-foreground" />
+    <>
+      {/* Mobile Menu Toggle Button */}
+      <button 
+        onClick={() => setIsMobileMenuOpen(true)}
+        className="lg:hidden fixed top-3 left-4 z-40 p-2 bg-card border border-border rounded-lg shadow-sm text-foreground focus:outline-none"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Content */}
+      <aside className={cn(
+        "fixed left-0 top-0 z-50 flex h-screen w-[240px] lg:w-[200px] flex-col border-r border-border bg-card transition-transform duration-300 ease-in-out",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
+        {/* Logo */}
+        <div className="flex h-[64px] items-center justify-between border-b border-border px-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <Wrench className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold text-foreground">SRM</span>
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden p-1 text-muted-foreground hover:bg-muted rounded-md focus:outline-none">
+             <X className="h-5 w-5" />
+          </button>
         </div>
-        <span className="text-lg font-bold text-foreground">SRM</span>
-      </div>
 
       {/* Shop Selector Dropdown */}
       <div className="px-4 pt-5 pb-2">
@@ -121,5 +150,6 @@ export function DashboardSidebar() {
         </ul>
       </nav>
     </aside>
+    </>
   )
 }
