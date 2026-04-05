@@ -2,6 +2,7 @@
 
 import LoginForm from '@/components/LoginForm/LoginForm';
 import LoginSidebar from '@/components/LoginSidebar/LoginSidebar';
+import { AuthLogo } from '@/components/common/auth-logo';
 
 import img1 from '../../../../public/login img 1.jpeg';
 import img2 from '../../../../public/login img 2.png';
@@ -38,9 +39,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-white overflow-hidden">
-      {/* Dynamic Visual Sidebar (Hidden on Small Screens) */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
+    <div className="flex min-h-screen w-full bg-white lg:overflow-hidden">
+      {/* Dynamic Visual Sidebar - Hidden on Mobile/Tablet */}
+      <div className="hidden lg:flex lg:w-1/2 relative h-full shrink-0">
         <LoginSidebar
           logoUrl="" // Will use pure Icon inside component
           carouselSlides={carouselSlides}
@@ -51,7 +52,12 @@ export default function LoginPage() {
       </div>
       
       {/* Authentication Form Half */}
-      <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white relative">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-24 bg-white relative overflow-y-auto w-full">
+        {/* Logo at the top for Mobile/Tablet */}
+        <div className="lg:hidden mb-12">
+           <AuthLogo />
+        </div>
+
         <div className="w-full max-w-[420px]">
           <LoginForm />
         </div>

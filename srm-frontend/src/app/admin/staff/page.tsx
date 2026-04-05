@@ -122,10 +122,10 @@ export default function StaffManagementPage() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <DashboardSidebar/>
-      <div className="flex flex-1 flex-col ml-[200px] min-w-0">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 min-w-0">
         <DashboardHeader/>
         <main className="flex-1 flex flex-col overflow-y-auto" onClick={()=>{ setShowSortMenu(false); setShowExportMenu(false) }}>
-          <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col flex-1">
+          <div className="w-full max-w-[1280px] px-4 lg:px-8 py-6 lg:py-8 mx-auto flex flex-col flex-1">
 
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
@@ -140,13 +140,13 @@ export default function StaffManagementPage() {
                 <h1 className="text-[26px] font-black text-[#0F172A] tracking-tight">Staff Management</h1>
                 <span className="px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] text-[13px] font-bold">{filtered.length} Members</span>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={e=>{e.stopPropagation();setShowRolesModal(true)}} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted shadow-sm focus:outline-none">
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <button onClick={e=>{e.stopPropagation();setShowRolesModal(true)}} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted shadow-sm focus:outline-none">
                   <Shield className="h-4 w-4 text-muted-foreground"/> Manage Roles
                 </button>
                 {/* Export */}
-                <div className="relative">
-                  <button onClick={e=>{e.stopPropagation();setShowExportMenu(p=>!p);setShowSortMenu(false)}} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-semibold text-[#0F172A] hover:bg-muted shadow-sm focus:outline-none">
+                <div className="relative flex-1 sm:flex-none">
+                  <button onClick={e=>{e.stopPropagation();setShowExportMenu(p=>!p);setShowSortMenu(false)}} className="w-full flex items-center justify-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-semibold text-[#0F172A] hover:bg-muted shadow-sm focus:outline-none">
                     {isExporting?<Loader2 className="h-4 w-4 animate-spin"/>:<FileDown className="h-4 w-4 text-muted-foreground"/>} Export <ChevronDown className="h-3.5 w-3.5 text-muted-foreground"/>
                   </button>
                   {showExportMenu&&(
@@ -156,7 +156,7 @@ export default function StaffManagementPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={()=>setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm focus:outline-none">
+                <button onClick={()=>setShowAddModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm focus:outline-none">
                   <Plus className="h-4 w-4"/> Add Staff
                 </button>
               </div>

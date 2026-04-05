@@ -5,6 +5,7 @@ import { Check, ArrowLeft } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep3 } from "./side-panel-step3"
+import { AuthLogo } from "@/components/common/auth-logo"
 
 interface Step3ChoosePlanProps {
   onNext: (plan: string) => void
@@ -92,19 +93,23 @@ export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left side panel */}
-      <div className="hidden w-[480px] shrink-0 lg:block">
-        <div className="sticky top-0 h-screen">
+    <div className="flex flex-col lg:flex-row min-h-screen w-full">
+      {/* Left side panel - Hidden on Mobile/Tablet */}
+      <div className="hidden lg:block lg:w-[480px] shrink-0">
+        <div className="lg:sticky lg:top-0 h-full lg:h-screen">
           <SidePanelStep3 />
         </div>
       </div>
 
       {/* Right side form */}
-      <div className="flex flex-1 flex-col bg-white">
+      <div className="flex flex-1 flex-col bg-white overflow-y-auto">
         <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-10 lg:px-14">
           <div className="w-full max-w-[900px]">
-            
+            {/* Logo at the top for Mobile/Tablet */}
+            <div className="lg:hidden mb-10 flex justify-center">
+               <AuthLogo />
+            </div>
+
             {/* Stepper */}
             <div className="mb-8">
               <RegistrationStepper
@@ -114,7 +119,10 @@ export function StepChoosePlan({ onNext, onBack }: Step3ChoosePlanProps) {
             </div>
 
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-8 lg:text-left text-center">
+              <div className="hidden lg:block mb-8">
+                <AuthLogo />
+              </div>
               <h2 className="text-[30px] font-bold text-[#111827] tracking-tight">Choose your plan</h2>
               <p className="mt-1.5 text-[15px] text-[#6B7280]">Select the best plan for your business needs</p>
             </div>

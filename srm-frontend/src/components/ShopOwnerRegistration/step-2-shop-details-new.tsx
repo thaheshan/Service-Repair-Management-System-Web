@@ -5,6 +5,7 @@ import { Store, MapPin, GitBranch, Info, ArrowLeft, ArrowRight, Globe } from "lu
 import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep2 } from "./side-panel-step2"
+import { AuthLogo } from "@/components/common/auth-logo"
 import {
   Select,
   SelectContent,
@@ -124,16 +125,16 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left side panel */}
-      <div className="hidden w-[480px] shrink-0 lg:block">
-        <div className="sticky top-0 h-screen">
+    <div className="flex flex-col lg:flex-row min-h-screen w-full">
+      {/* Left side panel - Hidden on Mobile/Tablet */}
+      <div className="hidden lg:block lg:w-[480px] shrink-0">
+        <div className="lg:sticky lg:top-0 h-full lg:h-screen">
           <SidePanelStep2 />
         </div>
       </div>
 
       {/* Right side form */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col bg-white overflow-y-auto">
         {/* Back button */}
         <div className="px-6 pt-6 lg:px-16">
           <button
@@ -147,6 +148,11 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
 
         <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-6 lg:px-16">
           <div className="w-full max-w-[520px]">
+            {/* Logo at the top for Mobile/Tablet */}
+            <div className="lg:hidden mb-10 flex justify-center">
+               <AuthLogo />
+            </div>
+
             {/* Stepper */}
             <div className="mb-8">
               <RegistrationStepper
@@ -156,7 +162,10 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
             </div>
 
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-6 lg:text-left text-center">
+              <div className="hidden lg:block mb-8">
+                <AuthLogo />
+              </div>
               <h2 className="text-2xl font-bold text-[#111827]">Shop details</h2>
               <p className="mt-1 text-sm text-[#6B7280]">Help us understand your business better</p>
             </div>

@@ -51,7 +51,7 @@ export default function CustomerDetailedPage() {
     <div className="flex bg-[#F8FAFC] text-foreground min-h-screen">
       <DashboardSidebar />
 
-      <main className="flex-1 ml-[200px] flex flex-col items-center">
+      <main className="flex-1 lg:ml-[200px] ml-0 flex flex-col items-center">
         {/* Maximum constraints for a beautiful responsive layout */}
         <div className="w-full max-w-[1200px] px-8 py-8">
           

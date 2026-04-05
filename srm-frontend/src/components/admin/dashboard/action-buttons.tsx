@@ -9,7 +9,7 @@ export function ActionButtons() {
 
   return (
     <>
-      <div className="grid w-full grid-cols-3 gap-4">
+      <div className="grid w-full grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Link href="/admin/repairs/new" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#4F46E5] px-5 font-semibold text-white transition-colors hover:bg-[#4338CA] shadow-sm">
           <Plus className="h-4 w-4 shrink-0" />
           <span>New Repair</span>
@@ -83,8 +83,8 @@ export function ActionButtons() {
                    </div>
                  </div>
 
-                 <div className="flex w-full gap-3 pt-4 border-t border-border">
-                    <button onClick={() => setOpen(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">
+                 <div className="flex flex-col-reverse sm:flex-row w-full gap-3 pt-4 border-t border-border">
+                    <button onClick={() => setOpen(false)} className="w-full sm:flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">
                       Cancel
                     </button>
                     <button 
@@ -92,7 +92,7 @@ export function ActionButtons() {
                         setOpen(false)
                         alert("Customer Added Successfully!")
                       }} 
-                      className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
+                      className="w-full sm:flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
                     >
                       Save Customer Profile
                     </button>

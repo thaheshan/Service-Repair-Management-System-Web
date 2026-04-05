@@ -105,10 +105,10 @@ export function DashboardHeader() {
 
   return (
     <>
-    <header className="sticky top-0 z-20 flex h-[64px] items-center justify-between border-b border-border bg-card px-8">
-      <div className="relative w-full max-w-sm flex items-center gap-6">
+    <header className="sticky top-0 z-20 flex h-[64px] items-center justify-between border-b border-border bg-card px-4 lg:px-8 pl-[60px] lg:pl-8">
+      <div className="relative w-full max-w-[180px] sm:max-w-[240px] md:max-w-sm flex items-center gap-6">
         {/* Search Bar */}
-        <div className="relative w-full max-w-sm">
+        <div className="relative w-full">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"

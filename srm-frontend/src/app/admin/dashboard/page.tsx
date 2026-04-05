@@ -20,13 +20,13 @@ export default function DashboardPage() {
       <DashboardSidebar />
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col ml-[200px]">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0">
         {/* Header */}
         <DashboardHeader />
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto w-full">
-          <div className="flex flex-col gap-6 p-6 mb-12">
+          <div className="flex flex-col gap-6 p-4 sm:p-6 mb-12">
 
             {/* Page Title & Actions Header (Stacked) */}
             <div className="flex flex-col gap-6 mb-2">
@@ -45,21 +45,21 @@ export default function DashboardPage() {
             <StatCards />
 
             {/* Row 2: Recent Repairs & Revenue Trend */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-1 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 h-full">
                 <RecentRepairs />
               </div>
-              <div className="col-span-2 h-full">
+              <div className="lg:col-span-2 h-full">
                 <RevenueTrend />
               </div>
             </div>
 
             {/* Row 3: Top Techs & Status Chart */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-1 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 h-full">
                 <TopTechnicians />
               </div>
-              <div className="col-span-2 h-full">
+              <div className="lg:col-span-2 h-full">
                 <RepairStatusChart />
               </div>
             </div>

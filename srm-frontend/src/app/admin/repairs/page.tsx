@@ -192,10 +192,10 @@ export default function RepairsPage() {
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
       <DashboardSidebar />
-      <div className="flex flex-col flex-1 ml-[200px] min-w-0 bg-background relative overflow-hidden h-screen">
+      <div className="flex flex-col flex-1 lg:ml-[200px] ml-0 min-w-0 bg-background relative overflow-hidden h-screen">
         <DashboardHeader />
         <main className="flex-1 overflow-y-auto w-full flex flex-col custom-scrollbar">
-          <div className="bg-background px-8 pt-6 pb-4">
+          <div className="bg-background px-4 lg:px-8 pt-6 pb-4">
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground mb-1.5 font-medium">
               <Link href="/admin/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
               <span>&gt;</span>
@@ -204,8 +204,8 @@ export default function RepairsPage() {
             <h1 className="text-[28px] font-bold text-[#0F172A] tracking-tight leading-none">Repairs Management</h1>
           </div>
 
-          <div className="flex-1 px-8 pb-6 pt-0 m-0 flex flex-col">
-            <div className="flex flex-col bg-card rounded-xl border border-border shadow-sm mb-6 min-h-[600px] overflow-hidden">
+          <div className="flex-1 px-4 lg:px-8 pb-6 pt-0 m-0 flex flex-col">
+            <div className="flex flex-col bg-card rounded-xl border border-border shadow-sm mb-6 min-h-[600px] overflow-hidden overflow-x-auto">
               <RepairsHeader
                 filteredRepairs={allFiltered}
                 hasActiveFilters={isActive}
@@ -219,9 +219,9 @@ export default function RepairsPage() {
                 onChangeViewMode={setViewMode}
               />
 
-              <div className="flex flex-1 overflow-hidden relative border-t border-border mt-1 transition-all duration-300">
+              <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative border-t border-border mt-1 transition-all duration-300">
                 {showFilters && (
-                  <div className="h-full pl-6 border-r border-border shrink-0 animate-in slide-in-from-left-4 duration-300 ease-out">
+                  <div className="w-full lg:w-auto lg:h-full p-4 lg:p-0 lg:pl-6 border-b lg:border-b-0 lg:border-r border-border shrink-0 animate-in slide-in-from-left-4 lg:animate-none duration-300 ease-out bg-card z-10">
                     <RepairsFilterSidebar
                       onApply={(filters) => { setActiveFilters(filters); setShowFilters(false); setCurrentPage(1) }}
                       onReset={() => { clearAllFilters(); setShowFilters(false) }}
@@ -229,7 +229,7 @@ export default function RepairsPage() {
                     />
                   </div>
                 )}
-                <div className="flex-1 flex flex-col min-w-0 bg-muted/10 relative">
+                <div className="flex-1 flex flex-col min-w-0 bg-muted/10 relative overflow-x-auto">
                   <RepairsTable
                     repairs={paginatedRepairs}
                     allRepairs={repairs}

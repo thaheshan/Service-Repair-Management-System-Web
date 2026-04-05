@@ -184,7 +184,7 @@ export default function SchedulePage() {
       <DashboardSidebar />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col ml-[200px] bg-background">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 bg-background">
         <DashboardHeader />
         
         {/* Top Header & Navigation */}
@@ -199,7 +199,7 @@ export default function SchedulePage() {
 
         {/* Calendar Grid Area */}
         <main className="flex-1 overflow-x-auto overflow-y-auto w-full">
-          <div className="min-w-[900px] p-6 mb-12">
+          <div className="min-w-[900px] p-4 lg:p-6 mb-12">
             <ScheduleCalendar 
               days={currentDays}
               appointments={filteredAppointments} 

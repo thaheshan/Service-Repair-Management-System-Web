@@ -215,7 +215,7 @@ export default function DevicesPage() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <DashboardSidebar/>
-      <div className="flex flex-1 flex-col ml-[200px] min-w-0">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 min-w-0">
         <DashboardHeader/>
         <main className="flex-1 flex flex-col overflow-y-auto">
           <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col flex-1">
@@ -403,7 +403,7 @@ export default function DevicesPage() {
                 ))}
               </div>
             ):(
-              <div className="bg-white rounded-xl border border-border shadow-sm mb-6 overflow-hidden">
+              <div className="bg-white rounded-xl border border-border shadow-sm mb-6 overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse min-w-[900px]">
                   <thead><tr className="bg-[#F8FAFC] border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     <th className="px-5 py-4">Device</th>
@@ -485,7 +485,7 @@ export default function DevicesPage() {
               <button onClick={()=>setShowAddModal(false)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Device Name *</label><input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. iPhone 14 Pro" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Brand</label>
                   <select value={form.brand} onChange={e=>setForm(p=>({...p,brand:e.target.value}))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
@@ -493,7 +493,7 @@ export default function DevicesPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Type</label>
                   <select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value as DeviceType}))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
                     {TYPES.map(t=><option key={t}>{t}</option>)}
@@ -501,11 +501,11 @@ export default function DevicesPage() {
                 </div>
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">IMEI / Serial *</label><input value={form.imei} onChange={e=>setForm(p=>({...p,imei:e.target.value}))} placeholder="15-digit IMEI" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] font-mono focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Owner Name</label><input value={form.ownerName} onChange={e=>setForm(p=>({...p,ownerName:e.target.value}))} placeholder="Full name" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Owner Phone</label><input value={form.ownerPhone} onChange={e=>setForm(p=>({...p,ownerPhone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Warranty</label>
                   <select value={form.warrantyStatus} onChange={e=>setForm(p=>({...p,warrantyStatus:e.target.value as WarrantyStatus}))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
                     {WARRANTIES.map(w=><option key={w}>{w}</option>)}
@@ -520,11 +520,11 @@ export default function DevicesPage() {
                 </div>
               </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Status</label>
-                <div className="flex gap-3">{STATUSES.map(s=>(
+                <div className="flex flex-wrap gap-2 sm:gap-3">{STATUSES.map(s=>(
                   <label key={s} onClick={e=>{e.preventDefault();setForm(p=>({...p,status:s}))}} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-[13px] font-semibold transition-colors ${form.status===s?"bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]":"border-border text-muted-foreground hover:bg-muted"}`}>{form.status===s&&<Check className="h-3.5 w-3.5"/>}{s}</label>
                 ))}</div>
               </div>
-              <div className="flex gap-3 pt-2 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2 border-t border-border">
                 <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">Cancel</button>
                 <button onClick={handleAdd} disabled={!form.name||!form.imei} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50">Register Device</button>
               </div>
@@ -543,7 +543,7 @@ export default function DevicesPage() {
             </div>
             <div className="p-6 space-y-4">
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Device Name</label><input value={editDevice.name} onChange={e=>setEditDevice(p=>p?{...p,name:e.target.value}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Status</label>
                   <select value={editDevice.status} onChange={e=>setEditDevice(p=>p?{...p,status:e.target.value as DeviceStatus}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
                     {STATUSES.map(s=><option key={s}>{s}</option>)}
@@ -557,7 +557,7 @@ export default function DevicesPage() {
               </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Owner Name</label><input value={editDevice.owner.name} onChange={e=>setEditDevice(p=>p?{...p,owner:{...p.owner,name:e.target.value}}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Owner Phone</label><input value={editDevice.owner.phone} onChange={e=>setEditDevice(p=>p?{...p,owner:{...p.owner,phone:e.target.value}}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-              <div className="flex gap-3 pt-2 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2 border-t border-border">
                 <button onClick={()=>setEditDevice(null)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
                 <button onClick={handleSaveEdit} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none">Save Changes</button>
               </div>
@@ -602,7 +602,7 @@ export default function DevicesPage() {
               <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center shrink-0"><Trash2 className="h-6 w-6 text-red-500"/></div>
               <div><h2 className="text-[17px] font-black text-[#0F172A]">Delete Device?</h2><p className="text-[13px] text-muted-foreground">This will permanently remove <strong>{deleteDevice.name}</strong>.</p></div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <button onClick={()=>setDeleteDevice(null)} className="flex-1 h-10 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
               <button onClick={handleDelete} className="flex-1 h-10 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 focus:outline-none">Delete</button>
             </div>

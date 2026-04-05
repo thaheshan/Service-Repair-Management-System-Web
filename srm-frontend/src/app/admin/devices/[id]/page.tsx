@@ -138,7 +138,7 @@ export default function DeviceDetailPage() {
     <div className="flex bg-background h-screen overflow-hidden text-[#0F172A]">
       <DashboardSidebar />
       
-      <div className="flex-1 ml-[200px] flex flex-col min-w-0">
+      <div className="flex-1 lg:ml-[200px] ml-0 flex flex-col min-w-0">
         <DashboardHeader />
 
         <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-[#F8FAFC]">

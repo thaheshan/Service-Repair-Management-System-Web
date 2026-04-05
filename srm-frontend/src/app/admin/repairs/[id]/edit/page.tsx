@@ -229,7 +229,7 @@ export default function EditRepairPage() {
       <DashboardSidebar />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col ml-[200px] bg-[#F8FAFC] relative h-full overflow-hidden">
+      <div className="flex flex-1 flex-col lg:ml-[200px] ml-0 bg-[#F8FAFC] relative h-full overflow-hidden">
         
         {/* Header Background */}
         <div className="bg-white px-8 pt-6 pb-2 border-b border-border shadow-sm z-10">
