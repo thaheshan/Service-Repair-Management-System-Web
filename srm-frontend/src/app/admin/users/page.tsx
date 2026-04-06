@@ -8,7 +8,7 @@ import {
   UserPlus, Mail, Shield, CheckCircle2, Clock, 
   MoreVertical, Edit2, Trash2, ShieldCheck, 
   Search, Filter, ChevronRight, User, Key, Lock, 
-  Settings, Award, Briefcase, Activity
+  Settings, Award, Briefcase, Activity, Plus
 } from "lucide-react"
 
 // Mock Team Members
