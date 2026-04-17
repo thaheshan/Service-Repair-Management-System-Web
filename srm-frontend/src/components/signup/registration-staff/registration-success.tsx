@@ -125,7 +125,7 @@ export function RegistrationSuccess({ userData }: RegistrationSuccessProps) {
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col gap-3">
           {/* ✅ Go to Login Button */}
-          <Link href="../../LoginForm">
+          <Link href="/login">
             <button className="flex h-12 w-full items-center justify-center rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA]">
               Go to Login
             </button>

@@ -26,12 +26,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { useState } from "react"
+import { useRoleAccess, RbacFeature } from "@/hooks/useRoleAccess"
 
 interface NavItem {
   icon: any
   label: string
   href: string
   aliases?: string[]
+  feature?: RbacFeature
 }
 
 const navItems: NavItem[] = [
@@ -39,11 +41,11 @@ const navItems: NavItem[] = [
   { icon: Wrench, label: "Repairs", href: "/admin/repairs", aliases: ["/admin/schedule"] },
   { icon: Users, label: "Customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
   { icon: Smartphone, label: "Devices", href: "/admin/devices", aliases: ["/admin/devices/"] },
-  { icon: FileText, label: "Invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"] },
-  { icon: Package, label: "Inventory", href: "/admin/inventory", aliases: ["/admin/inventory/"] },
-  { icon: BarChart3, label: "Reports", href: "/admin/reports" },
-  { icon: UserCircle, label: "Staff", href: "/admin/staff", aliases: ["/admin/staff/"] },
-  { icon: Settings, label: "Settings", href: "/admin/settings" },
+  { icon: FileText, label: "Invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"], feature: "view:invoices" },
+  { icon: Package, label: "Inventory", href: "/admin/inventory", aliases: ["/admin/inventory/"], feature: "view:inventory" },
+  { icon: BarChart3, label: "Reports", href: "/admin/reports", feature: "view:reports" },
+  { icon: UserCircle, label: "Staff", href: "/admin/staff", aliases: ["/admin/staff/"], feature: "view:staff" },
+  { icon: Settings, label: "Settings", href: "/admin/settings", feature: "view:settings" },
 ]
 
 const branches = [
@@ -57,6 +59,9 @@ export function DashboardSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const currentBranch = branches.find((b) => b.id === selectedBranch)
   const pathname = usePathname()
+  const { can } = useRoleAccess()
+
+  const filteredNavItems = navItems.filter(item => !item.feature || can(item.feature))
 
   return (
     <>
@@ -123,7 +128,7 @@ export function DashboardSidebar() {
       {/* Navigation */}
       <nav className="mt-2 flex-1 px-3">
         <ul className="flex flex-col gap-0.5">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             // Determine if the current path matches the item's href or aliases
             const isActive = 
               pathname === item.href || 

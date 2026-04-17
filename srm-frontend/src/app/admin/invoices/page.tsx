@@ -12,6 +12,9 @@ import {
   Grid, List as ListIcon, Calendar as CalendarIcon,
   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ChevronLeft, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, Calendar, SlidersHorizontal, ArrowUpRight
 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useRoleAccess } from "@/hooks/useRoleAccess"
+import { useEffect } from "react"
 
 // Exact Mock Dataset parsing Image 1 + Modified with Types
 const mockInvoices = [
@@ -90,6 +93,19 @@ export default function InvoicesManagementPage() {
   const printRef = useRef<HTMLDivElement>(null)
   const hiddenPrintRef = useRef<HTMLDivElement>(null)
   const [hiddenInvoiceTarget, setHiddenInvoiceTarget] = useState<any | null>(null)
+  
+  const router = useRouter()
+  const { can, isAuthenticated } = useRoleAccess()
+
+  useEffect(() => {
+    if (isAuthenticated && !can("view:invoices")) {
+      router.replace("/admin/dashboard")
+    }
+  }, [can, isAuthenticated, router])
+
+  if (isAuthenticated && !can("view:invoices")) {
+    return null
+  }
 
   const handleDownloadPDF = async (inv?: any) => {
     setIsGeneratingPDF(true)

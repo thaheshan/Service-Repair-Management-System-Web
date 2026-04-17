@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/ui-staff/select"
+import { useStaffRegistrationStore } from "@/store/staffRegistrationStore"
 
 interface StepShopDetailsProps {
   onNext: (data: ShopDetailsData) => void
@@ -20,6 +21,7 @@ interface StepShopDetailsProps {
 }
 
 export interface ShopDetailsData {
+  shopId: string
   shopName: string
   companyPersonnelId: string
   shopLocation: string
@@ -62,14 +64,17 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PERSONNEL_ID_REGEX = /^[A-Za-z0-9\-]{3,30}$/
 
 export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
+  const storeData = useStaffRegistrationStore((state) => state.shopDetails)
+
   const [formData, setFormData] = useState<ShopDetailsData>({
-    shopName: "",
-    companyPersonnelId: "",
-    shopLocation: "",
-    branchOutlet: "",
-    shopManagerEmail: "",
-    reasonForJoining: "",
-    agreeTerms: false,
+    shopId: storeData.shopId || "",
+    shopName: storeData.shopName || "",
+    companyPersonnelId: storeData.companyPersonnelId || "",
+    shopLocation: storeData.shopLocation || "",
+    branchOutlet: storeData.branchOutlet || "",
+    shopManagerEmail: storeData.shopManagerEmail || "",
+    reasonForJoining: storeData.reasonForJoining || "",
+    agreeTerms: storeData.agreeTerms || false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -80,6 +85,10 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
 
   const validate = () => {
     const e: Record<string, string> = {}
+
+    if (!formData.shopId.trim()) {
+      e.shopId = "Shop ID is required. Please get this from your admin."
+    }
 
     if (!formData.shopName.trim()) {
       e.shopName = "Shop name is required."
@@ -113,7 +122,10 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validate()) onNext(formData)
+    if (validate()) {
+      useStaffRegistrationStore.getState().setShopDetails(formData)
+      onNext(formData)
+    }
   }
 
   const inputClass = (field: string) =>
@@ -173,6 +185,27 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
             <form onSubmit={handleSubmit} noValidate>
               <div className="rounded-xl border border-[#E5E7EB] bg-white p-6">
                 <div className="flex flex-col gap-5">
+
+                  {/* Shop ID */}
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
+                      Unique Shop ID <span className="text-[#EF4444]">*</span>
+                    </label>
+                    <div className="relative">
+                      <Store className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
+                      <input
+                        type="text"
+                        placeholder="Enter the unique Shop ID"
+                        value={formData.shopId}
+                        onChange={(e) => handleChange("shopId", e.target.value)}
+                        className={inputClass("shopId")}
+                      />
+                    </div>
+                    {errors.shopId
+                      ? <p className="mt-1 text-xs text-[#EF4444]">{errors.shopId}</p>
+                      : <p className="mt-1 text-xs text-[#9CA3AF]">The distinct ID from your shop admin dashboard</p>
+                    }
+                  </div>
 
                   {/* Shop Name */}
                   <div>

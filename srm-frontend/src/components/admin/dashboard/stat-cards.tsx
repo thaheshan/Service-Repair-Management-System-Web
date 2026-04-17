@@ -1,9 +1,11 @@
 import { Wrench, Clock, DollarSign, Star } from "lucide-react"
 import { useRepairStore } from "@/store/repairStore"
 import { useMemo } from "react"
+import { useRoleAccess, RbacFeature } from "@/hooks/useRoleAccess"
 
 export function StatCards() {
   const { items } = useRepairStore()
+  const { can } = useRoleAccess()
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -38,6 +40,7 @@ export function StatCards() {
         icon: DollarSign,
         iconBg: "bg-[#D1FAE5]",
         iconColor: "text-[#10B981]",
+        feature: "view:revenue" as RbacFeature,
       },
       {
         title: "Customer Satisfaction",
@@ -51,9 +54,11 @@ export function StatCards() {
     ]
   }, [items])
 
+  const filteredStats = stats.filter(stat => !stat.feature || can(stat.feature))
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
-      {stats.map((stat) => (
+      {filteredStats.map((stat) => (
         <div
           key={stat.title}
           className="flex h-full items-center justify-between rounded-2xl border border-border/60 bg-card p-4 sm:p-6 shadow-sm"

@@ -1,11 +1,14 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useRoleAccess } from "@/hooks/useRoleAccess"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Plus, X, Shield, Star, Trash2, Edit2, Check, FileDown, Loader2, UserPlus, Calendar as CalendarIcon, Grid, List as ListIcon } from "lucide-react"
 import { INITIAL_STAFF, StaffMember, StaffRole, StaffStatus, Specialty, ROLES, SPECIALTIES, STATUSES, BRANCHES, ROLE_COLOR, STATUS_DOT, STATUS_BADGE, getInitials, getAvatarBg, UNASSIGNED_REPAIRS } from "./staff-data"
+import { useStaffStore } from "@/store/staffStore"
 
 type SortKey = "name-az"|"name-za"|"rating-desc"|"rating-asc"|"jobs-desc"|"jobs-asc"|"newest"|"oldest"
 const SORT_OPTIONS: {value:SortKey;label:string}[] = [
@@ -27,7 +30,7 @@ const INIT_ROLES: Role[] = [
 ]
 
 export default function StaffManagementPage() {
-  const [staff, setStaff] = useState<StaffMember[]>(INITIAL_STAFF)
+  const { items: staff, isLoading: isFetching, fetchItems, addItem, deleteItem, updateItem } = useStaffStore()
   const [viewMode, setViewMode] = useState<"grid"|"list">("grid")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name-az")
@@ -58,7 +61,24 @@ export default function StaffManagementPage() {
   const [newRole, setNewRole] = useState({name:"",color:"#4F46E5",desc:""})
 
   // Add form
-  const [form, setForm] = useState({firstName:"",lastName:"",email:"",phone:"",role:"Technician" as StaffRole, branch:"Main Branch",specialties:[] as Specialty[],status:"Available" as StaffStatus})
+  const [form, setForm] = useState({firstName:"",lastName:"",email:"",phone:"",role:"Technician" as StaffRole, branch:"Main Branch",specialties:[] as Specialty[],status:"Available" as StaffStatus, password: ""})
+
+  const router = useRouter()
+  const { can, isAuthenticated } = useRoleAccess()
+
+  useEffect(() => {
+    fetchItems()
+  }, [fetchItems])
+
+  useEffect(() => {
+    if (isAuthenticated && !can("view:staff")) {
+      router.replace("/admin/dashboard")
+    }
+  }, [can, isAuthenticated, router])
+
+  if (isAuthenticated && !can("view:staff")) {
+    return null
+  }
 
   const toggle = <T extends string>(val:T, arr:T[], set:(f:(p:T[])=>T[])=>void) =>
     set(p => p.includes(val) ? p.filter(x=>x!==val) : [...p,val])
@@ -90,11 +110,28 @@ export default function StaffManagementPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length/perPage))
   const paginated = filtered.slice((currentPage-1)*perPage, currentPage*perPage)
 
-  const handleAdd = () => {
-    if (!form.firstName||!form.lastName) return
-    const s: StaffMember = { id:Date.now(), ...form, rating:0, activeJobs:0, weekJobs:0, joinedAt:new Date().toISOString().slice(0,10) }
-    setStaff(p=>[s,...p]); setShowAddModal(false)
-    setForm({firstName:"",lastName:"",email:"",phone:"",role:"Technician",branch:"Main Branch",specialties:[],status:"Available"})
+  const handleAdd = async () => {
+    if (!form.firstName || !form.lastName || !form.email || !form.password) return
+    
+    // Map UI roles to backend ENUMs
+    let backendRole = "TECHNICIAN";
+    if (form.role === "Manager") backendRole = "MANAGER";
+    
+    try {
+      await addItem({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+        role: backendRole as any,
+        // Optional: shopId can be passed here if needed, 
+        // but the backend usually infers it for the tenant
+      })
+      setShowAddModal(false)
+      setForm({firstName:"",lastName:"",email:"",phone:"",role:"Technician",branch:"Main Branch",specialties:[],status:"Available", password: ""})
+    } catch (err: any) {
+      alert(err.message || "Failed to add staff member")
+    }
   }
 
   const handleExportCSV = () => {
@@ -382,8 +419,19 @@ export default function StaffManagementPage() {
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Last Name *</label><input value={form.lastName} onChange={e=>setForm(p=>({...p,lastName:e.target.value}))} placeholder="Doe" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email *</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Password *</label>
+                <input 
+                  value={form.password} 
+                  onChange={e=>setForm(p=>({...p,password:e.target.value}))} 
+                  type="password" 
+                  placeholder="Set initial password" 
+                  className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">This password will be used by the staff member to log in.</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Role</label>
@@ -508,7 +556,7 @@ export default function StaffManagementPage() {
             </div>
             <div className="flex gap-3">
               <button onClick={()=>setDeleteStaff(null)} className="flex-1 h-10 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-              <button onClick={()=>{setStaff(p=>p.filter(x=>x.id!==deleteStaff!.id));setDeleteStaff(null)}} className="flex-1 h-10 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 focus:outline-none">Remove</button>
+              <button onClick={()=>{deleteItem(deleteStaff.id.toString());setDeleteStaff(null)}} className="flex-1 h-10 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 focus:outline-none">Remove</button>
             </div>
           </div>
         </div>

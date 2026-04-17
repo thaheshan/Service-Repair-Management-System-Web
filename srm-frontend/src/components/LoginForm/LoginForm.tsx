@@ -30,7 +30,8 @@ export default function LoginForm() {
     setError('');
 
     try {
-      await login(email, password);
+      const normalizedEmail = email.trim().toLowerCase();
+      await login(normalizedEmail, password);
       const { user } = useAuthStore.getState();
       if (user) {
         const userRole = user.role.toLowerCase() as keyof typeof dashboardMap;

@@ -5,38 +5,48 @@ import { StepPersonalInfo, type PersonalInfoData } from "@/components/signup/reg
 import { StepShopDetails, type ShopDetailsData } from "@/components/signup/registration-staff/step-shop-details"
 import { StepVerification, type VerificationData } from "@/components/signup/registration-staff/step-verification"
 import { RegistrationSuccess } from "@/components/signup/registration-staff/registration-success"
+import { useStaffRegistrationStore } from "@/store/staffRegistrationStore"
 
 type Step = 1 | 2 | 3 | "success"
 
 export default function TechnicianRegistrationPage() {
-  const [currentStep, setCurrentStep] = useState<Step>(1)
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfoData | null>(null)
-  const [shopDetails, setShopDetails] = useState<ShopDetailsData | null>(null)
+  const { 
+    currentStep, 
+    setStep, 
+    personalInfo, 
+    shopDetails, 
+    registerStaff, 
+    isLoading, 
+    error 
+  } = useStaffRegistrationStore()
 
   const handleStep1Next = (data: PersonalInfoData) => {
-    setPersonalInfo(data)
-    setCurrentStep(2)
+    setStep(2)
     window.scrollTo(0, 0)
   }
 
   const handleStep2Next = (data: ShopDetailsData) => {
-    setShopDetails(data)
-    setCurrentStep(3)
+    setStep(3)
     window.scrollTo(0, 0)
   }
 
   const handleStep2Back = () => {
-    setCurrentStep(1)
+    setStep(1)
     window.scrollTo(0, 0)
   }
 
-  const handleStep3Submit = (data: VerificationData) => {
-    setCurrentStep("success")
-    window.scrollTo(0, 0)
+  const handleStep3Submit = async (data: VerificationData) => {
+    try {
+      await registerStaff()
+      setStep(4) // Custom step for success
+      window.scrollTo(0, 0)
+    } catch (err) {
+      // Error is handled in the store and can be displayed in StepVerification
+    }
   }
 
   const handleStep3Back = () => {
-    setCurrentStep(2)
+    setStep(2)
     window.scrollTo(0, 0)
   }
 
@@ -55,9 +65,9 @@ export default function TechnicianRegistrationPage() {
   return (
     <RegistrationSuccess
       userData={{
-        fullName: personalInfo?.fullName || "John Michael Smith",
-        email: personalInfo?.email || "john.smith@example.com",
-        role: "Shop Manager",
+        fullName: (personalInfo as any)?.fullName || "Team Member",
+        email: personalInfo?.email || "",
+        role: "Technician",
       }}
     />
   )
