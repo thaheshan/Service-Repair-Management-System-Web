@@ -1,17 +1,25 @@
-"use client"
-
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import Link from "next/link"
-
-const data = [
-  { name: "Completed", value: 30, color: "#10B981" },
-  { name: "In Progress", value: 12, color: "#4F46E5" },
-  { name: "Pending", value: 5, color: "#F59E0B" },
-]
-
-const totalRepairs = data.reduce((sum, item) => sum + item.value, 0)
+import { useRepairStore } from "@/store/repairStore"
+import { useMemo } from "react"
 
 export function RepairStatusChart() {
+  const { items } = useRepairStore()
+
+  const data = useMemo(() => {
+    const completed = items.filter(r => ['completed', 'ready_to_take', 'delivered'].includes(r.status)).length
+    const inProgress = items.filter(r => r.status === 'in_progress').length
+    const pending = items.filter(r => r.status === 'pending').length
+
+    return [
+      { name: "Completed", value: completed, color: "#10B981" },
+      { name: "In Progress", value: inProgress, color: "#4F46E5" },
+      { name: "Pending", value: pending, color: "#F59E0B" },
+    ]
+  }, [items])
+
+  const totalRepairs = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
+
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-card">
       {/* Header */}
@@ -33,19 +41,12 @@ export function RepairStatusChart() {
                 paddingAngle={3}
                 dataKey="value"
                 stroke="none"
-                label={({ cx, cy, midAngle = 0, outerRadius, percent, index }) => {
+                label={({ cx, cy, midAngle = 0, outerRadius, index }) => {
                   const RADIAN = Math.PI / 180;
-                  // Push the label 25px out from the edge of the pie
-                  const radius = outerRadius + 25;
-                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                  
-                  // Left-aligned if it's on the left side, Right-aligned if on right
-                  const isLeft = Math.cos(-midAngle * RADIAN) < 0;
-                  const textAnchor = isLeft ? 'end' : 'start';
                   const entry = data[index];
-                  
-                  // Push the text slightly further out to replace line space naturally
+                  if (entry.value === 0) return null;
+
+                  const textAnchor = Math.cos(-midAngle * RADIAN) < 0 ? 'end' : 'start';
                   const textX = cx + (outerRadius + 30) * Math.cos(-midAngle * RADIAN);
                   const textY = cy + (outerRadius + 30) * Math.sin(-midAngle * RADIAN);
 

@@ -5,7 +5,12 @@ import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { Search, Filter, ChevronDown, UserPlus, FileDown, Grid, List as ListIcon, MapPin, Mail, Phone, MessageSquare, X, ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Check, Loader2 } from "lucide-react"
-import { INITIAL_CUSTOMERS, Customer, CustomerType, getInitials, getAvatarColor, formatSpent } from "./customer-data"
+import { Customer, CustomerType, getInitials, getAvatarColor, formatSpent } from "./customer-data"
+import { useCustomerStore } from "@/store/customerStore"
+import { useAuthStore } from "@/store/authStore"
+import { Spinner } from "@/components/ui/Spinner"
+import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { useEffect } from "react"
 
 type SortKey = "name-az"|"name-za"|"repairs-desc"|"repairs-asc"|"spent-desc"|"spent-asc"|"latest-visit"|"oldest-visit"
 type LastVisitFilter = "today"|"this-week"|"this-month"|"last-6-months"|"inactive"|null
@@ -29,8 +34,30 @@ const INITIAL_ROLES: Role[] = [
   {id:3, name:"Regular Customer",  color:"#475569", desc:"Standard repair flow and retail pricing."},
 ]
 
+// Mapper for API -> UI Customer
+const mapApiToCustomer = (c: any): Customer => ({
+  id: c.id,
+  name: c.name,
+  email: c.email || "N/A",
+  phone: c.phone || "N/A",
+  location: c.address || "Unknown Location",
+  repairs: c.repairsCount || 0,
+  spentRaw: c.totalSpent || 0,
+  type: (c.type || "Regular") as CustomerType,
+  lastVisitDays: c.lastVisitDays || 30, // Default to 30 if not provided
+  registeredAt: c.createdAt ? c.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+  tags: c.tags || []
+});
+
 export default function CustomerManagementPage() {
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS)
+  const { items, isLoading, error, fetchItems, addItem } = useCustomerStore()
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    fetchItems()
+  }, [fetchItems])
+
+  const customers = useMemo(() => items.map(mapApiToCustomer), [items])
   const [viewMode, setViewMode] = useState<"grid"|"list">("grid")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name-az")
@@ -100,17 +127,21 @@ export default function CustomerManagementPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paginated = filtered.slice((currentPage-1)*perPage, currentPage*perPage)
 
-  const handleAddCustomer = () => {
+  const handleAddCustomer = async () => {
     if (!form.firstName || !form.lastName) return
-    const newC: Customer = {
-      id: Date.now(), name: `${form.firstName} ${form.lastName}`,
-      email: form.email, phone: form.phone, location: form.location || "Colombo, Sri Lanka",
-      repairs: 0, spentRaw: 0, type: form.type as CustomerType,
-      lastVisitDays: 0, registeredAt: new Date().toISOString().slice(0,10), tags: []
+    try {
+      await addItem({
+        name: `${form.firstName} ${form.lastName}`,
+        email: form.email,
+        phone: form.phone,
+        address: form.location,
+        shopId: user?.shopId || ""
+      } as any)
+      setShowAddModal(false)
+      setForm({firstName:"",lastName:"",email:"",phone:"",location:"",type:"Regular"})
+    } catch (err) {
+      console.error("Failed to add customer", err)
     }
-    setCustomers(p => [newC, ...p])
-    setShowAddModal(false)
-    setForm({firstName:"",lastName:"",email:"",phone:"",location:"",type:"Regular"})
   }
 
   const handleExportCSV = () => {
@@ -378,6 +409,18 @@ export default function CustomerManagementPage() {
 
           </div>
           <DashboardFooter/>
+
+          {isLoading && (
+            <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-[110]">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {error && (
+            <div className="fixed bottom-8 right-8 w-96 z-[110]">
+              <ErrorBanner message={error} onClose={() => useCustomerStore.setState({ error: null })} />
+            </div>
+          )}
         </main>
       </div>
 

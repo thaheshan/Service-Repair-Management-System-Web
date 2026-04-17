@@ -7,8 +7,30 @@ import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight } from "lucide-react"
-import { INITIAL_DEVICES, Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, BRANDS } from "./device-data"
+import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, BRANDS } from "./device-data"
 import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
+import { useDeviceStore } from "@/store/deviceStore"
+import { useAuthStore } from "@/store/authStore"
+import { Spinner } from "@/components/ui/Spinner"
+import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { useEffect } from "react"
+
+// Mapper API -> UI Device
+const mapApiToDevice = (d: any): Device => ({
+  id: d.id,
+  name: d.name,
+  brand: d.brand || "Unknown",
+  type: (d.type || "Mobile Phone") as DeviceType,
+  imei: d.imei || "N/A",
+  color: d.color || "bg-[#4F46E5]",
+  owner: d.owner || { name: "Guest", phone: "N/A" },
+  warranty: d.warranty || { status: "No Warranty", expiryDate: "N/A" },
+  totalRepairs: d.repairsCount || 0,
+  lastService: d.lastService || { date: "", type: "" },
+  registered: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "N/A",
+  status: (d.status ? (d.status.charAt(0).toUpperCase() + d.status.slice(1).replace("_", " ")) : "Available") as DeviceStatus,
+  price: d.price || 0
+});
 
 type SortKey = "name-az"|"name-za"|"repairs-desc"|"repairs-asc"|"brand-az"|"newest"|"oldest"
 const SORT_OPTIONS: {value:SortKey;label:string}[] = [
@@ -47,7 +69,14 @@ function WarrantyIcon({w}:{w:WarrantyStatus}) {
 }
 
 export default function DevicesPage() {
-  const [devices, setDevices] = useState<Device[]>(INITIAL_DEVICES)
+  const { items, isLoading, error, fetchItems, addItem, updateItem, deleteItem, updateStatus } = useDeviceStore()
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    fetchItems()
+  }, [fetchItems])
+
+  const devices = useMemo(() => items.map(mapApiToDevice), [items])
   const [viewMode, setViewMode] = useState<"list"|"grid">("list")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name-az")
@@ -163,40 +192,63 @@ export default function DevicesPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length/perPage))
   const paginated = filtered.slice((currentPage-1)*perPage, currentPage*perPage)
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name || !form.imei) return
-    const d: Device = {
-      id: Date.now().toString(), name: form.name, brand: form.brand, type: form.type,
-      imei: form.imei, color: "bg-[#4F46E5]",
-      owner: {name: form.ownerName||"Shop Stock", phone: form.ownerPhone||"—"},
-      warranty: {status: form.warrantyStatus, expiryDate: form.warrantyExpiry||"—"},
-      totalRepairs: 0, lastService: {date:"",type:""}, registered: new Date().toLocaleDateString("en-US",{month:"short",year:"numeric"}),
-      status: form.status,
-      price: form.price || 0
+    try {
+      await addItem({
+        name: form.name,
+        brand: form.brand,
+        type: form.type,
+        imei: form.imei,
+        ownerName: form.ownerName,
+        ownerPhone: form.ownerPhone,
+        warrantyStatus: form.warrantyStatus,
+        warrantyExpiry: form.warrantyExpiry,
+        status: form.status.toLowerCase().replace(" ", "_"),
+        price: form.price,
+        shopId: user?.shopId || ""
+      } as any)
+      setShowAddModal(false)
+      setForm({name:"",brand:"Apple",type:"Mobile Phone",imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active",warrantyExpiry:"",status:"Available",price:0})
+    } catch (err) {
+      console.error("Failed to add device", err)
     }
-    setDevices(p => [d,...p])
-    setShowAddModal(false)
-    setForm({name:"",brand:"Apple",type:"Mobile Phone",imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active",warrantyExpiry:"",status:"Available",price:0})
   }
 
-  const handleStatusUpdate = (autoNotify: boolean, newStatus: DeviceStatus) => {
+  const handleStatusUpdate = async (autoNotify: boolean, newStatus: DeviceStatus) => {
     if (!pendingStatusUpdate) return
-    setDevices(p => p.map(d => d.id===pendingStatusUpdate.id ? {...d, status: newStatus} : d))
-    setIsStatusModalOpen(false)
-    setPendingStatusUpdate(null)
-    setActiveDropdown(null)
+    try {
+      await updateStatus(pendingStatusUpdate.id, newStatus.toLowerCase().replace(" ", "_"))
+      setIsStatusModalOpen(false)
+      setPendingStatusUpdate(null)
+      setActiveDropdown(null)
+    } catch (err) {
+      console.error("Failed to update status", err)
+    }
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editDevice) return
-    setDevices(p => p.map(d => d.id===editDevice.id ? editDevice : d))
-    setEditDevice(null)
+    try {
+      await updateItem(editDevice.id, {
+        name: editDevice.name,
+        status: editDevice.status.toLowerCase().replace(" ", "_"),
+        // ... include other fields as needed
+      } as any)
+      setEditDevice(null)
+    } catch (err) {
+      console.error("Failed to edit device", err)
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteDevice) return
-    setDevices(p => p.filter(d => d.id!==deleteDevice.id))
-    setDeleteDevice(null)
+    try {
+      await deleteItem(deleteDevice.id)
+      setDeleteDevice(null)
+    } catch (err) {
+      console.error("Failed to delete device", err)
+    }
   }
 
   const handleExportCSV = () => {
@@ -473,6 +525,18 @@ export default function DevicesPage() {
             </div>
           </div>
           <DashboardFooter/>
+
+          {isLoading && (
+            <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-[110]">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {error && (
+            <div className="fixed bottom-8 right-8 w-96 z-[110]">
+              <ErrorBanner message={error} onClose={() => useDeviceStore.setState({ error: null })} />
+            </div>
+          )}
         </main>
       </div>
 

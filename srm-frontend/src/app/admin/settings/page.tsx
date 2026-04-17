@@ -23,10 +23,19 @@ import {
   Building,
   Upload,
 } from "lucide-react"
+import { useShopStore } from "@/store/shopStore"
+import { useStaffStore } from "@/store/staffStore"
+import { useAuthStore } from "@/store/authStore"
+import { Spinner } from "@/components/ui/Spinner"
+import { ErrorBanner } from "@/components/ui/ErrorBanner"
 
 type SettingsTab = "general" | "business" | "notifications" | "security" | "team"
 
 export default function SettingsView() {
+  const { shop, isLoading: isShopLoading, error: shopError, fetchShop, updateShop } = useShopStore()
+  const { items: staffItems, isLoading: isStaffLoading, fetchItems: fetchStaff } = useStaffStore()
+  const { user } = useAuthStore()
+
   const [activeTab, setActiveTab] = useState<SettingsTab>("general")
   const [isSaving, setIsSaving] = useState(false)
 
@@ -34,12 +43,12 @@ export default function SettingsView() {
   const [theme, setTheme] = useState("light")
   const [accentColor, setAccentColor] = useState("#4F46E5")
   const [businessSettings, setBusinessSettings] = useState({
-    name: "SRM Premium Repairs",
-    tin: "TIN-994852-X",
-    address: "123 Innovation Drive, Tech District, Colombo 03, Sri Lanka",
-    email: "support@srmpremium.com",
-    phone: "+94 77 123 4567",
-    website: "https://srmpremium.com",
+    name: "",
+    tin: "",
+    address: "",
+    email: "",
+    phone: "",
+    website: "",
     language: "English (United States)",
     timezone: "(GMT +05:30) Colombo, Sri Lanka"
   })
@@ -59,6 +68,26 @@ export default function SettingsView() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoFileName, setLogoFileName] = useState("Vertical Logo.png")
+
+  useEffect(() => {
+    fetchShop()
+    fetchStaff()
+  }, [fetchShop, fetchStaff])
+
+  useEffect(() => {
+    if (shop) {
+      setBusinessSettings({
+        name: shop.name,
+        tin: (shop as any).tin || "",
+        address: shop.address,
+        email: shop.email,
+        phone: shop.phone,
+        website: (shop as any).website || "",
+        language: (shop as any).language || "English (United States)",
+        timezone: (shop as any).timezone || "(GMT +05:30) Colombo, Sri Lanka"
+      })
+    }
+  }, [shop])
 
   // Sync Theme and Colors to Document
   useEffect(() => {
@@ -85,43 +114,58 @@ export default function SettingsView() {
     }
   }, [theme, accentColor])
   
-  // Team Management State
-  const [teamMembers, setTeamMembers] = useState([
-    { name: "John Smith", role: "Super Admin", email: "john@srm.com", status: "Active" },
-    { name: "Sarah Wayne", role: "Junior Technician", email: "sarah@srm.com", status: "Active" },
-    { name: "Robert Fox", role: "Logistics Manager", email: "robert@srm.com", status: "Pending" }
-  ])
+  const teamMembers = useMemo(() => staffItems.map(s => ({
+    name: s.name,
+    role: s.role.charAt(0).toUpperCase() + s.role.slice(1).replace("_", " "),
+    email: s.email,
+    status: s.isActive ? "Active" : "Pending"
+  })), [staffItems])
+
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [activeEditMember, setActiveEditMember] = useState<any>(null)
-  
-  // New Invite Draft
   const [newInvite, setNewInvite] = useState({ name: "", email: "", role: "Junior Technician" })
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
-      // Save theme to localStorage to mock persistence
+    try {
+      if (activeTab === "business") {
+        await updateShop({
+          name: businessSettings.name,
+          address: businessSettings.address,
+          phone: businessSettings.phone,
+          email: businessSettings.email,
+          // @ts-ignore
+          tin: businessSettings.tin,
+          website: businessSettings.website,
+          language: businessSettings.language,
+          timezone: businessSettings.timezone
+        })
+      }
+      
+      // Save theme and local prefs
       if (typeof window !== "undefined") {
         localStorage.setItem("srm_theme", theme)
-        localStorage.setItem("srm_business", JSON.stringify(businessSettings))
+        localStorage.setItem("srm_accent", accentColor)
       }
-      alert("Settings and configurations successfully saved and persisted!")
-    }, 1200)
+      
+      alert("Settings successfully saved!")
+    } catch (err) {
+      console.error("Failed to save settings", err)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleInviteSubmit = () => {
-    if (!newInvite.name || !newInvite.email) return alert("Please fill in required fields.")
-    setTeamMembers([...teamMembers, { ...newInvite, status: "Pending" }])
-    setNewInvite({ name: "", email: "", role: "Junior Technician" })
-    setIsInviteModalOpen(false)
+    // This will be expanded to use staffStore.addItem in future tasks
+    alert("Invitation feature is being connected to staffStore...");
+    setIsInviteModalOpen(false);
   }
 
   const handleEditMemberSubmit = () => {
-    if (!activeEditMember) return
-    const updated = teamMembers.map(m => m.email === activeEditMember.email ? activeEditMember : m)
-    setTeamMembers(updated)
-    setActiveEditMember(null)
+    // This will be expanded to use staffStore.updateItem in future tasks
+    alert("Edit member feature is being connected to staffStore...");
+    setActiveEditMember(null);
   }
 
   return (
@@ -643,6 +687,18 @@ export default function SettingsView() {
           </div>
           <div className="h-12" /> {/* Layout Spacer */}
           <DashboardFooter />
+
+          {(isShopLoading || isStaffLoading) && (
+            <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-[110]">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {(shopError) && (
+            <div className="fixed bottom-8 right-8 w-96 z-[110]">
+              <ErrorBanner message={shopError} onClose={() => useShopStore.setState({ error: null })} />
+            </div>
+          )}
         </main>
       </div>
 

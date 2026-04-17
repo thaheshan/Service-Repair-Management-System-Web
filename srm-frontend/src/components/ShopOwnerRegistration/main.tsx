@@ -6,11 +6,13 @@ import { RegistrationProvider } from './registration-context';
 import { StepAccount, AccountData } from './step-1-account-new';
 import { StepShopDetails, ShopDetailsData } from './step-2-shop-details-new';
 import { StepChoosePlan } from './step-3-choose-plan-new';
+import { useAuthStore } from '@/store/authStore';
 
 export default function RegistrationPage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [accountData, setAccountData] = useState<AccountData | null>(null);
   const [shopDetailsData, setShopDetailsData] = useState<ShopDetailsData | null>(null);
+  const { registerShop } = useAuthStore();
   const router = useRouter();
 
   const handleStep1Complete = (data: AccountData) => {
@@ -23,14 +25,19 @@ export default function RegistrationPage() {
     setCurrentStep(3);
   };
 
-  const handleStep3Complete = (plan: string) => {
-    console.log('Registration complete:', {
-      account: accountData,
-      shopDetails: shopDetailsData,
-      selectedPlan: plan,
-    });
+  const handleStep3Complete = async (plan: string) => {
+    try {
+      await registerShop({
+        ...accountData,
+        ...shopDetailsData,
+        selectedPlan: plan,
+      });
 
-    router.push('/request'); 
+      router.push('/admin/dashboard'); 
+    } catch (error) {
+      console.error('Registration failed', error);
+      alert('Registration failed. Please try again.');
+    }
   };
 
   return (

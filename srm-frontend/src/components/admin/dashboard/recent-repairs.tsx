@@ -11,6 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { StatusUpdateModal } from "@/components/admin/repairs/status-update-modal"
+import { useRepairStore } from "@/store/repairStore"
+import { useMemo } from "react"
+import { Spinner } from "@/components/ui/Spinner"
 
 type RepairStatus = "In Progress" | "Completed" | "Pending"
 
@@ -28,13 +31,22 @@ const statusStyles: Record<RepairStatus, string> = {
   Pending: "bg-[#FEF3C7] text-[#92400E]",
 }
 
-const statusDot: Record<RepairStatus, string> = {
-  "In Progress": "bg-[#1E40AF]",
-  Completed: "bg-[#065F46]",
-  Pending: "bg-[#92400E]",
+const statusOptions: RepairStatus[] = ["In Progress", "Completed", "Pending"]
+
+const API_TO_UI_STATUS: Record<string, RepairStatus> = {
+  pending: "Pending",
+  in_progress: "In Progress",
+  completed: "Completed",
+  ready_to_take: "Completed",
+  delivered: "Completed",
+  cancelled: "Pending",
 }
 
-const statusOptions: RepairStatus[] = ["In Progress", "Completed", "Pending"]
+const UI_TO_API_STATUS: Record<string, any> = {
+  "Pending": "pending",
+  "In Progress": "in_progress",
+  "Completed": "completed",
+}
 
 const initialRepairs: Repair[] = [
   {
@@ -74,18 +86,44 @@ const initialRepairs: Repair[] = [
   },
 ]
 
-export function RecentRepairs() {
-  const [repairs, setRepairs] = useState<Repair[]>(initialRepairs)
+export function RecentRepairs({ 
+  title = "Recent Repairs", 
+  filterTechnicianId 
+}: { 
+  title?: string, 
+  filterTechnicianId?: string 
+}) {
+  const { items, updateStatus, isLoading } = useRepairStore()
+
+  const repairs = useMemo(() => {
+    let filteredItems = items
+    if (filterTechnicianId) {
+      filteredItems = items.filter(item => item.technicianId === filterTechnicianId)
+    }
+
+    return filteredItems
+      .slice(-5)
+      .reverse()
+      .map((item) => ({
+        id: item.id,
+        name: (item as any).customerName || "Unknown Customer",
+        device: `${item.deviceId} - ${item.issueDescription.slice(0, 20)}...`,
+        status: API_TO_UI_STATUS[item.status] || "Pending",
+        amount: `Rs. ${item.actualCost || item.estimatedCost || 0}`,
+        avatar: `https://i.pravatar.cc/150?u=${item.id}`,
+      }))
+  }, [items, filterTechnicianId])
+
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
-    repairIndex: number | null
+    repairId: string | null
     fromStatus: RepairStatus | null
     targetStatus: RepairStatus | null
     repairName: string
     repairDevice: string
   }>({
     open: false,
-    repairIndex: null,
+    repairId: null,
     fromStatus: null,
     targetStatus: null,
     repairName: "",
@@ -95,13 +133,11 @@ export function RecentRepairs() {
   const handleStatusChange = (index: number, newStatus: RepairStatus) => {
     const repair = repairs[index]
 
-    // Skip if selecting the same status
     if (repair.status === newStatus) return
 
-    // Always show confirmation dialog for any status change
     setConfirmDialog({
       open: true,
-      repairIndex: index,
+      repairId: repair.id,
       fromStatus: repair.status,
       targetStatus: newStatus,
       repairName: repair.name,
@@ -109,32 +145,21 @@ export function RecentRepairs() {
     })
   }
 
-  const applyStatusChange = (index: number, newStatus: RepairStatus) => {
-    setRepairs((prev) =>
-      prev.map((repair, i) =>
-        i === index ? { ...repair, status: newStatus } : repair
-      )
-    )
-  }
-
-  const handleConfirm = (autoUpdateCustomer: boolean, newStatus: string) => {
-    if (confirmDialog.repairIndex !== null && confirmDialog.targetStatus) {
-      applyStatusChange(confirmDialog.repairIndex, confirmDialog.targetStatus)
+  const handleConfirm = async (autoUpdateCustomer: boolean, newStatus: string) => {
+    if (confirmDialog.repairId && confirmDialog.targetStatus) {
+      try {
+        await updateStatus(confirmDialog.repairId, UI_TO_API_STATUS[confirmDialog.targetStatus])
+      } catch (err) {
+        console.error("Failed to update status", err)
+      }
     }
-    setConfirmDialog({
-      open: false,
-      repairIndex: null,
-      fromStatus: null,
-      targetStatus: null,
-      repairName: "",
-      repairDevice: "",
-    })
+    setConfirmDialog((prev) => ({ ...prev, open: false }))
   }
 
   const handleCancel = () => {
     setConfirmDialog({
       open: false,
-      repairIndex: null,
+      repairId: null,
       fromStatus: null,
       targetStatus: null,
       repairName: "",
@@ -147,7 +172,7 @@ export function RecentRepairs() {
       <div className="flex flex-col h-full rounded-xl border border-border bg-card">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
-          <h3 className="text-base font-semibold text-foreground">Recent Repairs</h3>
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
           <Link href="/admin/repairs" className="text-sm font-medium text-primary hover:underline">View All</Link>
         </div>
 

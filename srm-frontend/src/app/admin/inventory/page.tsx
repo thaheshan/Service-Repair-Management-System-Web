@@ -46,6 +46,25 @@ import {
   AreaChart,
   Area,
 } from "recharts"
+import { useInventoryStore } from "@/store/inventoryStore"
+import { useAuthStore } from "@/store/authStore"
+import { Spinner } from "@/components/ui/Spinner"
+import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { useEffect } from "react"
+
+// Mapper API -> UI Inventory Item
+const mapApiToItem = (i: any) => ({
+  code: i.sku || i.id.slice(0, 8).toUpperCase(),
+  name: i.name,
+  brand: i.brand || "N/A",
+  category: i.category || "General",
+  stock: i.quantity || 0,
+  maxStock: i.maxStock || 100,
+  price: i.price || 0,
+  supplier: i.supplier || "Unknown",
+  location: i.location || "N/A",
+  status: (i.quantity === 0 ? "Out of Stock" : i.quantity < (i.lowStockThreshold || 10) ? "Low Stock" : "In Stock") as "In Stock" | "Low Stock" | "Out of Stock",
+});
 
 const fastMovingItemsData = [
   { name: "iPhone 13 Screen", count: 48 },
@@ -152,7 +171,14 @@ const initialInventoryData = [
 ]
 
 export default function InventoryManagementPage() {
-  const [inventoryState, setInventoryState] = useState(initialInventoryData)
+  const { items, isLoading, error, fetchItems, addItem, updateItem, deleteItem } = useInventoryStore()
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    fetchItems()
+  }, [fetchItems])
+
+  const inventoryState = useMemo(() => items.map(mapApiToItem), [items])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState("All Categories")
   const [filterStatus, setFilterStatus] = useState("All Status")
@@ -283,9 +309,17 @@ export default function InventoryManagementPage() {
     )
   }
 
-  const handleDeleteItem = (code: string) => {
-    setInventoryState(prev => prev.filter(item => item.code !== code))
-    setActiveMenuId(null)
+  const handleDeleteItem = async (code: string) => {
+    // Find item ID by code if necessary, or use code directly if it's the ID
+    const item = items.find(i => (i.sku || i.id.slice(0, 8).toUpperCase()) === code)
+    if (item) {
+      try {
+        await deleteItem(item.id)
+        setActiveMenuId(null)
+      } catch (err) {
+        console.error("Failed to delete item", err)
+      }
+    }
   }
 
   return (
@@ -669,6 +703,18 @@ export default function InventoryManagementPage() {
           </div>
           <div className="h-12" /> {/* Layout Spacer */}
           <DashboardFooter />
+
+          {isLoading && (
+            <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-[210]">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {error && (
+            <div className="fixed bottom-8 right-8 w-96 z-[210]">
+              <ErrorBanner message={error} onClose={() => useInventoryStore.setState({ error: null })} />
+            </div>
+          )}
         </main>
 
         {/* 🔵 OVERLAY MODALS */}
