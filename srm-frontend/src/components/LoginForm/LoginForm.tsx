@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@/types';
 
 export default function LoginForm() {
   const router = useRouter();
+  const { login } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -14,17 +17,26 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const dashboardMap: Record<UserRole, string> = {
+    admin: "/admin/dashboard",
+    manager: "/staff/dashboard",
+    technician: "/staff/dashboard",
+    customer: "/customer/dashboard",
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      document.cookie = 'token=fake-token-123; path=/; max-age=86400';
-      router.push('/admin/dashboard');
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      await login(email, password);
+      const { user } = useAuthStore.getState();
+      if (user) {
+        router.push(dashboardMap[user.role]);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }

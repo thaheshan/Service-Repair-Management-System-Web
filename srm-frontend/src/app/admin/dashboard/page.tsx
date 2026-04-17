@@ -12,8 +12,22 @@ import { RepairStatusChart } from "@/components/admin/dashboard/repair-status-ch
 import { RecentActivity } from "@/components/admin/dashboard/recent-activity"
 import { TopTechnicians } from "@/components/admin/dashboard/top-technicians"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
+import { useEffect } from "react"
+import { useRepairStore } from "@/store/repairStore"
+import { useStaffStore } from "@/store/staffStore"
+import { useShopStore } from "@/store/shopStore"
 
 export default function DashboardPage() {
+  const { fetchItems: fetchRepairs } = useRepairStore()
+  const { fetchItems: fetchStaff } = useStaffStore()
+  const { fetchShop } = useShopStore()
+
+  useEffect(() => {
+    fetchRepairs()
+    fetchStaff()
+    fetchShop()
+  }, [fetchRepairs, fetchStaff, fetchShop])
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}

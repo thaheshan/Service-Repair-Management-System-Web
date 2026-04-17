@@ -10,6 +10,12 @@ import {
   Search, Filter, ChevronRight, User, Key, Lock, 
   Settings, Award, Briefcase, Activity, Plus
 } from "lucide-react"
+import { useStaffStore } from "@/store/staffStore"
+import { useAuthStore } from "@/store/authStore"
+import { Spinner } from "@/components/ui/Spinner"
+import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { useEffect } from "react"
+import { Staff } from "@/types"
 
 // Mock Team Members
 interface TeamMember {
@@ -23,53 +29,33 @@ interface TeamMember {
   permissions: string[];
 }
 
-const INITIAL_MEMBERS: TeamMember[] = [
-  { 
-    id: 1, 
-    name: "John Smith", 
-    email: "john@srm.com", 
-    role: "Super Admin", 
-    status: "Active", 
-    joined: "2023-11-12", 
-    avatarBg: "bg-rose-500",
-    permissions: ["Full Access", "Billing", "Staff Management"]
-  },
-  { 
-    id: 2, 
-    name: "Sarah Wayne", 
-    email: "sarah@srm.com", 
-    role: "Junior Technician", 
-    status: "Active", 
-    joined: "2024-01-05", 
-    avatarBg: "bg-indigo-500",
-    permissions: ["Repair Access", "Clock In/Out"]
-  },
-  { 
-    id: 3, 
-    name: "Robert Fox", 
-    email: "robert@srm.com", 
-    role: "Logistics Manager", 
-    status: "Pending", 
-    joined: "2024-02-10", 
-    avatarBg: "bg-emerald-500",
-    permissions: ["Inventory", "Ordering"]
-  },
-]
+// Mapper API -> UI TeamMember
+const mapApiToMember = (s: Staff): TeamMember => ({
+  id: s.id as any,
+  name: s.name,
+  email: s.email,
+  role: s.role.charAt(0).toUpperCase() + s.role.slice(1).replace("_", " "),
+  status: s.isActive ? "Active" : "Pending",
+  joined: (s as any).createdAt ? (s as any).createdAt.slice(0, 10) : "2024-01-01",
+  avatarBg: getAvatarBg(s.id),
+  permissions: (s as any).permissions || ["Access Dashboard"]
+});
 
-const ROLE_STYLES: Record<string, string> = {
-  "Super Admin": "bg-rose-50 text-rose-600 border-rose-100",
-  "Junior Technician": "bg-indigo-50 text-indigo-600 border-indigo-100",
-  "Logistics Manager": "bg-emerald-50 text-emerald-600 border-emerald-100",
-}
-
-const STATUS_CHIPS: Record<string, string> = {
-  Active: "bg-emerald-500 text-white shadow-emerald-200",
-  Pending: "bg-amber-500 text-white shadow-amber-200",
-  Suspended: "bg-slate-400 text-white shadow-slate-100",
+function getAvatarBg(id: string) {
+  const bgs = ["bg-rose-500", "bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-sky-500", "bg-violet-500"];
+  const index = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return bgs[index % bgs.length];
 }
 
 export default function TeamManagementPage() {
-  const [members, setMembers] = useState<TeamMember[]>(INITIAL_MEMBERS)
+  const { items, isLoading, error, fetchItems, addItem, updateItem, deleteItem } = useStaffStore()
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    fetchItems()
+  }, [fetchItems])
+
+  const members = useMemo(() => items.map(mapApiToMember), [items])
   const [search, setSearch] = useState("")
   const [showInviteModal, setShowInviteModal] = useState(false)
 
@@ -216,6 +202,18 @@ export default function TeamManagementPage() {
             </div>
           </div>
           <DashboardFooter />
+
+          {isLoading && (
+            <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-[110]">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {error && (
+            <div className="fixed bottom-8 right-8 w-96 z-[110]">
+               <ErrorBanner message={error} onClose={() => useStaffStore.setState({ error: null })} />
+            </div>
+          )}
         </main>
       </div>
 
