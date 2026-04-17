@@ -16,13 +16,14 @@ export default function Home() {
   const handleSplashComplete = () => {
     if (isAuthenticated && user) {
       // Skip role selection - go directly to role dashboard
-      const dashboardMap: Record<UserRole, string> = {
+      const dashboardMap: Record<string, string> = {
         admin: "/admin/dashboard",
         manager: "/manager/dashboard",
         technician: "/technician/dashboard",
         customer: "/customer/dashboard",
       };
-      router.push(dashboardMap[user.role]);
+      const userRole = user.role.toLowerCase();
+      router.push(dashboardMap[userRole] || "/login");
     } else {
       setCurrentScreen('role-selection');
     }

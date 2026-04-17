@@ -1,26 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
 import { PasswordStrength } from "@/components/common/inputs/password-strength"
 import { AuthLogo } from "@/components/common/auth-logo"
+import { useRegistrationStore, AccountData } from "@/store/registrationStore"
 
 interface StepAccountProps {
-  onNext: (data: AccountData) => void
-}
-
-export interface AccountData {
-  shopName: string
-  ownerName: string
-  email: string
-  phoneCode: string
-  phone: string
-  password: string
-  confirmPassword: string
-  agreeTerms: boolean
+  onNext: () => void
 }
 
 // Representing a robust list of global phone codes
@@ -46,23 +36,22 @@ const PHONE_CODES = [
 ]
 
 export function StepAccount({ onNext }: StepAccountProps) {
-  const [formData, setFormData] = useState<AccountData>({
-    shopName: "",
-    ownerName: "",
-    email: "",
-    phoneCode: "+94",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: false,
-  })
+  const { accountData, setAccountData } = useRegistrationStore()
+  const [formData, setFormData] = useState<AccountData>(accountData)
+  
+  // Update local state when hydration finishes to avoid mismatch
+  useEffect(() => {
+    setFormData(accountData)
+  }, [accountData])
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleChange = (field: keyof AccountData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    const newData = { ...formData, [field]: value }
+    setFormData(newData)
+    setAccountData(newData)
     // Clear error for field upon typing
     if (errors[field]) {
       setErrors((prev) => {
@@ -117,7 +106,7 @@ export function StepAccount({ onNext }: StepAccountProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validate()) {
-      onNext(formData)
+      onNext()
     }
   }
 

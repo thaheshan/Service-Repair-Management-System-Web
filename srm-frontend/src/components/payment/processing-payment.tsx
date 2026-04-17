@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Lock, ShieldCheck } from "lucide-react"
 
 interface ProcessingPaymentProps {
-  onComplete: (success: boolean) => void
+  onComplete: (success: boolean, paymentId?: string) => void
 }
 
 export function ProcessingPayment({ onComplete }: ProcessingPaymentProps) {
@@ -15,8 +15,11 @@ export function ProcessingPayment({ onComplete }: ProcessingPaymentProps) {
       setActiveDot((prev) => (prev + 1) % 3)
     }, 600)
 
+    // Simulate real payment processing and finalization
     const completeTimeout = setTimeout(() => {
-      onComplete(true)
+      // In a real Stripe app, this would be where we confirm the payment
+      // For now, we return a mock ID to fulfill the "finalize" API requirement
+      onComplete(true, "pi_mock_success_" + Date.now())
     }, 4000)
 
     return () => {
@@ -40,6 +43,9 @@ export function ProcessingPayment({ onComplete }: ProcessingPaymentProps) {
       <div className="relative z-10 flex flex-col items-center text-center px-6">
 
         {/* Title */}
+        <div className="mb-4 inline-flex items-center rounded-full bg-amber-500/20 border border-amber-500/50 px-3 py-1 text-[11px] font-bold text-amber-500 uppercase tracking-widest">
+          Test Mode
+        </div>
         <h1 className="text-[32px] lg:text-[36px] font-bold text-white mb-3 tracking-tight">
           Processing Payment
         </h1>

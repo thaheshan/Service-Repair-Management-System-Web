@@ -1,4 +1,4 @@
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 export const TOKEN_KEY = "srm_token";
 
 export const ENDPOINTS = {

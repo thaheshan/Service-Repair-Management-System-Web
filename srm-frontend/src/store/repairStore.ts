@@ -23,10 +23,12 @@ export const useRepairStore = create<RepairStore>((set, get) => ({
   fetchItems: async () => {
     set({ isLoading: true, error: null });
     try {
-      const items = await repairService.getAll();
+      const response = await repairService.getAll() as any;
+      // Backend wraps responses in { success: true, data: [...] }
+      const items = Array.isArray(response) ? response : (response?.data ?? []);
       set({ items, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      set({ error: error.message, isLoading: false, items: [] });
     }
   },
 

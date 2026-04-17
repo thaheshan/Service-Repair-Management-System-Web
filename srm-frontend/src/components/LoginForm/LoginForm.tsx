@@ -33,7 +33,8 @@ export default function LoginForm() {
       await login(email, password);
       const { user } = useAuthStore.getState();
       if (user) {
-        router.push(dashboardMap[user.role]);
+        const userRole = user.role.toLowerCase() as keyof typeof dashboardMap;
+        router.push(dashboardMap[userRole] || "/login");
       }
     } catch (err: any) {
       setError(err.message || 'Invalid email or password. Please try again.');

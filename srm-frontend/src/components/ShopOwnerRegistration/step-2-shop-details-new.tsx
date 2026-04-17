@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Store, MapPin, GitBranch, Info, ArrowLeft, ArrowRight, Globe } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep2 } from "./side-panel-step2"
 import { AuthLogo } from "@/components/common/auth-logo"
+import { useRegistrationStore, ShopDetailsData } from "@/store/registrationStore"
 import {
   Select,
   SelectContent,
@@ -15,18 +16,8 @@ import {
 } from "@/components/ui/select"
 
 interface StepShopDetailsProps {
-  onNext: (data: ShopDetailsData) => void
+  onNext: () => void
   onBack: () => void
-}
-
-export interface ShopDetailsData {
-  businessRegNumber: string
-  address: string
-  country: string
-  city: string
-  branches: string
-  repairTypes: string[]
-  agreeTerms: boolean
 }
 
 const SRI_LANKA_CITIES = [
@@ -43,15 +34,13 @@ const COUNTRIES = [
 ]
 
 export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
-  const [formData, setFormData] = useState<ShopDetailsData>({
-    businessRegNumber: "",
-    address: "",
-    country: "Sri Lanka",
-    city: "",
-    branches: "",
-    repairTypes: [],
-    agreeTerms: false,
-  })
+  const { shopDetailsData, setShopDetailsData } = useRegistrationStore()
+  const [formData, setFormData] = useState<ShopDetailsData>(shopDetailsData)
+
+  // Sync on hydration
+  useEffect(() => {
+    setFormData(shopDetailsData)
+  }, [shopDetailsData])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -66,14 +55,14 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
   ]
 
   const handleChange = (field: keyof ShopDetailsData, value: string | boolean) => {
-    setFormData((prev) => {
-      const updated = { ...prev, [field]: value }
-      // If country changes, clear city to prevent data mismatches
-      if (field === "country" && prev.country !== value) {
-        updated.city = ""
-      }
-      return updated
-    })
+    let updated = { ...formData, [field]: value }
+    // If country changes, clear city to prevent data mismatches
+    if (field === "country" && formData.country !== value) {
+      updated.city = ""
+    }
+    
+    setFormData(updated)
+    setShopDetailsData(updated)
     
     // Clear validation error when typing/selecting
     if (errors[field]) {
@@ -86,21 +75,21 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
   }
 
   const toggleRepairType = (type: string) => {
-    setFormData((prev) => {
-      const newTypes = prev.repairTypes.includes(type)
-        ? prev.repairTypes.filter((t) => t !== type)
-        : [...prev.repairTypes, type]
-        
-      if (errors.repairTypes && newTypes.length > 0) {
-        setErrors((errs) => {
-          const newErrors = { ...errs }
-          delete newErrors.repairTypes
-          return newErrors
-        })
-      }
+    const newTypes = formData.repairTypes.includes(type)
+      ? formData.repairTypes.filter((t) => t !== type)
+      : [...formData.repairTypes, type]
       
-      return { ...prev, repairTypes: newTypes }
-    })
+    const updated = { ...formData, repairTypes: newTypes }
+    setFormData(updated)
+    setShopDetailsData(updated)
+      
+    if (errors.repairTypes && newTypes.length > 0) {
+      setErrors((errs) => {
+        const newErrors = { ...errs }
+        delete newErrors.repairTypes
+        return newErrors
+      })
+    }
   }
 
   const validate = () => {
@@ -120,7 +109,7 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validate()) {
-      onNext(formData)
+      onNext()
     }
   }
 

@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { ResetCard } from './reset-card';
 import { IconBadge } from './icon-badge';
 import { PasswordStrength } from '@/components/common/inputs/password-strength';
+import { useAuthStore } from '@/store/authStore';
 
 interface ResetPasswordProps {
   onSubmit?: (password: string, confirmPassword: string) => Promise<void>;
@@ -14,6 +15,10 @@ interface ResetPasswordProps {
 
 export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+  const { resetPassword } = useAuthStore();
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,17 +40,23 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
       return;
     }
 
+    if (!token) {
+      setError('Invalid or missing reset token. Please request a new link.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (onSubmit) {
         await onSubmit(password, confirmPassword);
+      } else {
+        await resetPassword(token, password);
       }
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push('/auth/reset-success');
-    } catch (err) {
-      setError('Failed to reset password. Please try again.');
+      router.push('/reset-success');
+    } catch (err: any) {
+      console.error('Failed to reset password:', err);
+      setError(err.message || 'Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -141,7 +152,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
 
       <div className="mt-6 pt-6 border-t border-gray-200">
         <Link
-          href="/auth/login"
+          href="/login"
           className="flex items-center justify-center text-gray-600 hover:text-gray-900 font-semibold gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -152,7 +163,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
       <div className="text-center mt-6">
         <p className="text-gray-600 text-sm">
           Don't have an account?{' '}
-          <Link href="/auth/signup" className="text-blue-600 font-semibold hover:underline">
+          <Link href="/signup" className="text-blue-600 font-semibold hover:underline">
             Sign up
           </Link>
         </p>
