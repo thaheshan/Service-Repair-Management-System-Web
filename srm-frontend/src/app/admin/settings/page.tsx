@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
@@ -28,6 +28,8 @@ import { useStaffStore } from "@/store/staffStore"
 import { useAuthStore } from "@/store/authStore"
 import { Spinner } from "@/components/ui/Spinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { useRouter } from "next/navigation"
+import { useRoleAccess } from "@/hooks/useRoleAccess"
 
 type SettingsTab = "general" | "business" | "notifications" | "security" | "team"
 
@@ -38,6 +40,19 @@ export default function SettingsView() {
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("general")
   const [isSaving, setIsSaving] = useState(false)
+
+  const router = useRouter()
+  const { can, isAuthenticated } = useRoleAccess()
+
+  useEffect(() => {
+    if (isAuthenticated && !can("view:settings")) {
+      router.replace("/admin/dashboard")
+    }
+  }, [can, isAuthenticated, router])
+
+  if (isAuthenticated && !can("view:settings")) {
+    return null
+  }
 
   // --- STATE MANAGEMENT ---
   const [theme, setTheme] = useState("light")

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Trash2, CheckCircle2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Trash2, CheckCircle2, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 import {
@@ -18,6 +18,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
+import { useShopStore } from "@/store/shopStore"
+import { useAuthStore } from "@/store/authStore"
+import { useRoleAccess } from "@/hooks/useRoleAccess"
 
 const initialNotifications = [
   {
@@ -72,6 +75,25 @@ export function DashboardHeader() {
   
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const { shop, fetchShop } = useShopStore()
+  const { user } = useAuthStore()
+  const { can } = useRoleAccess()
+  const [copied, setCopied] = useState(false)
+
+  // Self-fetch shop data whenever the user is authenticated
+  useEffect(() => {
+    if (user) {
+      fetchShop()
+    }
+  }, [user, fetchShop])
+
+  const copyShopId = () => {
+    if (shop?.id) {
+      navigator.clipboard.writeText(shop.id)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   const filteredSearch = mockSearchData.filter(item => 
     searchQuery && (
@@ -164,6 +186,29 @@ export function DashboardHeader() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
+        {/* Shop ID Display — always rendered, shows loading state or actual ID */}
+        {can("view:shop-id") && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+            <span className="text-[10px] font-black text-indigo-900 uppercase tracking-widest hidden sm:inline-block">Shop ID:</span>
+            {shop?.id ? (
+              <>
+                <span className="text-[11px] font-mono font-semibold text-indigo-700 max-w-[120px] truncate" title={shop.id}>
+                  {shop.id.substring(0, 8)}…
+                </span>
+                <button 
+                  onClick={copyShopId} 
+                  className="ml-1 text-indigo-600 hover:text-indigo-900 transition-colors"
+                  title={`Copy full Shop ID: ${shop.id}`}
+                >
+                  {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              </>
+            ) : (
+              <span className="text-[11px] text-indigo-400 italic">loading…</span>
+            )}
+          </div>
+        )}
+
         {/* Notifications Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -280,10 +325,12 @@ export function DashboardHeader() {
               <User className="h-4 w-4 mr-2" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </DropdownMenuItem>
+            {can("view:settings") && (
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
+                <Settings className="h-4 w-4 mr-2" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="cursor-pointer">
               <CreditCard className="h-4 w-4 mr-2" />
               Billing

@@ -23,9 +23,24 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   fetchItems: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await get<any>("/staff");
+      const res = await get<any>("/users");
+      // Handle { success: true, data: [...] } structure
       const items = Array.isArray(res) ? res : (res?.data ?? []);
-      set({ items, isLoading: false });
+      
+      // Map backend 'name' to frontend 'firstName' and 'lastName' if needed
+      const mappedItems = items.map((item: any) => {
+        if (item.name && (!item.firstName || !item.lastName)) {
+          const parts = item.name.split(" ");
+          return {
+            ...item,
+            firstName: parts[0] || "",
+            lastName: parts.slice(1).join(" ") || "",
+          };
+        }
+        return item;
+      });
+
+      set({ items: mappedItems, isLoading: false });
     } catch (error: any) {
       set({ error: error.message || "Failed to fetch staff", isLoading: false, items: [] });
     }
@@ -34,10 +49,28 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   addItem: async (item) => {
     set({ isLoading: true, error: null });
     try {
-      const newItem = await post<Staff>("/staff", item);
-      set({ items: [...get().items, newItem], isLoading: false });
+      // Map frontend firstName/lastName to backend 'name'
+      const payload = {
+        ...item,
+        email: item.email?.trim().toLowerCase(), // Normalize email
+        name: `${item.firstName} ${item.lastName}`.trim(),
+      };
+      const res = await post<any>("/users", payload);
+      const newItem = res.data || res;
+      
+      // Map it back for consistent state
+      const mappedNewItem = {
+        ...newItem,
+        firstName: item.firstName,
+        lastName: item.lastName,
+      };
+
+      set({ items: [...get().items, mappedNewItem], isLoading: false });
+      return mappedNewItem;
     } catch (error: any) {
-      set({ error: error.message || "Failed to add staff member", isLoading: false });
+      const msg = error.message || "Failed to add staff member";
+      set({ error: msg, isLoading: false });
+      throw error; // Throw so UI can handle it
     }
   },
 
@@ -57,13 +90,15 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   deleteItem: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await del(`/staff/${id}`);
+      await del(`/users/${id}`);
       set({
         items: get().items.filter((i) => i.id !== id),
         isLoading: false,
       });
     } catch (error: any) {
-      set({ error: error.message || "Failed to delete staff member", isLoading: false });
+      const msg = error.message || "Failed to delete staff member";
+      set({ error: msg, isLoading: false });
+      throw error;
     }
   },
 

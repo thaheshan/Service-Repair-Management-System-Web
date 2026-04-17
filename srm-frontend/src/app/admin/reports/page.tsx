@@ -45,6 +45,9 @@ import {
 import { DashboardSidebar } from '@/components/admin/dashboard/sidebar'
 import { DashboardHeader } from '@/components/admin/dashboard/header'
 import { DashboardFooter } from '@/components/admin/dashboard/footer'
+import { useRouter } from 'next/navigation'
+import { useRoleAccess } from '@/hooks/useRoleAccess'
+import { useEffect } from 'react'
 
 // --- DYNAMIC MOCK DATA ORCHESTRATION ---
 const metricMaps: Record<string, any> = {
@@ -194,6 +197,18 @@ export default function ReportsPage() {
 
   // Grab data based on selected filter
   const currentData = metricMaps[timeRange] || metricMaps['30d']
+  const { can, isAuthenticated } = useRoleAccess()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isAuthenticated && !can("view:reports")) {
+      router.replace("/admin/dashboard")
+    }
+  }, [can, isAuthenticated, router])
+
+  if (isAuthenticated && !can("view:reports")) {
+    return null // Prevent flash of content
+  }
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true)

@@ -7,6 +7,7 @@ import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep3 } from "./side-panel-step3"
 import { FileUpload } from "./file-upload"
 import { AuthLogo } from "@/components/common/auth-logo"
+import { useStaffRegistrationStore } from "@/store/staffRegistrationStore"
 
 interface StepVerificationProps {
   onSubmit: (data: VerificationData) => void
@@ -22,6 +23,7 @@ export interface VerificationData {
 }
 
 export function StepVerification({ onSubmit, onBack }: StepVerificationProps) {
+  const { isLoading, error } = useStaffRegistrationStore()
   const [formData, setFormData] = useState<VerificationData>({
     nicNumber: "",
     nicFront: null,
@@ -150,22 +152,43 @@ export function StepVerification({ onSubmit, onBack }: StepVerificationProps) {
                   </label>
                 </div>
 
+                {/* Error message */}
+                {error && (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm font-medium">
+                    {error}
+                  </div>
+                )}
+
                 {/* Buttons */}
                 <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={onBack}
-                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] bg-white text-sm font-semibold text-[#374151] transition-colors hover:bg-[#F9FAFB]"
+                    disabled={isLoading}
+                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] bg-white text-sm font-semibold text-[#374151] transition-colors hover:bg-[#F9FAFB] disabled:opacity-50"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </button>
                   <button
                     type="submit"
-                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA]"
+                    disabled={isLoading || !formData.agreeTerms}
+                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA] disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-[#4F46E5]/20"
                   >
-                    Create Account
-                    <ArrowRight className="h-4 w-4" />
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Creating...
+                      </span>
+                    ) : (
+                      <>
+                        Create Account
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

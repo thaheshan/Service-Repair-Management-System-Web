@@ -7,6 +7,7 @@ import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
 import { PasswordStrength } from "@/components/common/inputs/password-strength"
 import { AuthLogo } from "@/components/common/auth-logo"
+import { useStaffRegistrationStore } from "@/store/staffRegistrationStore"
 
 interface StepPersonalInfoProps {
   onNext: (data: PersonalInfoData) => void
@@ -47,14 +48,16 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/
 
 export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
+  const storeData = useStaffRegistrationStore((state) => state.personalInfo)
+  
   const [formData, setFormData] = useState<PersonalInfoData>({
-    fullName: "",
-    email: "",
-    phoneCode: "+94",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: false,
+    fullName: storeData.fullName || "",
+    email: storeData.email || "",
+    phoneCode: storeData.phoneCode || "+94",
+    phone: storeData.phone || "",
+    password: storeData.password || "",
+    confirmPassword: storeData.confirmPassword || "",
+    agreeTerms: storeData.agreeTerms || false,
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -109,7 +112,10 @@ export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validate()) onNext(formData)
+    if (validate()) {
+      useStaffRegistrationStore.getState().setPersonalInfo(formData)
+      onNext(formData)
+    }
   }
 
   const inputClass = (field: string) =>

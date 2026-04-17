@@ -1,8 +1,10 @@
 'use client'
 
-import { AlertCircle, CheckCircle2, Gift, MessageCircle, Phone, Mail } from 'lucide-react'
+import { useState } from 'react'
+import { AlertCircle, CheckCircle2, Gift, MessageCircle, Phone, Mail, Send, RefreshCw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useRegistrationStore } from '@/store/registrationStore'
 
 interface RequestPendingProps {
   onCheckStatus: () => void
@@ -40,6 +42,31 @@ const timelineSteps: TimelineStep[] = [
 ]
 
 export function RequestPending({ onCheckStatus, onGoHome }: RequestPendingProps) {
+  const { requestId } = useRegistrationStore()
+  const [resendStatus, setResendStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [resendMessage, setResendMessage] = useState('')
+
+  const handleResendRequest = async () => {
+    if (!requestId) {
+      setResendStatus('error')
+      setResendMessage('No request ID found. Please complete the registration form first.')
+      return
+    }
+    setResendStatus('loading')
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+      const resp = await fetch(`${apiUrl}/onboarding/resend/${requestId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!resp.ok) throw new Error('Failed to resend')
+      setResendStatus('success')
+      setResendMessage('Admin notification resent successfully! Check admin@futuracareers.tech.')
+    } catch (err) {
+      setResendStatus('error')
+      setResendMessage('Failed to resend the request. Please try again.')
+    }
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg max-w-2xl w-full">
@@ -142,8 +169,38 @@ export function RequestPending({ onCheckStatus, onGoHome }: RequestPendingProps)
 
         <div className="px-8 py-6 border-t border-gray-200 space-y-3">
           <Button onClick={onCheckStatus} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-base rounded-lg">
+            <RefreshCw className="w-4 h-4 mr-2" />
             Check Status
           </Button>
+
+          {/* Resend Request Button */}
+          <Button
+            onClick={handleResendRequest}
+            disabled={resendStatus === 'loading' || resendStatus === 'success'}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 text-base rounded-lg disabled:opacity-60"
+          >
+            {resendStatus === 'loading' ? (
+              <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full mr-2 inline-block" />Sending...</>
+            ) : resendStatus === 'success' ? (
+              <><CheckCircle2 className="w-4 h-4 mr-2" />Request Resent!</>
+            ) : (
+              <><Send className="w-4 h-4 mr-2" />Re-send Request to Admin</>  
+            )}
+          </Button>
+
+          {/* Feedback message */}
+          {resendMessage && (
+            <div className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
+              resendStatus === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {resendStatus === 'success' 
+                ? <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              }
+              {resendMessage}
+            </div>
+          )}
+
           <Button onClick={onGoHome} variant="outline" className="w-full text-blue-600 border-blue-600 hover:bg-blue-50 py-6 text-base rounded-lg">
             Go to Home
           </Button>
