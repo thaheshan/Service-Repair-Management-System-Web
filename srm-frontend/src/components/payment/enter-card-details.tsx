@@ -240,13 +240,22 @@ export function EnterCardDetails({ onBack, onPay }: EnterCardDetailsProps) {
             </label>
           </div>
 
+          {/* Test Mode Alert */}
+          <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4 flex gap-3">
+             <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+             <div className="text-xs text-amber-800 leading-relaxed">
+                <strong>Safety Notice (Test Mode)</strong>: You are currently in our secure Sandbox environment for Sri Lanka. No real charges will be made. You can use any test card details to proceed.
+             </div>
+          </div>
+
           {/* Pay Button */}
           <button
             onClick={onPay}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4F46E5] px-6 py-3.5 text-sm font-semibold text-[#FFFFFF] hover:bg-[#4338CA] transition-colors"
+            disabled={!agreeTerms}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4F46E5] px-6 py-3.5 text-sm font-semibold text-[#FFFFFF] hover:bg-[#4338CA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Lock className="h-4 w-4" />
-            Pay Rs. 9,050
+            Pay Rs. 25
           </button>
 
           {/* Security Footer */}
@@ -276,12 +285,11 @@ export function EnterCardDetails({ onBack, onPay }: EnterCardDetailsProps) {
         {/* Right Column - Order Summary */}
         <div className="lg:w-[380px]">
           <OrderSummary
-            planName="Single Shop Plan"
-            planPrice={8500}
+            planName="Shop Registration"
+            planPrice={25}
             quantity={1}
-            discount={500}
-            discountCode="SUMMER20"
-            showPromoInput={true}
+            discount={0}
+            showPromoInput={false}
             showPaymentMethod={true}
             showNeedHelp={true}
             showSecurityNote={true}

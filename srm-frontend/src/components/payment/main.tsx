@@ -17,7 +17,12 @@ type PaymentScreen =
   | "success"
   | "failed"
 
-export default function PaymentPage() {
+interface PaymentPageProps {
+  onPaymentSuccess?: () => Promise<void>;
+  onNavigateToLogin?: () => void;
+}
+
+export default function PaymentPage({ onPaymentSuccess, onNavigateToLogin }: PaymentPageProps = {}) {
   const [screen, setScreen] = useState<PaymentScreen>("select-method")
   const [selectedMethod, setSelectedMethod] = useState("")
   const router = useRouter()
@@ -35,16 +40,39 @@ export default function PaymentPage() {
     setScreen("processing")
   }
 
-  const handleProcessingComplete = (success: boolean) => {
-    setScreen(success ? "success" : "failed")
+  const handleProcessingComplete = async (success: boolean, paymentId?: string) => {
+    if (success && onPaymentSuccess) {
+      try {
+        // executeRegistration in main.tsx expects the paymentId
+        await (onPaymentSuccess as any)(paymentId);
+        setScreen("success");
+      } catch (error) {
+        setScreen("failed");
+      }
+    } else {
+      setScreen(success ? "success" : "failed")
+    }
   }
 
-  const handleBankTransferComplete = () => {
-    setScreen("success")
+  const handleBankTransferComplete = async () => {
+    if (onPaymentSuccess) {
+      try {
+        await onPaymentSuccess();
+        setScreen("success");
+      } catch (error) {
+        setScreen("failed");
+      }
+    } else {
+      setScreen("success");
+    }
   }
 
   const handleLogin = () => {
-    router.push("/login")
+    if (onNavigateToLogin) {
+      onNavigateToLogin();
+    } else {
+      router.push("/login")
+    }
   }
 
   return (

@@ -23,10 +23,11 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   fetchItems: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await get<Staff[]>("/staff");
-      set({ items: res, isLoading: false });
+      const res = await get<any>("/staff");
+      const items = Array.isArray(res) ? res : (res?.data ?? []);
+      set({ items, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message || "Failed to fetch staff", isLoading: false });
+      set({ error: error.message || "Failed to fetch staff", isLoading: false, items: [] });
     }
   },
 

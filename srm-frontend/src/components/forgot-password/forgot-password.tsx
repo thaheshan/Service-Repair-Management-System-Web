@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Key, ArrowLeft } from 'lucide-react';
 import { ResetCard } from './reset-card';
 import { IconBadge } from './icon-badge';
+import { useAuthStore } from '@/store/authStore';
 
 interface ForgotPasswordProps {
   onSubmit?: (email: string) => Promise<void>;
@@ -13,27 +14,27 @@ interface ForgotPasswordProps {
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSubmit }) => {
   const router = useRouter();
+  const { forgotPassword } = useAuthStore();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       if (onSubmit) {
         await onSubmit(email);
+      } else {
+        await forgotPassword(email);
       }
       setSubmitted(true);
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Navigate to reset password page
-      router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`);
-    } catch (error) {
-      console.error('Failed to send reset link:', error);
+    } catch (err: any) {
+      console.error('Failed to send reset link:', err);
+      setError(err.message || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSubmit }) => {
               .
             </p>
           </div>
-          <Link href="/auth/login" className="text-[#4F46E5] font-semibold hover:underline">
+          <Link href="/login" className="text-[#4F46E5] font-semibold hover:underline">
             Back to Sign In
           </Link>
         </div>
@@ -86,6 +87,11 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSubmit }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2">
             Email Address
@@ -114,7 +120,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSubmit }) => {
 
       <div className="mt-6 pt-6 border-t border-gray-200">
         <Link
-          href="/auth/login"
+          href="/login"
           className="flex items-center justify-center text-gray-600 hover:text-gray-900 font-semibold gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
