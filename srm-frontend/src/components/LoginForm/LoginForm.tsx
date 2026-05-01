@@ -5,28 +5,46 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
+import { useLoginMutation } from '@/services/api/authApiSlice';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '@/store/slices/authSlice';
+import { toast } from 'sonner';
+
 export default function LoginForm() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const [login, { isLoading }] = useLoginMutation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      document.cookie = 'token=fake-token-123; path=/; max-age=86400';
-      router.push('/admin/dashboard');
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
-    } finally {
-      setIsLoading(false);
+      const result = await login({ email, password }).unwrap();
+      
+      // Save token to cookie for the middleware
+      document.cookie = `token=${result.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+      
+      dispatch(setCredentials({
+        user: result.user,
+        accessToken: result.accessToken,
+      }));
+
+      // Use hard redirect for reliability during dev
+      if (result.user.role === 'ADMIN') {
+        window.location.href = '/admin/dashboard';
+      } else {
+        window.location.href = '/dashboard';
+      }
+    } catch (err: any) {
+      console.error('[LoginForm] Login error:', err);
+      setError(err.data?.message || 'Invalid email or password. Please try again.');
+      toast.error('Login failed');
     }
   };
 

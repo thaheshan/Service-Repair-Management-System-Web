@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
-  const isProtectedRoute = protectedPrefixes.some(prefix => pathname.startsWith(prefix));
+  const isProtectedRoute = protectedPrefixes.some(prefix => pathname.startsWith(prefix)) && !pathname.startsWith('/admin/onboarding');
   const isAuthRoute = authPrefixes.some(prefix => pathname.startsWith(prefix));
 
   // 1. If trying to access a protected route without a token -> Redirect to login

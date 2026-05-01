@@ -7,35 +7,29 @@ import { Mail, Key, ArrowLeft } from 'lucide-react';
 import { ResetCard } from './reset-card';
 import { IconBadge } from './icon-badge';
 
+import { useForgotPasswordMutation } from '@/services/api/authApiSlice';
+import { toast } from 'sonner';
+
 interface ForgotPasswordProps {
   onSubmit?: (email: string) => Promise<void>;
 }
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSubmit }) => {
   const router = useRouter();
+  const [forgotPassword, { isLoading: loading }] = useForgotPasswordMutation();
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      if (onSubmit) {
-        await onSubmit(email);
-      }
+      await forgotPassword({ email }).unwrap();
       setSubmitted(true);
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Navigate to reset password page
-      router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`);
-    } catch (error) {
+      toast.success('Reset link sent to your email');
+    } catch (error: any) {
+      toast.error(error.data?.message || 'Failed to send reset link');
       console.error('Failed to send reset link:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
