@@ -1,6 +1,7 @@
 "use client"
 
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 
 const data = [
@@ -12,6 +13,15 @@ const data = [
 const totalRepairs = data.reduce((sum, item) => sum + item.value, 0)
 
 export function RepairStatusChart() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-[350px] w-full bg-slate-50 animate-pulse rounded-xl" />;
+  }
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-card">
       {/* Header */}
@@ -20,8 +30,8 @@ export function RepairStatusChart() {
       </div>
 
       {/* Chart */}
-      <div className="flex flex-1 items-center justify-center px-4 py-8">
-        <div className="relative h-[280px] w-full">
+      <div className="flex flex-1 items-center justify-center px-4 py-8" style={{ height: '350px', width: '100%' }}>
+        <div className="relative h-full w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

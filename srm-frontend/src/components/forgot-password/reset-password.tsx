@@ -8,46 +8,46 @@ import { ResetCard } from './reset-card';
 import { IconBadge } from './icon-badge';
 import { PasswordStrength } from '@/components/common/inputs/password-strength';
 
+import { useResetPasswordMutation } from '@/services/api/authApiSlice';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+
 interface ResetPasswordProps {
   onSubmit?: (password: string, confirmPassword: string) => Promise<void>;
 }
 
 export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+  const [resetPassword, { isLoading: loading }] = useResetPasswordMutation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    if (!token) {
+      setError('Invalid or expired reset token');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      if (onSubmit) {
-        await onSubmit(password, confirmPassword);
-      }
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push('/auth/reset-success');
-    } catch (err) {
-      setError('Failed to reset password. Please try again.');
-    } finally {
-      setLoading(false);
+      await resetPassword({ token, password }).unwrap();
+      toast.success('Password reset successfully!');
+      router.push('/reset-success');
+    } catch (err: any) {
+      setError(err.data?.message || 'Failed to reset password. Please try again.');
+      toast.error('Reset failed');
     }
   };
 
@@ -141,7 +141,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
 
       <div className="mt-6 pt-6 border-t border-gray-200">
         <Link
-          href="/auth/login"
+          href="/login"
           className="flex items-center justify-center text-gray-600 hover:text-gray-900 font-semibold gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -152,7 +152,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSubmit }) => {
       <div className="text-center mt-6">
         <p className="text-gray-600 text-sm">
           Don't have an account?{' '}
-          <Link href="/auth/signup" className="text-blue-600 font-semibold hover:underline">
+          <Link href="/signup" className="text-blue-600 font-semibold hover:underline">
             Sign up
           </Link>
         </p>

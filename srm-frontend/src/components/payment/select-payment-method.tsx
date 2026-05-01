@@ -10,11 +10,21 @@ interface SelectPaymentMethodProps {
 
 const paymentMethods = [
   {
+    id: "payhere",
+    icon: CreditCard,
+    label: "PayHere (Local Gateway)",
+    description: "Secure local payment via PayHere",
+    badge: "Recommended",
+    badgeColor: "text-amber-600 bg-amber-50",
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
+  },
+  {
     id: "credit-card",
     icon: CreditCard,
-    label: "Credit/Debit Card",
+    label: "Credit/Debit Card (Global)",
     description: "Visa, Mastercard, American Express",
-    badge: "Fast & Secure",
+    badge: "Secure",
     badgeColor: "text-[#4F46E5] bg-[#EEF2FF]",
     iconBg: "bg-[#EEF2FF]",
     iconColor: "text-[#4F46E5]",
@@ -28,34 +38,6 @@ const paymentMethods = [
     badgeColor: "text-[#10B981] bg-[#D1FAE5]",
     iconBg: "bg-[#D1FAE5]",
     iconColor: "text-[#10B981]",
-  },
-  {
-    id: "digital-wallet",
-    icon: Wallet,
-    label: "Digital Wallet (Apple Pay/Google Pay)",
-    description: "Quick & secure payment",
-    badge: "Available",
-    badgeColor: "text-[#10B981] bg-[#D1FAE5]",
-    iconBg: "bg-[#FEF3C7]",
-    iconColor: "text-[#F59E0B]",
-  },
-  {
-    id: "upi",
-    icon: Smartphone,
-    label: "UPI / Mobile Money",
-    description: "GooglePay, PhonePe, PayTM, BHIM",
-    iconBg: "bg-[#EEF2FF]",
-    iconColor: "text-[#6366F1]",
-  },
-  {
-    id: "bnpl",
-    icon: Gift,
-    label: "Buy Now Pay Later",
-    description: "Split into 3, 6, 9, or 12 monthly installments",
-    badge: "0% Interest",
-    badgeColor: "text-[#EF4444] bg-[#FEE2E2]",
-    iconBg: "bg-[#FEE2E2]",
-    iconColor: "text-[#EF4444]",
   },
 ]
 

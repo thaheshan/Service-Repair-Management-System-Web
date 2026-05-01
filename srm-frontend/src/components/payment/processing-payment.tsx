@@ -3,27 +3,48 @@
 import { useEffect, useState } from "react"
 import { Lock, ShieldCheck } from "lucide-react"
 
+import axios from "axios"
+import { useSearchParams } from "next/navigation"
+
 interface ProcessingPaymentProps {
   onComplete: (success: boolean) => void
 }
 
 export function ProcessingPayment({ onComplete }: ProcessingPaymentProps) {
   const [activeDot, setActiveDot] = useState(0)
+  const searchParams = useSearchParams()
+  const requestId = searchParams.get('id')
 
   useEffect(() => {
     const dotInterval = setInterval(() => {
       setActiveDot((prev) => (prev + 1) % 3)
     }, 600)
 
-    const completeTimeout = setTimeout(() => {
-      onComplete(true)
-    }, 4000)
+    const finalize = async () => {
+      try {
+        // We send a mock payment ID for now since it's development
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/onboarding/finalize`, {
+          requestId,
+          paymentIntentId: "MOCK_CARD_PAYMENT_" + Date.now()
+        });
+
+        if (response.status === 200) {
+          onComplete(true)
+        } else {
+          onComplete(false)
+        }
+      } catch (error) {
+        console.error("Finalization error:", error)
+        onComplete(false)
+      }
+    }
+
+    finalize()
 
     return () => {
       clearInterval(dotInterval)
-      clearTimeout(completeTimeout)
     }
-  }, [onComplete])
+  }, [onComplete, requestId])
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#312E81] via-[#4338CA] to-[#3730A3]">

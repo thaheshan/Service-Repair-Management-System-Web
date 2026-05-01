@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import {
@@ -49,8 +49,18 @@ const dataByRange: Record<string, { day: string; revenue: number }[]> = {
 const rangeOptions = ["Last 7 days", "Last 14 days", "Last 30 days"]
 
 export function RevenueTrend() {
+  const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState("Last 7 days")
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const data = dataByRange[selectedRange]
+
+  if (!mounted) {
+    return <div className="h-[300px] w-full bg-slate-50 animate-pulse rounded-xl" />;
+  }
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-card">
@@ -79,7 +89,7 @@ export function RevenueTrend() {
       </div>
 
       {/* Chart */}
-      <div className="flex-1 px-5 pb-3 min-h-[220px]">
+      <div className="px-5 pb-3" style={{ height: '300px', width: '100%' }}>
         <div className="h-full w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>

@@ -18,7 +18,7 @@ export const ResetSuccess: React.FC = () => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          router.push('/auth/login');
+          router.push('/login');
           return 0;
         }
         return prev - 1;
@@ -46,13 +46,12 @@ export const ResetSuccess: React.FC = () => {
           You can now sign in with your new password.
         </p>
 
-        <button
-          onClick={() => router.push('/auth/login')}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors mb-2 flex items-center justify-center gap-2"
+        <Link
+          href="/login"
+          className="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200"
         >
-          Continue to Sign In
-          <span>→</span>
-        </button>
+          Continue to Login
+        </Link>
 
         <p className="text-sm text-gray-600 mb-8">
           Redirecting automatically in{' '}
