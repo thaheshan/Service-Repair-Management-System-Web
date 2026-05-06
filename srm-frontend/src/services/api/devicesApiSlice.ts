@@ -17,7 +17,7 @@ export const devicesApiSlice = apiSlice.injectEndpoints({
     updateDevice: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `/v1/devices/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [

@@ -420,7 +420,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                     <td className="px-5 py-3 align-middle">
                       <div className="flex items-center justify-end gap-2 text-muted-foreground">
                         <Link href={`/admin/repairs/${r.id}?from=repairs`} className="rounded p-1.5 hover:bg-muted hover:text-[#4F46E5] transition-colors focus:outline-none"><Eye className="h-4 w-4" /></Link>
-                        <Link href={`/admin/repairs/${r.id}/edit`} className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><Edit2 className="h-4 w-4" /></Link>
+                        <Link href={`/admin/repairs/edit/${r.id}`} className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><Edit2 className="h-4 w-4" /></Link>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><MoreVertical className="h-4 w-4" /></button>

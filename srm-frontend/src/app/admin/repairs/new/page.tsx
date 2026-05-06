@@ -11,6 +11,7 @@ import { useCreateRepairMutation } from "@/services/api/repairsApiSlice"
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
 import { useGetDevicesQuery, useCreateDeviceMutation } from "@/services/api/devicesApiSlice"
 import { useGetStaffListQuery, useGetStaffContextQuery } from "@/services/api/staffApiSlice"
+import { useGetInventoryItemsQuery } from "@/services/api/inventoryApiSlice"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { setCredentials } from "@/store/slices/authSlice"
@@ -22,20 +23,27 @@ const TabletIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="n
 const LaptopIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="12" rx="2" ry="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
 const WatchIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/></svg>
 const ConsoleIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="13" r="1"/><circle cx="16" cy="15" r="1"/><circle cx="14" cy="13" r="1"/><path d="M6 11v4"/><path d="M4 13h4"/></svg>
+const OtherIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
 
 export default function CreateRepairPage() {
   const router = useRouter()
 
   // Form States
   const [deviceCategory, setDeviceCategory] = useState("Mobile Phone")
+  const [customDeviceCategory, setCustomDeviceCategory] = useState("")
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("")
   const [customer, setCustomer] = useState("")
   const [deviceType, setDeviceType] = useState("Mobile Phone")
   const [brand, setBrand] = useState("Apple")
+  const [customBrand, setCustomBrand] = useState("")
   const [model, setModel] = useState("iPhone 13 Pro")
+  const [customModel, setCustomModel] = useState("")
   const [color, setColor] = useState("Space Gray")
+  const [customColor, setCustomColor] = useState("")
   const [storage, setStorage] = useState("256GB")
+  const [customStorage, setCustomStorage] = useState("")
   const [condition, setCondition] = useState("Excellent")
+  const [customCondition, setCustomCondition] = useState("")
   const [issueCategory, setIssueCategory] = useState("Screen Damage")
   const [issueDescription, setIssueDescription] = useState("")
   const [serialNo, setSerialNo] = useState("")
@@ -70,6 +78,7 @@ export default function CreateRepairPage() {
   const { data: staffData } = useGetStaffListQuery({}, { skip: !user?.shopId })
   const { data: userContext, error: userContextError } = useGetStaffContextQuery({}, { skip: !!user || !token })
   const [createDevice] = useCreateDeviceMutation()
+  const { data: inventoryData } = useGetInventoryItemsQuery({}, { skip: !user?.shopId })
 
   const dispatch = useDispatch()
 
@@ -106,6 +115,7 @@ export default function CreateRepairPage() {
   const section1Ref = useRef<HTMLDivElement>(null)
   const section2Ref = useRef<HTMLDivElement>(null)
   const section3Ref = useRef<HTMLDivElement>(null)
+  const section4Ref = useRef<HTMLDivElement>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
   // PDF Generation Logic
@@ -207,6 +217,7 @@ export default function CreateRepairPage() {
       { step: 1, element: section1Ref.current },
       { step: 2, element: section2Ref.current },
       { step: 3, element: section3Ref.current },
+      { step: 4, element: section4Ref.current },
     ]
     
     // Find the section closest to the top
@@ -274,8 +285,9 @@ export default function CreateRepairPage() {
 
       // Create Device record
       const newDev = await createDevice({
-        brand,
-        model,
+        type: deviceType === "Other" ? customDeviceCategory : deviceType,
+        brand: brand === "Other" ? customBrand : brand,
+        model: model === "Other" ? customModel : model,
         customerId: finalCustomerId,
         shopId: user.shopId,
         tenantId: user.tenantId,
@@ -407,7 +419,7 @@ export default function CreateRepairPage() {
           </div>
 
           {/* Scrollable Form Content */}
-          <div className="flex-1 overflow-y-auto w-full pb-32 scroll-smooth">
+          <div onScroll={handleScroll} className="flex-1 overflow-y-auto w-full pb-32 scroll-smooth">
             <div className="max-w-4xl mx-auto py-8 px-4 sm:px-8 flex flex-col gap-8">
               
               {/* 1. Basic Information */}
@@ -416,17 +428,23 @@ export default function CreateRepairPage() {
                 
                 <div className="mb-6">
                   <label className="block text-[13px] font-bold text-foreground mb-3">Repair Category <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-6 gap-3">
                     {[
                       {name: "Mobile Phone", icon: PhoneIcon},
                       {name: "Tablet", icon: TabletIcon},
                       {name: "Laptop", icon: LaptopIcon},
                       {name: "Smartwatch", icon: WatchIcon},
-                      {name: "Gaming Console", icon: ConsoleIcon}
+                      {name: "Gaming Console", icon: ConsoleIcon},
+                      {name: "Other", icon: OtherIcon}
                     ].map((cat) => (
                       <button 
                         key={cat.name}
-                        onClick={() => setDeviceCategory(cat.name)}
+                        onClick={() => {
+                          setDeviceCategory(cat.name)
+                          if (cat.name !== "Other") {
+                            setDeviceType(cat.name)
+                          }
+                        }}
                         className={`flex flex-col items-center justify-center gap-2 h-24 rounded-xl border-2 transition-all ${deviceCategory === cat.name ? 'border-[#4F46E5] bg-indigo-50/50 text-[#4F46E5]' : 'border-border bg-white text-muted-foreground hover:border-border/80 hover:bg-muted/20'}`}
                       >
                         <cat.icon />
@@ -434,6 +452,21 @@ export default function CreateRepairPage() {
                       </button>
                     ))}
                   </div>
+                  {deviceCategory === "Other" && (
+                    <div className="mt-4 animate-in fade-in slide-in-from-top-2">
+                      <label className="block text-[13px] font-bold text-foreground mb-1.5">Specify Custom Category <span className="text-red-500">*</span></label>
+                      <input 
+                        type="text" 
+                        value={customDeviceCategory}
+                        onChange={(e) => {
+                          setCustomDeviceCategory(e.target.value)
+                          setDeviceType(e.target.value)
+                        }}
+                        placeholder="e.g. Drone, VR Headset..." 
+                        className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" 
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
@@ -539,71 +572,94 @@ export default function CreateRepairPage() {
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">Device Type <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <select value={deviceType} onChange={(e) => setDeviceType(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                          <option>Mobile Phone</option>
-                          <option>Tablet</option>
-                          <option>Laptop</option>
+                          <option value="Mobile Phone">Mobile Phone</option>
+                          <option value="Tablet">Tablet</option>
+                          <option value="Laptop">Laptop</option>
+                          <option value="Other">Other</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
+                      {deviceType === "Other" && (
+                        <input type="text" value={customDeviceCategory} onChange={(e) => setCustomDeviceCategory(e.target.value)} placeholder="Enter custom device type" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
+                      )}
                     </div>
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5 flex items-center gap-1">Brand <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <select value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                          <option>Apple</option>
-                          <option>Samsung</option>
-                          <option>Google</option>
+                          <option value="Apple">Apple</option>
+                          <option value="Samsung">Samsung</option>
+                          <option value="Google">Google</option>
+                          <option value="Other">Other</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
+                      {brand === "Other" && (
+                        <input type="text" value={customBrand} onChange={(e) => setCustomBrand(e.target.value)} placeholder="Enter custom brand" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
+                      )}
                     </div>
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">Model <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                          <option>iPhone 13 Pro</option>
-                          <option>iPhone 14 Pro</option>
-                          <option>iPhone 15 Pro</option>
+                          <option value="iPhone 13 Pro">iPhone 13 Pro</option>
+                          <option value="iPhone 14 Pro">iPhone 14 Pro</option>
+                          <option value="iPhone 15 Pro">iPhone 15 Pro</option>
+                          <option value="Other">Other</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
+                      {model === "Other" && (
+                        <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter custom model" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
+                      )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 col-span-1 sm:col-span-2">
                        <div className="flex-1">
                          <label className="block text-[13px] font-bold text-foreground mb-1.5">Color (Optional)</label>
                          <div className="relative">
                            <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                             <option>Space Gray</option>
-                             <option>Silver</option>
-                             <option>Gold</option>
+                             <option value="Space Gray">Space Gray</option>
+                             <option value="Silver">Silver</option>
+                             <option value="Gold">Gold</option>
+                             <option value="Other">Other</option>
                            </select>
                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                          </div>
+                         {color === "Other" && (
+                           <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="Enter custom color" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
+                         )}
                        </div>
                        <div className="flex-1">
                          <label className="block text-[13px] font-bold text-foreground mb-1.5">Storage Capacity (Optional)</label>
                          <div className="relative">
                            <select value={storage} onChange={(e) => setStorage(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                             <option>256GB</option>
-                             <option>512GB</option>
-                             <option>1TB</option>
+                             <option value="256GB">256GB</option>
+                             <option value="512GB">512GB</option>
+                             <option value="1TB">1TB</option>
+                             <option value="Other">Other</option>
                            </select>
                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                          </div>
+                         {storage === "Other" && (
+                           <input type="text" value={customStorage} onChange={(e) => setCustomStorage(e.target.value)} placeholder="Enter custom storage" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
+                         )}
                        </div>
                     </div>
                  </div>
 
                  <div className="mb-6">
                    <label className="block text-[13px] font-bold text-foreground mb-3">Device Condition (Optional)</label>
-                   <div className="flex items-center gap-4">
-                     {["Excellent", "Good", "Fair", "Poor"].map((cond) => (
+                   <div className="flex items-center gap-4 flex-wrap">
+                     {["Excellent", "Good", "Fair", "Poor", "Other"].map((cond) => (
                        <label key={cond} className="flex items-center gap-2 cursor-pointer">
                          <input type="radio" name="condition" checked={condition === cond} onChange={() => setCondition(cond)} className="h-4 w-4 accent-[#4F46E5]" />
                          <span className="text-[13px] font-medium text-foreground">{cond}</span>
                        </label>
                      ))}
                    </div>
+                   {condition === "Other" && (
+                     <input type="text" value={customCondition} onChange={(e) => setCustomCondition(e.target.value)} placeholder="Specify custom condition" className="w-full sm:w-[50%] h-10 rounded-lg border border-border bg-white px-3 text-sm mt-3 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
+                   )}
                  </div>
 
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
@@ -718,20 +774,54 @@ export default function CreateRepairPage() {
                      {partsRequired.map((part, idx) => (
                        <div key={idx} className="px-3 py-1.5 border border-border rounded-lg bg-muted/30 flex items-center gap-2 inline-flex">
                          <span className="text-[12px] font-medium text-foreground">{part}</span>
-                         <button onClick={(e) => { e.preventDefault(); setPartsRequired(partsRequired.filter((_, i) => i !== idx)) }} className="h-4 w-4 rounded-full bg-white border border-border flex items-center justify-center text-[10px] text-muted-foreground hover:bg-red-50 hover:text-red-500 hover:border-red-200">
+                      <button onClick={(e) => { e.preventDefault(); setPartsRequired(partsRequired.filter((_, i) => i !== idx)) }} className="h-4 w-4 rounded-full bg-white border border-border flex items-center justify-center text-[10px] text-muted-foreground hover:bg-red-50 hover:text-red-500 hover:border-red-200">
                            <X className="h-2.5 w-2.5" />
                          </button>
                        </div>
                      ))}
-                     <button className="text-[13px] font-bold text-[#4F46E5] flex items-center gap-1 hover:underline ml-2 outline-none">
+                     <button onClick={(e) => e.preventDefault()} className="text-[13px] font-bold text-[#4F46E5] flex items-center gap-1 hover:underline ml-2 outline-none">
                        <Plus className="h-3.5 w-3.5" /> Browse Inventory
                      </button>
                    </div>
+                   {/* Live inventory dropdown - shown while typing in part input */}
+                   {partInput.trim().length > 0 && (() => {
+                     const filtered = (inventoryData?.data ?? []).filter((item: any) =>
+                       item.name?.toLowerCase().includes(partInput.toLowerCase())
+                     );
+                     return filtered.length > 0 ? (
+                       <div className="border border-border rounded-xl shadow-md overflow-hidden mb-3">
+                         <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1 bg-muted/30">Inventory matches</p>
+                         {filtered.map((item: any) => (
+                           <div
+                             key={item.id}
+                             onClick={() => {
+                               if (!partsRequired.includes(item.name)) {
+                                 setPartsRequired(prev => [...prev, item.name]);
+                               }
+                               setPartInput("");
+                             }}
+                             className="px-3 py-2.5 hover:bg-indigo-50 cursor-pointer border-t border-border flex justify-between items-center gap-4 transition-colors"
+                           >
+                             <div>
+                               <p className="text-sm font-bold text-foreground">{item.name}</p>
+                               {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
+                             </div>
+                             <div className="text-right shrink-0">
+                               <p className={`text-xs font-semibold ${(item.quantity ?? 0) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                 {(item.quantity ?? 0) > 0 ? `${item.quantity} in stock` : 'Out of stock'}
+                               </p>
+                               {item.sellingPrice && <p className="text-xs text-muted-foreground">Rs. {item.sellingPrice}</p>}
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     ) : null;
+                   })()}
                  </div>
               </section>
 
-              {/* 5. Pricing & Quote */}
-              <section className="bg-white rounded-xl shadow-sm border border-border p-6">
+              {/* 5. Pricing & Quote mapped to Stepper Section 4 */}
+              <section ref={section4Ref} className="bg-white rounded-xl shadow-sm border border-border p-6 scroll-mt-6">
                  <h2 className="text-lg font-bold text-foreground mb-6">Pricing & Quote</h2>
                  
                  <div className="p-6 bg-[#F8FAFC] border border-border rounded-xl">
