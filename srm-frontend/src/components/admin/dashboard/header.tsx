@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Trash2, CheckCircle2 } from "lucide-react"
+import { useState, useMemo } from "react"
+import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Trash2, CheckCircle2, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/store"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 import {
   Dialog,
@@ -19,43 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 
-const initialNotifications = [
-  {
-    id: 1,
-    title: "New repair request",
-    description: "iPhone 14 Pro - Screen crack reported by Amit Shah",
-    time: "5 min ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    title: "Parts arrived",
-    description: "Samsung S21 battery replacement part delivered",
-    time: "1 hour ago",
-    unread: true,
-  },
-  {
-    id: 3,
-    title: "Payment received",
-    description: "Invoice #INV-2023-001 paid by Sarah Jenkins",
-    time: "2 hours ago",
-    unread: true,
-  },
-  {
-    id: 4,
-    title: "Repair completed",
-    description: "MacBook Air keyboard fix completed by David Chen",
-    time: "3 hours ago",
-    unread: false,
-  },
-  {
-    id: 5,
-    title: "Low stock alert",
-    description: "iPhone 13 Pro Max OLED Screens dropping below minimum threshold",
-    time: "5 hours ago",
-    unread: false,
-  }
-]
+
 
 export const mockSearchData = [
   { id: 1, type: "Customer", name: "Sarah Anderson", sub: "sarah@example.com", link: "/admin/customers/1" },
@@ -65,13 +30,56 @@ export const mockSearchData = [
   { id: 5, type: "Device", name: "Samsung S22 Ultra", sub: "In Inventory: 5 units", link: "/admin/devices" },
 ]
 
+import { 
+  useGetDashboardAnalyticsQuery, 
+  useMarkReadMutation, 
+  useClearNotificationsMutation 
+} from "@/services/api/dashboardApiSlice"
+
+const formatTimeAgo = (date: any) => {
+  if (!date) return "Just now";
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMs = now.getTime() - past.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHrs = Math.floor(diffInMins / 60);
+  const diffInDays = Math.floor(diffInHrs / 24);
+
+  if (diffInMins < 1) return "Just now";
+  if (diffInMins < 60) return `${diffInMins} min ago`;
+  if (diffInHrs < 24) return `${diffInHrs} ${diffInHrs === 1 ? 'hour' : 'hours'} ago`;
+  return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+}
+
 export function DashboardHeader() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState(initialNotifications)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { data: response } = useGetDashboardAnalyticsQuery(7);
+  const [markRead] = useMarkReadMutation()
+  const [clearNotifications] = useClearNotificationsMutation()
   
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const { user } = useAuthStore()
+
+
+
+  const notifications = useMemo(() => {
+    return response?.data?.notifications?.map((n: any) => ({
+      ...n,
+      time: formatTimeAgo(n.time)
+    })) || [];
+  }, [response]);
+
+  const unreadCount = notifications.filter((n: any) => n.unread).length
+
+  const handleCopyShopId = () => {
+    const shopCode = user?.shopCode;
+    if (shopCode) {
+      navigator.clipboard.writeText(shopCode);
+      alert(`Shop ID "${shopCode}" copied! Share this with your staff so they can register.`);
+    }
+  }
 
   const filteredSearch = mockSearchData.filter(item => 
     searchQuery && (
@@ -81,9 +89,6 @@ export function DashboardHeader() {
     )
   )
 
-
-  const unreadCount = notifications.filter(n => n.unread).length
-
   const handleLogout = () => {
     // Clear the auth cookie
     document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
@@ -91,16 +96,32 @@ export function DashboardHeader() {
     router.push("/login")
   }
 
-  const markAllAsRead = (e: React.MouseEvent) => {
+  const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setNotifications(notifications.map(n => ({ ...n, unread: false })))
+    try {
+      await markRead().unwrap()
+    } catch (err) {
+      console.error("Failed to mark all as read:", err)
+    }
   }
 
-  const clearAll = (e: React.MouseEvent) => {
+  const handleClearAll = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setNotifications([])
+    try {
+      await clearNotifications().unwrap()
+    } catch (err) {
+      console.error("Failed to clear notifications:", err)
+    }
+  }
+
+  const handleMarkOneRead = async (id: string) => {
+    try {
+      await markRead(id).unwrap()
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err)
+    }
   }
 
   return (
@@ -164,6 +185,21 @@ export function DashboardHeader() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
+        {/* Shop ID for Admin/Shop Owner - shows the shopCode staff use to join */}
+        {(user?.role === 'ADMIN' || user?.role === 'admin') && user?.shopCode && (
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#EEF2FF] border border-[#4F46E5]/20 rounded-lg mr-2">
+            <span className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wider">Shop ID:</span>
+            <code className="text-xs font-mono font-bold text-[#0F172A] select-all">{user.shopCode}</code>
+            <button 
+              onClick={handleCopyShopId} 
+              className="ml-1 text-[#4F46E5] hover:text-[#4338CA] focus:outline-none transition-colors"
+              title="Copy Shop ID - share this with staff to join"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Notifications Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -183,7 +219,7 @@ export function DashboardHeader() {
               <div className="flex items-center gap-3">
                 {unreadCount > 0 && (
                   <button 
-                    onClick={markAllAsRead}
+                    onClick={handleMarkAllRead}
                     className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 focus:outline-none"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -192,7 +228,7 @@ export function DashboardHeader() {
                 )}
                 {notifications.length > 0 && (
                   <button 
-                    onClick={clearAll}
+                    onClick={handleClearAll}
                     className="text-xs font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 focus:outline-none"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -220,9 +256,7 @@ export function DashboardHeader() {
                       className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-border/40 last:border-b-0 rounded-none focus:bg-muted/50 transition-colors ${notification.unread ? 'bg-primary/[0.03]' : ''}`}
                       onSelect={(e) => {
                         e.preventDefault()
-                        setNotifications(notifications.map(n => 
-                          n.id === notification.id ? { ...n, unread: false } : n
-                        ))
+                        handleMarkOneRead(notification.id)
                       }}
                     >
                       <div className="flex w-full items-start gap-3">
@@ -268,7 +302,7 @@ export function DashboardHeader() {
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">AU</AvatarFallback>
               </Avatar>
               <div className="flex items-center gap-1 hidden sm:flex">
-                <span className="text-sm font-medium text-foreground">Admin User</span>
+                <span className="text-sm font-medium text-foreground">{user?.name || "Admin User"}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
             </button>
@@ -309,7 +343,7 @@ export function DashboardHeader() {
             <div className="flex items-center gap-4">
               {unreadCount > 0 && (
                 <button 
-                  onClick={markAllAsRead}
+                  onClick={handleMarkAllRead}
                   className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 focus:outline-none"
                 >
                   <CheckCircle2 className="w-4 h-4" />
@@ -318,7 +352,7 @@ export function DashboardHeader() {
               )}
               {notifications.length > 0 && (
                 <button 
-                  onClick={clearAll}
+                  onClick={handleClearAll}
                   className="text-sm font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1.5 focus:outline-none"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -345,9 +379,7 @@ export function DashboardHeader() {
                   key={notification.id} 
                   className={`flex items-start gap-4 p-6 hover:bg-muted/30 transition-colors cursor-pointer ${notification.unread ? 'bg-primary/[0.04]' : ''}`}
                   onClick={() => {
-                    setNotifications(notifications.map(n => 
-                      n.id === notification.id ? { ...n, unread: false } : n
-                    ))
+                    handleMarkOneRead(notification.id)
                   }}
                 >
                   <div className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.unread ? 'bg-primary' : 'bg-transparent'}`} />

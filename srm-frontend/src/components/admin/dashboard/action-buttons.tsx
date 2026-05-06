@@ -3,9 +3,44 @@
 import { useState } from "react"
 import { Plus, UserPlus, Calendar, X } from "lucide-react"
 import Link from "next/link"
+import { useCreateCustomerMutation } from "@/services/api/customersApiSlice"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 
 export function ActionButtons() {
   const [open, setOpen] = useState(false)
+  const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation()
+  const { user } = useSelector((state: RootState) => state.auth)
+
+  const [customerForm, setCustomerForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: ""
+  })
+
+  const handleCreateCustomer = async () => {
+    if (!customerForm.firstName || !customerForm.phone) {
+      alert("First name and phone are required");
+      return;
+    }
+    try {
+      await createCustomer({
+        tenantId: user?.tenantId,
+        shopId: user?.shopId,
+        name: `${customerForm.firstName} ${customerForm.lastName}`.trim(),
+        phone: customerForm.phone,
+        email: customerForm.email,
+        address: customerForm.address
+      }).unwrap();
+      alert("Customer Added Successfully!");
+      setOpen(false);
+      setCustomerForm({ firstName: "", lastName: "", email: "", phone: "", address: "" });
+    } catch (err: any) {
+      alert("Failed to create customer");
+    }
+  }
 
   return (
     <>
@@ -45,28 +80,28 @@ export function ActionButtons() {
                  <div className="grid grid-cols-2 gap-5 mb-5">
                    <div>
                      <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">First Name</label>
-                     <input type="text" placeholder="Sarah" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
+                     <input type="text" value={customerForm.firstName} onChange={e => setCustomerForm({...customerForm, firstName: e.target.value})} placeholder="Sarah" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
                    </div>
                    <div>
                      <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Last Name</label>
-                     <input type="text" placeholder="Anderson" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
+                     <input type="text" value={customerForm.lastName} onChange={e => setCustomerForm({...customerForm, lastName: e.target.value})} placeholder="Anderson" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
                    </div>
                  </div>
                  
                  <div className="grid grid-cols-2 gap-5 mb-5">
                    <div>
                      <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email Address</label>
-                     <input type="email" placeholder="sarah@example.com" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
+                     <input type="email" value={customerForm.email} onChange={e => setCustomerForm({...customerForm, email: e.target.value})} placeholder="sarah@example.com" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
                    </div>
                    <div>
                      <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone Number</label>
-                     <input type="tel" placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
+                     <input type="tel" value={customerForm.phone} onChange={e => setCustomerForm({...customerForm, phone: e.target.value})} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
                    </div>
                  </div>
 
                  <div className="mb-6">
                    <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Address</label>
-                   <input type="text" placeholder="Street Address, City" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
+                   <input type="text" value={customerForm.address} onChange={e => setCustomerForm({...customerForm, address: e.target.value})} placeholder="Street Address, City" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]" />
                  </div>
 
                  <div className="mb-8">
@@ -88,13 +123,11 @@ export function ActionButtons() {
                       Cancel
                     </button>
                     <button 
-                      onClick={() => {
-                        setOpen(false)
-                        alert("Customer Added Successfully!")
-                      }} 
-                      className="w-full sm:flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
+                      onClick={handleCreateCustomer} 
+                      disabled={isCreating}
+                      className="w-full sm:flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50"
                     >
-                      Save Customer Profile
+                      {isCreating ? "Saving..." : "Save Customer Profile"}
                     </button>
                  </div>
               </div>

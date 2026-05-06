@@ -29,8 +29,48 @@ const INITIAL_ROLES: Role[] = [
   {id:3, name:"Regular Customer",  color:"#475569", desc:"Standard repair flow and retail pricing."},
 ]
 
+import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
+
 export default function CustomerManagementPage() {
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS)
+  const { data: response, isLoading } = useGetCustomersQuery({});
+  const [createCustomer] = useCreateCustomerMutation();
+
+  const customers = useMemo(() => {
+    const apiCustomers = response?.customers || [];
+    return apiCustomers.map((c: any) => {
+      // Calculate derived fields
+      const repairsCount = c.repairs?.length || 0;
+      const spentRaw = c.repairs?.reduce((acc: number, curr: any) => acc + (curr.finalCost || curr.estimatedCost || 0), 0) || 0;
+      
+      let lastVisitDays = 0;
+      if (c.repairs && c.repairs.length > 0) {
+        const sortedRepairs = [...c.repairs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const diffTime = Math.abs(new Date().getTime() - new Date(sortedRepairs[0].createdAt).getTime());
+        lastVisitDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      } else {
+        const diffTime = Math.abs(new Date().getTime() - new Date(c.registeredAt || c.createdAt || Date.now()).getTime());
+        lastVisitDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+
+      let type: CustomerType = "Regular";
+      if (spentRaw > 10000 || repairsCount >= 3) type = "VIP";
+      else if (lastVisitDays < 30) type = "New";
+
+      return {
+        id: c.id,
+        name: c.name || "Unknown Customer",
+        email: c.email || "",
+        phone: c.phone || "",
+        location: c.address || "N/A",
+        repairs: repairsCount,
+        spentRaw,
+        type,
+        lastVisitDays,
+        registeredAt: new Date(c.registeredAt || c.createdAt || Date.now()).toISOString().slice(0, 10),
+        tags: c.tags || []
+      }
+    });
+  }, [response]);
   const [viewMode, setViewMode] = useState<"grid"|"list">("grid")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name-az")
@@ -59,7 +99,7 @@ export default function CustomerManagementPage() {
   const [isExporting, setIsExporting] = useState(false)
 
   // Add customer form
-  const [form, setForm] = useState({firstName:"",lastName:"",email:"",phone:"",location:"",type:"Regular" as CustomerType})
+  const [form, setForm] = useState({name:"",email:"",phone:"",address:"",type:"Regular" as CustomerType})
 
   const toggleType = (t: CustomerType) => setFilterTypes(p => p.includes(t) ? p.filter(x=>x!==t) : [...p,t])
 
@@ -75,7 +115,7 @@ export default function CustomerManagementPage() {
       r = r.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q))
     }
     if (filterTypes.length) r = r.filter(c => filterTypes.includes(c.type))
-    r = r.filter(c => c.repairs <= filterRepairsMax && c.spentRaw <= filterSpentMax)
+    r = r.filter(c => c.repairs <= (filterRepairsMax === 50 ? 999999 : filterRepairsMax) && c.spentRaw <= (filterSpentMax === 100 ? 99999999 : filterSpentMax * 1000))
     if (filterLastVisit === "today")        r = r.filter(c => c.lastVisitDays === 0)
     if (filterLastVisit === "this-week")    r = r.filter(c => c.lastVisitDays <= 7)
     if (filterLastVisit === "this-month")   r = r.filter(c => c.lastVisitDays <= 30)
@@ -100,17 +140,21 @@ export default function CustomerManagementPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paginated = filtered.slice((currentPage-1)*perPage, currentPage*perPage)
 
-  const handleAddCustomer = () => {
-    if (!form.firstName || !form.lastName) return
-    const newC: Customer = {
-      id: Date.now(), name: `${form.firstName} ${form.lastName}`,
-      email: form.email, phone: form.phone, location: form.location || "Colombo, Sri Lanka",
-      repairs: 0, spentRaw: 0, type: form.type as CustomerType,
-      lastVisitDays: 0, registeredAt: new Date().toISOString().slice(0,10), tags: []
+  const handleAddCustomer = async () => {
+    if (!form.name || !form.phone) return
+    try {
+      await createCustomer({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        address: form.address || "Colombo, Sri Lanka",
+      }).unwrap()
+      
+      setShowAddModal(false)
+      setForm({name:"",email:"",phone:"",address:"",type:"Regular"})
+    } catch (err) {
+      console.error("Failed to add customer:", err);
     }
-    setCustomers(p => [newC, ...p])
-    setShowAddModal(false)
-    setForm({firstName:"",lastName:"",email:"",phone:"",location:"",type:"Regular"})
   }
 
   const handleExportCSV = () => {
@@ -390,15 +434,15 @@ export default function CustomerManagementPage() {
               <button onClick={()=>setShowAddModal(false)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">First Name *</label><input value={form.firstName} onChange={e=>setForm(p=>({...p,firstName:e.target.value}))} placeholder="e.g. Sarah" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Last Name *</label><input value={form.lastName} onChange={e=>setForm(p=>({...p,lastName:e.target.value}))} placeholder="e.g. Anderson" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Full Name *</label>
+                <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Sarah Anderson" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="email@example.com" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone *</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Location</label><input value={form.location} onChange={e=>setForm(p=>({...p,location:e.target.value}))} placeholder="City, Sri Lanka" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Address</label><input value={form.address} onChange={e=>setForm(p=>({...p,address:e.target.value}))} placeholder="City, Sri Lanka" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Customer Type</label>
                 <div className="flex gap-3">{(["Regular","VIP","New"] as CustomerType[]).map(t=>(
                   <label key={t} onClick={e=>{e.preventDefault();setForm(p=>({...p,type:t}))}} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-[13px] font-semibold transition-colors ${form.type===t?"bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]":"border-border text-muted-foreground hover:bg-muted"}`}>{form.type===t&&<Check className="h-3.5 w-3.5"/>}{t}</label>
@@ -406,7 +450,7 @@ export default function CustomerManagementPage() {
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
                 <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">Cancel</button>
-                <button onClick={handleAddCustomer} disabled={!form.firstName||!form.lastName} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50">Save Customer</button>
+                <button onClick={handleAddCustomer} disabled={!form.name||!form.phone} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50">Save Customer</button>
               </div>
             </div>
           </div>

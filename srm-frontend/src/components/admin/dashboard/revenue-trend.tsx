@@ -46,20 +46,37 @@ const dataByRange: Record<string, { day: string; revenue: number }[]> = {
   }),
 }
 
+import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
+
 const rangeOptions = ["Last 7 days", "Last 14 days", "Last 30 days"]
 
 export function RevenueTrend() {
   const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState("Last 7 days")
+  
+  const daysMap: Record<string, number> = {
+    "Last 7 days": 7,
+    "Last 14 days": 14,
+    "Last 30 days": 30
+  };
+
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery(daysMap[selectedRange] || 7);
+  const data = response?.data?.revenueData || [];
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const data = dataByRange[selectedRange]
-
-  if (!mounted) {
-    return <div className="h-[300px] w-full bg-slate-50 animate-pulse rounded-xl" />;
+  if (!mounted || isLoading) {
+    return (
+      <div className="flex h-[380px] w-full flex-col rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-8">
+           <div className="h-4 w-32 bg-slate-100 animate-pulse rounded" />
+           <div className="h-8 w-24 bg-slate-100 animate-pulse rounded" />
+        </div>
+        <div className="flex-1 w-full bg-slate-50 animate-pulse rounded-lg" />
+      </div>
+    );
   }
 
   return (
@@ -101,7 +118,7 @@ export function RevenueTrend() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
               <XAxis
-                dataKey="day"
+                dataKey={data[0]?.date ? "date" : "day"}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#6B7280", fontSize: 12 }}

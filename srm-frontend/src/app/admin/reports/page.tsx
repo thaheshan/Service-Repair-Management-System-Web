@@ -45,6 +45,7 @@ import {
 import { DashboardSidebar } from '@/components/admin/dashboard/sidebar'
 import { DashboardHeader } from '@/components/admin/dashboard/header'
 import { DashboardFooter } from '@/components/admin/dashboard/footer'
+import { useGetDashboardAnalyticsQuery } from '@/services/api/dashboardApiSlice'
 
 // --- DYNAMIC MOCK DATA ORCHESTRATION ---
 const metricMaps: Record<string, any> = {
@@ -192,8 +193,39 @@ export default function ReportsPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const hiddenReportRef = useRef<HTMLDivElement>(null)
 
-  // Grab data based on selected filter
+  const { data: dashResponse } = useGetDashboardAnalyticsQuery({});
+  const apiStats = dashResponse?.data?.stats;
+
+  // Grab chart data based on selected filter (period-bucketed mock shapes)
   const currentData = metricMaps[timeRange] || metricMaps['30d']
+
+  // Override stats with live values when available
+  const liveStats = useMemo(() => [
+    {
+      label: 'Total Revenue',
+      value: apiStats ? `Rs. ${(apiStats.totalRevenue ?? 0).toLocaleString()}` : currentData.stats[0].value,
+      change: apiStats?.revenueChange ?? currentData.stats[0].change,
+      isUp: true, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50'
+    },
+    {
+      label: 'Total Repairs',
+      value: apiStats ? String(apiStats.totalRepairs ?? 0) : currentData.stats[1].value,
+      change: apiStats?.repairChange ?? currentData.stats[1].change,
+      isUp: true, icon: Wrench, color: 'text-indigo-600', bg: 'bg-indigo-50'
+    },
+    {
+      label: 'Pending Repairs',
+      value: apiStats ? String(apiStats.pendingRepairs ?? 0) : currentData.stats[2].value,
+      change: 'Action required',
+      isUp: false, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50'
+    },
+    {
+      label: 'Active Technicians',
+      value: apiStats ? String(apiStats.activeTechnicians ?? 0) : currentData.stats[3].value,
+      change: 'Currently assigned',
+      isUp: true, icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50'
+    },
+  ], [apiStats, currentData]);
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true)
@@ -364,7 +396,7 @@ export default function ReportsPage() {
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {currentData.stats.map((stat: any, idx: number) => (
+              {liveStats.map((stat: any, idx: number) => (
                 <div key={idx} className="bg-white p-6 rounded-[24px] border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                   <div className="flex justify-between items-start mb-4">
                     <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center shadow-inner`}>
@@ -415,20 +447,16 @@ export default function ReportsPage() {
                 </div>
                 <div className="h-[350px] w-full mt-auto">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={currentData.revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={dashResponse?.data?.revenueData || currentData.revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.1}/>
                           <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
                         </linearGradient>
-                        <linearGradient id="colorRepairs" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                        </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                       <XAxis 
-                        dataKey="label" 
+                        dataKey={dashResponse?.data?.revenueData ? "date" : "label"} 
                         axisLine={false} 
                         tickLine={false} 
                         tick={{ fill: '#64748B', fontSize: 12, fontWeight: 600 }}
@@ -440,14 +468,6 @@ export default function ReportsPage() {
                         tickLine={false} 
                         tick={{ fill: '#64748B', fontSize: 11, fontWeight: 600 }}
                         tickFormatter={(value) => `Rs.${value/1000}k`}
-                      />
-                      <YAxis 
-                        yAxisId="right"
-                        orientation="right"
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#10B981', fontSize: 11, fontWeight: 600 }}
-                        tickFormatter={(value) => `${value}`}
                       />
                       <Tooltip 
                         contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px' }}
@@ -464,16 +484,6 @@ export default function ReportsPage() {
                         fill="url(#colorRev)" 
                         name="Revenue"
                       />
-                      <Area 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="repairs" 
-                        stroke="#10B981" 
-                        strokeWidth={3}
-                        fillOpacity={1} 
-                        fill="url(#colorRepairs)" 
-                        name="Repair Volume"
-                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -489,7 +499,7 @@ export default function ReportsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={currentData.statusDistribution}
+                          data={dashResponse?.data?.statusData || currentData.statusDistribution}
                           cx="50%"
                           cy="50%"
                           innerRadius={70}
@@ -497,8 +507,8 @@ export default function ReportsPage() {
                           paddingAngle={8}
                           dataKey="value"
                         >
-                          {currentData.statusDistribution.map((entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          {(dashResponse?.data?.statusData || currentData.statusDistribution).map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.color || '#94A3B8'} />
                           ))}
                         </Pie>
                         <Tooltip 
@@ -507,19 +517,21 @@ export default function ReportsPage() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-[32px] font-black text-[#0F172A]">{currentData.statusDistribution[0].value}%</span>
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Completed</span>
+                      <span className="text-[24px] font-black text-[#0F172A]">
+                        {dashResponse?.data?.statusData?.[0]?.value || currentData.statusDistribution[0].value}
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Completed</span>
                     </div>
                   </div>
 
                   <div className="w-full mt-8 space-y-3">
-                    {currentData.statusDistribution.map((item: any, idx: number) => (
+                    {(dashResponse?.data?.statusData || currentData.statusDistribution).map((item: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color || '#94A3B8' }} />
                           <span className="text-[13px] font-bold text-[#475569]">{item.name}</span>
                         </div>
-                        <span className="text-[13px] font-black text-[#0F172A]">{item.value}%</span>
+                        <span className="text-[13px] font-black text-[#0F172A]">{item.value}</span>
                       </div>
                     ))}
                   </div>
@@ -546,7 +558,7 @@ export default function ReportsPage() {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={currentData.brandDistribution}
+                            data={dashResponse?.data?.brandData || currentData.brandDistribution}
                             cx="50%"
                             cy="50%"
                             innerRadius={40}
@@ -554,22 +566,22 @@ export default function ReportsPage() {
                             paddingAngle={5}
                             dataKey="value"
                           >
-                            {currentData.brandDistribution.map((entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            {(dashResponse?.data?.brandData || currentData.brandDistribution).map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={entry.color || '#94A3B8'} />
                             ))}
                           </Pie>
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
                     <div className="flex-1 space-y-4">
-                       {currentData.brandDistribution.map((brand: any, idx: number) => (
+                       {(dashResponse?.data?.brandData || currentData.brandDistribution).map((brand: any, idx: number) => (
                          <div key={idx} className="flex flex-col gap-1">
                             <div className="flex justify-between items-center text-[12px] font-bold">
                                <span className="text-muted-foreground">{brand.name}</span>
                                <span className="text-[#0F172A]">{brand.value}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${brand.value}%`, backgroundColor: brand.color }} />
+                               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${brand.value}%`, backgroundColor: brand.color || '#94A3B8' }} />
                             </div>
                          </div>
                        ))}
@@ -590,7 +602,7 @@ export default function ReportsPage() {
                  </div>
 
                  <div className="space-y-4">
-                    {currentData.topServices.map((service: any, idx: number) => (
+                    {(dashResponse?.data?.topServices || currentData.topServices).map((service: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-border/50 group hover:border-[#4F46E5]/20 transition-all">
                         <div className="flex items-center gap-3">
                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[12px] font-black text-[#0F172A] shadow-sm">

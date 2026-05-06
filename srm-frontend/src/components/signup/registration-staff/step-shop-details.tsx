@@ -1,18 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Store, Badge, MapPin, GitBranch, Mail, ArrowLeft, Info, FileText } from "lucide-react"
-import { Checkbox } from "@/components/ui/ui-staff/checkbox"
+import { Store, ArrowLeft, CheckCircle2, Loader2, UserCog, Wrench } from "lucide-react"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep2 } from "./side-panel-step2"
 import { AuthLogo } from "@/components/common/auth-logo"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/ui-staff/select"
 
 interface StepShopDetailsProps {
   onNext: (data: ShopDetailsData) => void
@@ -20,112 +12,59 @@ interface StepShopDetailsProps {
 }
 
 export interface ShopDetailsData {
-  shopName: string
-  companyPersonnelId: string
-  shopLocation: string
-  branchOutlet: string
-  shopManagerEmail: string
-  reasonForJoining: string
-  agreeTerms: boolean
+  shopId: string        // the shopCode (e.g. "SHOP-ABC123")
+  role: "TECHNICIAN" | "MANAGER"
 }
 
-// All 25 Sri Lanka districts
-const SL_DISTRICTS = [
-  "Ampara",
-  "Anuradhapura",
-  "Badulla",
-  "Batticaloa",
-  "Colombo",
-  "Galle",
-  "Gampaha",
-  "Hambantota",
-  "Jaffna",
-  "Kalutara",
-  "Kandy",
-  "Kegalle",
-  "Kilinochchi",
-  "Kurunegala",
-  "Mannar",
-  "Matale",
-  "Matara",
-  "Monaragala",
-  "Mullaitivu",
-  "Nuwara Eliya",
-  "Polonnaruwa",
-  "Puttalam",
-  "Ratnapura",
-  "Trincomalee",
-  "Vavuniya",
-]
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PERSONNEL_ID_REGEX = /^[A-Za-z0-9\-]{3,30}$/
-
 export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
-  const [formData, setFormData] = useState<ShopDetailsData>({
-    shopName: "",
-    companyPersonnelId: "",
-    shopLocation: "",
-    branchOutlet: "",
-    shopManagerEmail: "",
-    reasonForJoining: "",
-    agreeTerms: false,
-  })
+  const [shopId, setShopId] = useState("")
+  const [role, setRole] = useState<"TECHNICIAN" | "MANAGER">("TECHNICIAN")
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isValidating, setIsValidating] = useState(false)
+  const [validShop, setValidShop] = useState<string | null>(null) // shop name after successful validation
 
-  const handleChange = (field: keyof ShopDetailsData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) setErrors((prev) => { const e = { ...prev }; delete e[field]; return e })
-  }
-
-  const validate = () => {
-    const e: Record<string, string> = {}
-
-    if (!formData.shopName.trim()) {
-      e.shopName = "Shop name is required."
-    } else if (formData.shopName.trim().length < 2) {
-      e.shopName = "Shop name must be at least 2 characters."
+  const validateShopIdWithBackend = async (id: string) => {
+    if (!id.trim()) return
+    setIsValidating(true)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1/staff/validate-shop-id`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shop_id: id.trim() }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setValidShop(data?.data?.shop_id || id.trim())
+        setErrors(prev => { const e = { ...prev }; delete e.shopId; return e })
+      } else {
+        const data = await res.json()
+        setValidShop(null)
+        setErrors(prev => ({ ...prev, shopId: data?.message || "Invalid Shop ID. Please check and try again." }))
+      }
+    } catch {
+      setValidShop(null)
+      setErrors(prev => ({ ...prev, shopId: "Unable to verify Shop ID. Check your connection." }))
+    } finally {
+      setIsValidating(false)
     }
-
-    if (!formData.companyPersonnelId.trim()) {
-      e.companyPersonnelId = "Company Personnel ID is required."
-    } else if (!PERSONNEL_ID_REGEX.test(formData.companyPersonnelId.trim())) {
-      e.companyPersonnelId = "ID must be 3–30 alphanumeric characters (hyphens allowed)."
-    }
-
-    if (!formData.shopLocation) {
-      e.shopLocation = "Please select the shop's district."
-    }
-
-    if (!formData.shopManagerEmail.trim()) {
-      e.shopManagerEmail = "Shop manager email is required."
-    } else if (!EMAIL_REGEX.test(formData.shopManagerEmail)) {
-      e.shopManagerEmail = "Enter a valid email address."
-    }
-
-    if (!formData.agreeTerms) {
-      e.agreeTerms = "You must agree to the Terms of Service and Privacy Policy."
-    }
-
-    setErrors(e)
-    return Object.keys(e).length === 0
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validate()) onNext(formData)
+    const errs: Record<string, string> = {}
+    if (!shopId.trim()) errs.shopId = "Shop ID is required."
+    else if (!validShop) errs.shopId = "Please verify your Shop ID first."
+    setErrors(errs)
+    if (Object.keys(errs).length === 0) {
+      onNext({ shopId: shopId.trim(), role })
+    }
   }
 
-  const inputClass = (field: string) =>
-    `h-11 w-full rounded-lg border bg-white pl-10 pr-4 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none transition-all focus:ring-2 ${
-      errors[field]
-        ? "border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20"
-        : "border-[#E5E7EB] focus:border-[#4F46E5] focus:ring-[#4F46E5]/20"
-    }`
+  const hasError = (field: string) => !!errors[field]
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen w-full">
-      {/* Left side panel - Hidden on Mobile/Tablet */}
+      {/* Left side panel */}
       <div className="hidden lg:block lg:w-[480px] shrink-0">
         <div className="lg:sticky lg:top-0 h-full lg:h-screen">
           <SidePanelStep2 />
@@ -134,7 +73,6 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
 
       {/* Right side form */}
       <div className="flex flex-1 flex-col bg-white overflow-y-auto">
-        {/* Back button */}
         <div className="px-6 pt-6 lg:px-16">
           <button
             onClick={onBack}
@@ -147,12 +85,10 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
 
         <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-6 lg:px-16">
           <div className="w-full max-w-[520px]">
-            {/* Logo at the top for Mobile/Tablet */}
             <div className="lg:hidden mb-10 flex justify-center">
-               <AuthLogo />
+              <AuthLogo />
             </div>
 
-            {/* Stepper */}
             <div className="mb-8">
               <RegistrationStepper
                 currentStep={2}
@@ -160,197 +96,115 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
               />
             </div>
 
-            {/* Header */}
             <div className="mb-6 text-center lg:text-left">
               <div className="hidden lg:block mb-8 text-center">
                 <AuthLogo />
               </div>
-              <h2 className="text-2xl font-bold text-[#111827]">Shop Information</h2>
-              <p className="mt-1 text-sm text-[#6B7280]">Enter the details of the repair shop you want to join</p>
+              <h2 className="text-2xl font-bold text-[#111827]">Join Your Shop</h2>
+              <p className="mt-1 text-sm text-[#6B7280]">
+                Enter the Shop ID provided by your shop owner to link your account
+              </p>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} noValidate>
-              <div className="rounded-xl border border-[#E5E7EB] bg-white p-6">
-                <div className="flex flex-col gap-5">
+              <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 flex flex-col gap-6">
 
-                  {/* Shop Name */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
-                      Shop Name <span className="text-[#EF4444]">*</span>
-                    </label>
-                    <div className="relative">
+                {/* Shop ID */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
+                    Shop ID <span className="text-[#EF4444]">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
                       <Store className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
                       <input
                         type="text"
-                        placeholder="Enter shop name"
-                        value={formData.shopName}
-                        onChange={(e) => handleChange("shopName", e.target.value)}
-                        className={inputClass("shopName")}
+                        placeholder="e.g. SHOP-ABC123"
+                        value={shopId}
+                        onChange={(e) => {
+                          setShopId(e.target.value)
+                          setValidShop(null)
+                          setErrors(prev => { const er = { ...prev }; delete er.shopId; return er })
+                        }}
+                        className={`h-11 w-full rounded-lg border bg-white pl-10 pr-4 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none transition-all focus:ring-2 ${
+                          hasError("shopId")
+                            ? "border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20"
+                            : validShop
+                            ? "border-[#10B981] focus:border-[#10B981] focus:ring-[#10B981]/20"
+                            : "border-[#E5E7EB] focus:border-[#4F46E5] focus:ring-[#4F46E5]/20"
+                        }`}
                       />
                     </div>
-                    {errors.shopName
-                      ? <p className="mt-1 text-xs text-[#EF4444]">{errors.shopName}</p>
-                      : <p className="mt-1 text-xs text-[#9CA3AF]">The official name of the repair shop</p>
-                    }
+                    <button
+                      type="button"
+                      onClick={() => validateShopIdWithBackend(shopId)}
+                      disabled={isValidating || !shopId.trim()}
+                      className="flex h-11 items-center gap-1.5 rounded-lg bg-[#4F46E5] px-4 text-sm font-semibold text-white hover:bg-[#4338CA] disabled:opacity-50 focus:outline-none shrink-0"
+                    >
+                      {isValidating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Verify"
+                      )}
+                    </button>
                   </div>
 
-                  {/* Company Personnel ID */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
-                      Company Personnel ID <span className="text-[#EF4444]">*</span>
-                    </label>
-                    <div className="relative">
-                      <Badge className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
-                      <input
-                        type="text"
-                        placeholder="e.g., TECH-2024-001"
-                        value={formData.companyPersonnelId}
-                        onChange={(e) => handleChange("companyPersonnelId", e.target.value)}
-                        className={inputClass("companyPersonnelId")}
-                      />
+                  {validShop && (
+                    <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#10B981]">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Shop verified! You're joining: <strong>{validShop}</strong>
                     </div>
-                    {errors.companyPersonnelId
-                      ? <p className="mt-1 text-xs text-[#EF4444]">{errors.companyPersonnelId}</p>
-                      : <p className="mt-1 text-xs text-[#9CA3AF]">Your unique employee ID provided by the shop</p>
-                    }
-                  </div>
-
-                  {/* Shop Location — all 25 Sri Lanka districts */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
-                      Shop Location <span className="text-[#EF4444]">*</span>
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
-                      <Select onValueChange={(value) => handleChange("shopLocation", value)}>
-                        <SelectTrigger
-                          className={`h-11 w-full rounded-lg pl-10 text-sm [&>span]:text-[#9CA3AF] data-[state=open]:ring-2 ${
-                            errors.shopLocation
-                              ? "border-[#EF4444] data-[state=open]:border-[#EF4444] data-[state=open]:ring-[#EF4444]/20"
-                              : "border-[#E5E7EB] data-[state=open]:border-[#4F46E5] data-[state=open]:ring-[#4F46E5]/20"
-                          }`}
-                        >
-                          <SelectValue placeholder="Select district" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          {SL_DISTRICTS.map((district) => (
-                            <SelectItem key={district} value={district.toLowerCase().replace(/\s+/g, "-")}>
-                              {district}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {errors.shopLocation
-                      ? <p className="mt-1 text-xs text-[#EF4444]">{errors.shopLocation}</p>
-                      : <p className="mt-1 text-xs text-[#9CA3AF]">Select the district where the shop is located</p>
-                    }
-                  </div>
-
-                  {/* Branch/Outlet (Optional) */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
-                      Branch/Outlet{" "}
-                      <span className="text-xs font-normal text-[#9CA3AF]">(Optional)</span>
-                    </label>
-                    <div className="relative">
-                      <GitBranch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
-                      <input
-                        type="text"
-                        placeholder="e.g., Main Branch, Mall Outlet"
-                        value={formData.branchOutlet}
-                        onChange={(e) => handleChange("branchOutlet", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#E5E7EB] bg-white pl-10 pr-4 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20"
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-[#9CA3AF]">Specify if the shop has multiple locations</p>
-                  </div>
-
-                  {/* Shop Manager Email */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
-                      Shop Manager Email <span className="text-[#EF4444]">*</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
-                      <input
-                        type="email"
-                        placeholder="manager@repairshop.com"
-                        value={formData.shopManagerEmail}
-                        onChange={(e) => handleChange("shopManagerEmail", e.target.value)}
-                        className={inputClass("shopManagerEmail")}
-                      />
-                    </div>
-                    {errors.shopManagerEmail
-                      ? <p className="mt-1 text-xs text-[#EF4444]">{errors.shopManagerEmail}</p>
-                      : <p className="mt-1 text-xs text-[#9CA3AF]">Your access request will be sent to this email</p>
-                    }
-                  </div>
-
-                  {/* Reason for Joining (Optional) */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-[#111827]">
-                      Reason for Joining{" "}
-                      <span className="text-xs font-normal text-[#9CA3AF]">(Optional)</span>
-                    </label>
-                    <div className="relative">
-                      <FileText className="absolute left-3 top-3.5 h-4 w-4 text-[#9CA3AF]" />
-                      <textarea
-                        placeholder="Tell us why you want to join this shop…"
-                        value={formData.reasonForJoining}
-                        onChange={(e) => handleChange("reasonForJoining", e.target.value)}
-                        rows={3}
-                        className="w-full resize-none rounded-lg border border-[#E5E7EB] bg-white pl-10 pr-4 py-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20"
-                      />
-                    </div>
-                  </div>
-
+                  )}
+                  {hasError("shopId") && (
+                    <p className="mt-1 text-xs text-[#EF4444]">{errors.shopId}</p>
+                  )}
+                  {!validShop && !hasError("shopId") && (
+                    <p className="mt-1 text-xs text-[#9CA3AF]">
+                      Ask your shop owner for the Shop ID shown in their dashboard
+                    </p>
+                  )}
                 </div>
+
+                {/* Role */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#111827]">
+                    Your Role <span className="text-[#EF4444]">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { value: "TECHNICIAN", label: "Technician", icon: Wrench, desc: "Repair & service tasks" },
+                      { value: "MANAGER", label: "Manager", icon: UserCog, desc: "Manage shop operations" },
+                    ] as const).map(({ value, label, icon: Icon, desc }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setRole(value)}
+                        className={`flex flex-col items-start gap-1.5 rounded-xl border p-4 text-left transition-all focus:outline-none ${
+                          role === value
+                            ? "border-[#4F46E5] bg-[#EEF2FF] text-[#4F46E5]"
+                            : "border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB]"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 ${role === value ? "text-[#4F46E5]" : "text-[#9CA3AF]"}`} />
+                        <span className="text-sm font-semibold">{label}</span>
+                        <span className="text-xs text-[#6B7280]">{desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
               </div>
 
               {/* Info box */}
-              <div className="mt-6 rounded-xl border border-[#BFDBFE] bg-[#DBEAFE] px-4 py-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3B82F6]">
-                    <Info className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-[#111827]">Verification Required</h4>
-                    <p className="mt-0.5 text-xs leading-relaxed text-[#374151]">
-                      {"Your request will be sent to the shop manager for approval. You'll receive an email notification once your account is verified."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Terms */}
-              <div className="mt-6 flex flex-col gap-1.5">
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    checked={formData.agreeTerms}
-                    onCheckedChange={(checked) => handleChange("agreeTerms", checked === true)}
-                    className={`mt-0.5 ${errors.agreeTerms ? "border-[#EF4444]" : ""}`}
-                    id="terms-step2-staff"
-                  />
-                  <label
-                    htmlFor="terms-step2-staff"
-                    className={`text-sm leading-relaxed ${errors.agreeTerms ? "text-[#EF4444]" : "text-[#374151]"}`}
-                  >
-                    I agree to the{" "}
-                    <a href="#" className="font-medium text-[#4F46E5] hover:underline">Terms of Service</a>
-                    {" "}and{" "}
-                    <a href="#" className="font-medium text-[#4F46E5] hover:underline">Privacy Policy</a>
-                    . I confirm that all information provided is accurate and true.
-                  </label>
-                </div>
-                {errors.agreeTerms && (
-                  <p className="text-xs text-[#EF4444]">{errors.agreeTerms}</p>
-                )}
+              <div className="mt-5 rounded-xl border border-[#BFDBFE] bg-[#DBEAFE] px-4 py-3">
+                <p className="text-xs leading-relaxed text-[#374151]">
+                  <strong>How to get your Shop ID:</strong> Ask your shop owner or manager to share the
+                  Shop ID visible in their admin dashboard header. It looks like <code className="font-mono bg-white/60 px-1 rounded">SHOP-XXXXXX</code>.
+                </p>
               </div>
 
               {/* Buttons */}
-              <div className="mt-8 flex gap-4">
+              <div className="mt-6 flex gap-4">
                 <button
                   type="button"
                   onClick={onBack}
@@ -368,14 +222,12 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
               </div>
             </form>
 
-            {/* Sign in link */}
             <div className="mt-8 pb-8 text-center">
               <p className="text-sm text-[#6B7280]">
                 Already have an account?{" "}
                 <a href="/login" className="font-semibold text-[#111827] underline hover:text-[#4F46E5]">Sign in</a>
               </p>
             </div>
-
           </div>
         </div>
       </div>

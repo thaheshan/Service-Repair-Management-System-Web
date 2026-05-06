@@ -1,12 +1,15 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import axios from 'axios';
 
 export interface User {
   user_id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  fullName?: string;
+  role: 'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'CUSTOMER' | 'admin' | 'user';
   tenant_id: string;
+  shopCode?: string | null;
+  shopName?: string | null;
 }
 
 interface AuthState {
@@ -99,14 +102,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password
       });
 
-      const { token, user } = response.data;
+      // Backend returns { success, user, accessToken, refreshToken }
+      const { accessToken, token: tokenFallback, user } = response.data;
+      const authToken = accessToken || tokenFallback;
+
+      if (!authToken) {
+        throw new Error("No access token received from server");
+      }
+
+      // Normalize user shape from backend response
+      const normalizedUser: User = {
+        user_id: user.id || user.user_id,
+        email: user.email || '',
+        name: user.fullName || user.name || user.email?.split('@')[0] || 'User',
+        fullName: user.fullName || user.name,
+        role: user.role?.toLowerCase() as User['role'],
+        tenant_id: user.tenantId || user.tenant_id,
+        shopCode: user.shopCode ?? null,
+        shopName: user.shopName ?? null,
+      };
 
       // Store token
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      localStorage.setItem(AUTH_TOKEN_KEY, authToken);
 
       set({
-        token,
-        user,
+        token: authToken,
+        user: normalizedUser,
         isAuthenticated: true,
         isLoading: false,
         error: null

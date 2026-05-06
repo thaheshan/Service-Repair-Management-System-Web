@@ -3,24 +3,30 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 
-const data = [
-  { name: "Completed", value: 30, color: "#10B981" },
-  { name: "In Progress", value: 12, color: "#4F46E5" },
-  { name: "Pending", value: 5, color: "#F59E0B" },
+const fallbackData = [
+  { name: "Completed", value: 0, color: "#10B981" },
+  { name: "In Progress", value: 0, color: "#4F46E5" },
+  { name: "Pending", value: 0, color: "#F59E0B" },
 ]
-
-const totalRepairs = data.reduce((sum, item) => sum + item.value, 0)
 
 export function RepairStatusChart() {
   const [mounted, setMounted] = useState(false);
+  const { data: response } = useGetDashboardAnalyticsQuery({});
+  
+  const data = response?.data?.statusData?.length > 0 
+    ? response.data.statusData 
+    : fallbackData;
+    
+  const totalRepairs = data.reduce((sum: number, item: any) => sum + item.value, 0)
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) {
-    return <div className="h-[350px] w-full bg-slate-50 animate-pulse rounded-xl" />;
+    return <div className="h-[550px] w-full bg-slate-50 animate-pulse rounded-xl" />;
   }
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-card">
@@ -30,7 +36,7 @@ export function RepairStatusChart() {
       </div>
 
       {/* Chart */}
-      <div className="flex flex-1 items-center justify-center px-4 py-8" style={{ height: '350px', width: '100%' }}>
+      <div className="flex flex-1 items-center justify-center px-4 py-8" style={{ height: '550px', width: '100%' }}>
         <div className="relative h-full w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>

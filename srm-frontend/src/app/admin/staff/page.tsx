@@ -26,8 +26,33 @@ const INIT_ROLES: Role[] = [
   {id:3, name:"Junior Technician", color:"#059669", desc:"Can view assigned tasks and log time."},
 ]
 
+import { useGetStaffListQuery, useCreateStaffMutation, useUpdateStaffMutation, useDeleteStaffMutation } from "@/services/api/staffApiSlice"
+
 export default function StaffManagementPage() {
-  const [staff, setStaff] = useState<StaffMember[]>(INITIAL_STAFF)
+  const { data: response, isLoading } = useGetStaffListQuery({});
+  const [createStaff] = useCreateStaffMutation();
+  const [updateStaff] = useUpdateStaffMutation();
+  const [deleteStaffMutation] = useDeleteStaffMutation();
+
+  const staff = useMemo(() => {
+    const apiStaff = response?.staff || [];
+    return apiStaff.map((s: any, index: number) => ({
+      id: s.id || s.staffId || `staff-${index}`,
+      firstName: s.name ? s.name.split(' ')[0] : (s.email?.split('@')[0] || "Unknown"),
+      lastName: s.name && s.name.includes(' ') ? s.name.split(' ').slice(1).join(' ') : "",
+      email: s.email || "",
+      phone: s.phone || "N/A",
+      role: s.role || "Technician",
+      branch: "Main Branch",
+      specialties: s.specialties || [],
+      rating: 4.8,
+      activeJobs: s.assignedRepairs ? s.assignedRepairs.length : 0,
+      weekJobs: 0,
+      status: s.isActive ? "Available" : "Offline",
+      joinedAt: s.createdAt ? new Date(s.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      avatar: undefined
+    }));
+  }, [response]);
   const [viewMode, setViewMode] = useState<"grid"|"list">("grid")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name-az")
@@ -58,7 +83,7 @@ export default function StaffManagementPage() {
   const [newRole, setNewRole] = useState({name:"",color:"#4F46E5",desc:""})
 
   // Add form
-  const [form, setForm] = useState({firstName:"",lastName:"",email:"",phone:"",role:"Technician" as StaffRole, branch:"Main Branch",specialties:[] as Specialty[],status:"Available" as StaffStatus})
+  const [form, setForm] = useState({name:"",email:"",phone:"",password:"",role:"Technician" as StaffRole, branch:"Main Branch",specialties:[] as Specialty[],status:"Available" as StaffStatus})
 
   const toggle = <T extends string>(val:T, arr:T[], set:(f:(p:T[])=>T[])=>void) =>
     set(p => p.includes(val) ? p.filter(x=>x!==val) : [...p,val])
@@ -90,11 +115,22 @@ export default function StaffManagementPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length/perPage))
   const paginated = filtered.slice((currentPage-1)*perPage, currentPage*perPage)
 
-  const handleAdd = () => {
-    if (!form.firstName||!form.lastName) return
-    const s: StaffMember = { id:Date.now(), ...form, rating:0, activeJobs:0, weekJobs:0, joinedAt:new Date().toISOString().slice(0,10) }
-    setStaff(p=>[s,...p]); setShowAddModal(false)
-    setForm({firstName:"",lastName:"",email:"",phone:"",role:"Technician",branch:"Main Branch",specialties:[],status:"Available"})
+  const handleAdd = async () => {
+    if (!form.name || !form.email || !form.password) return
+    try {
+      await createStaff({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role: form.role,
+        specialties: form.specialties
+      }).unwrap()
+      setShowAddModal(false)
+      setForm({name:"",email:"",phone:"",password:"",role:"Technician",branch:"Main Branch",specialties:[],status:"Available"})
+    } catch (err) {
+      console.error("Failed to add staff:", err);
+    }
   }
 
   const handleExportCSV = () => {
@@ -377,13 +413,17 @@ export default function StaffManagementPage() {
               <button onClick={()=>setShowAddModal(false)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">First Name *</label><input value={form.firstName} onChange={e=>setForm(p=>({...p,firstName:e.target.value}))} placeholder="John" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Last Name *</label><input value={form.lastName} onChange={e=>setForm(p=>({...p,lastName:e.target.value}))} placeholder="Doe" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Full Name *</label>
+                <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="John Doe" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email *</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Password *</label>
+                <input value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))} type="password" placeholder="Min 8 characters" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Role</label>
@@ -415,7 +455,7 @@ export default function StaffManagementPage() {
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
                 <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-                <button onClick={handleAdd} disabled={!form.firstName||!form.lastName} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none disabled:opacity-50">Save Staff Member</button>
+                <button onClick={handleAdd} disabled={!form.name||!form.email||!form.password} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none disabled:opacity-50">Save Staff Member</button>
               </div>
             </div>
           </div>
@@ -431,9 +471,13 @@ export default function StaffManagementPage() {
               <button onClick={()=>setEditStaff(null)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">First Name</label><input value={editStaff.firstName} onChange={e=>setEditStaff(p=>p?{...p,firstName:e.target.value}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Last Name</label><input value={editStaff.lastName} onChange={e=>setEditStaff(p=>p?{...p,lastName:e.target.value}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              <div>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Full Name</label>
+                <input value={editStaff.firstName + (editStaff.lastName ? " " + editStaff.lastName : "")} onChange={e=>{
+                  const val = e.target.value;
+                  const parts = val.split(' ');
+                  setEditStaff(p => p ? { ...p, firstName: parts[0], lastName: parts.slice(1).join(' ') } : p);
+                }} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email</label><input value={editStaff.email} onChange={e=>setEditStaff(p=>p?{...p,email:e.target.value}:p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               <div className="grid grid-cols-2 gap-4">
@@ -455,7 +499,19 @@ export default function StaffManagementPage() {
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
                 <button onClick={()=>setEditStaff(null)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-                <button onClick={()=>{setStaff(p=>p.map(x=>x.id===editStaff!.id?editStaff!:x));setEditStaff(null)}} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none">Save Changes</button>
+                <button onClick={async ()=>{
+                  try {
+                    await updateStaff({
+                      id: editStaff!.id,
+                      name: editStaff!.firstName + (editStaff!.lastName ? " " + editStaff!.lastName : ""),
+                      email: editStaff!.email,
+                      phone: editStaff!.phone,
+                      role: editStaff!.role,
+                      isActive: editStaff!.status === "Available"
+                    }).unwrap();
+                    setEditStaff(null);
+                  } catch(e) { console.error(e) }
+                }} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none">Save Changes</button>
               </div>
             </div>
           </div>
@@ -508,7 +564,12 @@ export default function StaffManagementPage() {
             </div>
             <div className="flex gap-3">
               <button onClick={()=>setDeleteStaff(null)} className="flex-1 h-10 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-              <button onClick={()=>{setStaff(p=>p.filter(x=>x.id!==deleteStaff!.id));setDeleteStaff(null)}} className="flex-1 h-10 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 focus:outline-none">Remove</button>
+              <button onClick={async ()=>{
+                try {
+                  await deleteStaffMutation(deleteStaff!.id).unwrap();
+                  setDeleteStaff(null);
+                } catch(e) { console.error(e) }
+              }} className="flex-1 h-10 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 focus:outline-none">Remove</button>
             </div>
           </div>
         </div>
