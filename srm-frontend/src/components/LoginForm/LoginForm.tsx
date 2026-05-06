@@ -35,11 +35,18 @@ export default function LoginForm() {
         accessToken: result.accessToken,
       }));
 
-      // Use hard redirect for reliability during dev
-      if (result.user.role === 'ADMIN') {
+      // Role-based routing
+      const role = result.user.role;
+      if (role === 'ADMIN') {
         window.location.href = '/admin/dashboard';
+      } else if (role === 'MANAGER') {
+        window.location.href = '/manager/dashboard';
+      } else if (role === 'TECHNICIAN') {
+        window.location.href = '/technician/dashboard';
+      } else if (role === 'CUSTOMER') {
+        window.location.href = '/customer/dashboard';
       } else {
-        window.location.href = '/dashboard';
+        window.location.href = '/admin/dashboard';
       }
     } catch (err: any) {
       console.error('[LoginForm] Login error:', err);

@@ -6,6 +6,9 @@ import { useRouter, useParams } from "next/navigation"
 import { Calendar, Search, ChevronDown, Check, Camera, Image as ImageIcon, Plus, X, Download } from "lucide-react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { useGetRepairByIdQuery, useUpdateRepairStatusMutation } from "@/services/api/repairsApiSlice"
+import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
+import { toast } from "sonner"
 
 // Mock device icons
 const PhoneIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -35,19 +38,72 @@ export default function EditRepairPage() {
   // Custom Parts State
   const [partsRequired, setPartsRequired] = useState<string[]>(["Premium Screen Assembly - iPhone 13 Pro"])
   const [partInput, setPartInput] = useState("")
+  const [imei, setImei] = useState("")
+  const [serialNo, setSerialNo] = useState("")
+  const [passcode, setPasscode] = useState("")
+  const [internalNotes, setInternalNotes] = useState("")
+  const [estimatedDate, setEstimatedDate] = useState("2026-01-20")
   
   // Pricing States
-  const [laborCost, setLaborCost] = useState("3500")
-  const [partsCost, setPartsCost] = useState("4500")
-  const [discount, setDiscount] = useState("500")
+  const [laborCost, setLaborCost] = useState("0")
+  const [partsCost, setPartsCost] = useState("0")
+  const [discount, setDiscount] = useState("0")
   const [tax, setTax] = useState("0")
   const [advancePayment, setAdvancePayment] = useState("")
   const [applyDiscount, setApplyDiscount] = useState(true)
 
   // Assignment States
-  const [technician, setTechnician] = useState("John Smith")
+  const [technician, setTechnician] = useState("")
   const [status, setStatus] = useState("Pending")
   const [priority, setPriority] = useState("Urgent")
+
+  // API Hooks
+  const { data: repairResponse, isLoading } = useGetRepairByIdQuery(id)
+  const { data: staffResponse } = useGetStaffListQuery({})
+  const [updateRepair, { isLoading: isUpdating }] = useUpdateRepairStatusMutation()
+
+  const repair = repairResponse?.data
+  const technicians = staffResponse?.staff || []
+
+  useEffect(() => {
+    if (repair) {
+      setCustomer(repair.customer?.name || "")
+      setDeviceType(repair.device?.type || "Mobile Phone")
+      setDeviceCategory(repair.device?.type || "Mobile Phone")
+      setBrand(repair.device?.brand || "")
+      setModel(repair.device?.model || "")
+      setImei(repair.device?.imei || "")
+      setSerialNo(repair.device?.serialNo || "")
+      
+      setIssueDescription(repair.issue || "")
+      setLaborCost((repair.estimatedCost || 0).toString())
+      setPartsCost("0")
+      setTechnician(repair.technicianId || "")
+      setStatus(
+        repair.status === "NOT_STARTED" ? "Pending" :
+        repair.status === "IN_PROGRESS" ? "In Progress" :
+        repair.status === "READY_TO_TAKE" ? "Ready" : "Delivered"
+      )
+      
+      if (repair.priority) {
+        setPriority(
+          repair.priority === "URGENT" ? "Urgent" : 
+          repair.priority === "HIGH" ? "High" : 
+          repair.priority === "LOW" ? "Low" : "Medium"
+        )
+      }
+
+      if (repair.estimatedCompletionDate) {
+        try {
+          setEstimatedDate(new Date(repair.estimatedCompletionDate).toISOString().split('T')[0])
+        } catch (e) {
+          console.error("Invalid date", repair.estimatedCompletionDate)
+        }
+      }
+      
+      setCurrentRef(repair.reference || "")
+    }
+  }, [repair])
 
   // UI States
   const [currentStep, setCurrentStep] = useState(1)
@@ -77,6 +133,35 @@ export default function EditRepairPage() {
   const handleDownloadPDF = async () => {
     if (!printRef.current) return
     setIsGeneratingPDF(true)
+
+    // Fix: html2canvas cannot parse modern `oklab()`/`oklch()` CSS color functions.
+    // We inject a temporary style that overrides all CSS variables with plain hex values.
+    const tempStyle = document.createElement('style')
+    tempStyle.id = '__pdf_color_fix'
+    tempStyle.textContent = `
+      :root, * {
+        --background: #ffffff !important;
+        --foreground: #111111 !important;
+        --muted: #f3f4f6 !important;
+        --muted-foreground: #6b7280 !important;
+        --border: #e5e7eb !important;
+        --card: #ffffff !important;
+        --card-foreground: #111111 !important;
+        --primary: #4F46E5 !important;
+        --primary-foreground: #ffffff !important;
+        --secondary: #f3f4f6 !important;
+        --secondary-foreground: #111111 !important;
+        --accent: #f3f4f6 !important;
+        --accent-foreground: #111111 !important;
+        --ring: #4F46E5 !important;
+        --input: #e5e7eb !important;
+        color: inherit !important;
+        background-color: transparent;
+      }
+      body, html { background-color: #ffffff !important; }
+    `
+    document.head.appendChild(tempStyle)
+
     try {
       // Dynamic imports to prevent SSR hydration errors and bundle bloat
       const html2canvas = (await import('html2canvas')).default
@@ -86,6 +171,36 @@ export default function EditRepairPage() {
         scale: 2, 
         useCORS: true,
         backgroundColor: "#ffffff",
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Nuclear fix for html2canvas oklab/oklch/lab issue
+          // We remove ALL stylesheets from the clone to prevent parsing errors
+          const styles = clonedDoc.getElementsByTagName("style");
+          for (let i = styles.length - 1; i >= 0; i--) {
+            if (styles[i].id !== '__pdf_color_fix') {
+              styles[i].remove();
+            }
+          }
+          const links = clonedDoc.getElementsByTagName("link");
+          for (let i = links.length - 1; i >= 0; i--) {
+            if (links[i].rel === "stylesheet") {
+              links[i].remove();
+            }
+          }
+
+          // Force HEX colors on all elements in the clone
+          const elements = clonedDoc.getElementsByTagName("*");
+          for (let i = 0; i < elements.length; i++) {
+            const el = elements[i] as HTMLElement;
+            el.style.color = "#000000";
+            if (el.classList.contains("bg-[#4F46E5]")) {
+              el.style.backgroundColor = "#4F46E5";
+              el.style.color = "#ffffff";
+            } else {
+               // el.style.backgroundColor = "transparent"; // Keep layout intact
+            }
+          }
+        }
       })
       
       const imgData = canvas.toDataURL('image/png')
@@ -102,7 +217,10 @@ export default function EditRepairPage() {
       pdf.save(`Invoice_${currentRef || 'Draft'}.pdf`)
     } catch (err) {
       console.error("Failed to generate PDF", err)
+      toast.error("Failed to generate PDF. Make sure html2canvas and jspdf are installed.");
     } finally {
+      // Always remove the temporary style
+      document.getElementById('__pdf_color_fix')?.remove()
       setIsGeneratingPDF(false)
     }
   }
@@ -153,34 +271,32 @@ export default function EditRepairPage() {
 
   const generateId = () => Math.random().toString(36).substr(2, 9)
 
-  const handleCreateRepair = () => {
-    const newRepair = {
-      id: generateId(),
-      reference: currentRef || `#REP-2026-000000`,
-      customer: { name: customer || "Walk-in Customer", phone: "+94 77 000 0000" },
-      device: { 
-        type: deviceType.toLowerCase().includes("phone") ? "phone" : 
-              deviceType.toLowerCase().includes("tablet") ? "tablet" : 
-              deviceType.toLowerCase().includes("console") ? "console" : "laptop", 
-        name: `${brand} ${model}`, 
-        specs: `${color}, ${storage}` 
-      },
-      issue: issueDescription || issueCategory,
-      status: status,
-      priority: priority,
-      technician: technician ? { name: technician, initials: technician.split(' ').map(n=>n[0]).join(''), bg: "bg-[#4F46E5]" } : null,
-      amount: `Rs. ${pricingTotal.toLocaleString()}`,
-      dueDate: { text: "Today", isOverdue: false }
+  const handleCreateRepair = async () => {
+    try {
+      const repairData = {
+        id,
+        issue: issueDescription || issueCategory,
+        estimatedCost: Math.round(pricingTotal),
+        technicianId: technician || null,
+        status: status === "Pending" ? "NOT_STARTED" : 
+                status === "In Progress" ? "IN_PROGRESS" : 
+                status === "Ready" ? "READY_TO_TAKE" : 
+                status === "Delivered" ? "DELIVERED" : 
+                status === "Completed" ? "DELIVERED" : "NOT_STARTED",
+        priority: priority ? priority.toUpperCase() : "MEDIUM",
+        estimatedCompletionDate: estimatedDate ? new Date(estimatedDate).toISOString() : null,
+      };
+
+      console.log("Submitting repair update payload:", repairData);
+      await updateRepair(repairData).unwrap();
+      
+      setIsConfirmModalOpen(false)
+      setIsReceiptModalOpen(true)
+      toast.success("Repair updated successfully");
+    } catch (err: any) {
+      console.error("Failed to update repair", err);
+      toast.error(err.data?.message || err.message || "Failed to update repair. Please check if your backend is synchronized.");
     }
-
-    // Attempt to save to localStorage
-    const saved = localStorage.getItem("srm_repairs_mock")
-    const currentArray = saved ? JSON.parse(saved) : []
-    const updatedArray = [newRepair, ...currentArray]
-    localStorage.setItem("srm_repairs_mock", JSON.stringify(updatedArray))
-
-    setIsConfirmModalOpen(false)
-    setIsReceiptModalOpen(true)
   }
 
   const handleSaveDraft = () => {
@@ -332,7 +448,12 @@ export default function EditRepairPage() {
                 <div>
                   <label className="block text-[13px] font-bold text-foreground mb-1.5 flex items-center gap-1">Estimated Completion Date <span className="text-red-500">*</span></label>
                   <div className="relative">
-                     <input type="text" defaultValue="2026-01-20" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" />
+                     <input 
+                       type="date" 
+                       value={estimatedDate}
+                       onChange={(e) => setEstimatedDate(e.target.value)}
+                       className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" 
+                     />
                      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>
                 </div>
@@ -341,6 +462,8 @@ export default function EditRepairPage() {
               <div>
                 <label className="block text-[13px] font-bold text-foreground mb-1.5">Internal Notes (Optional)</label>
                 <textarea 
+                  value={internalNotes}
+                  onChange={(e) => setInternalNotes(e.target.value)}
                   placeholder="Add any internal notes about this repair..."
                   className="w-full h-24 rounded-lg border border-border bg-white p-3 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60"
                 />
@@ -442,20 +565,38 @@ export default function EditRepairPage() {
                  </div>
                </div>
 
-               <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-[13px] font-bold text-foreground mb-1.5">Serial Number (Optional)</label>
-                    <input type="text" placeholder="Enter Serial" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" />
+                    <input 
+                      type="text" 
+                      value={serialNo}
+                      onChange={(e) => setSerialNo(e.target.value)}
+                      placeholder="Enter Serial" 
+                      className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" 
+                    />
                   </div>
                   <div>
                     <label className="block text-[13px] font-bold text-foreground mb-1.5">IMEI Number (Optional)</label>
-                    <input type="text" placeholder="Enter IMEI (for mobile devices)" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" />
+                    <input 
+                      type="text" 
+                      value={imei}
+                      onChange={(e) => setImei(e.target.value)}
+                      placeholder="Enter IMEI (for mobile devices)" 
+                      className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" 
+                    />
                   </div>
                </div>
                
                <div className="mb-6">
                   <label className="block text-[13px] font-bold text-foreground mb-1.5">Passcode / PIN (Optional)</label>
-                  <input type="text" placeholder="Used to verify device works after repair is complete" className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" />
+                  <input 
+                    type="text" 
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    placeholder="Used to verify device works after repair is complete" 
+                    className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60" 
+                  />
                </div>
 
                <div className="mb-6">
@@ -676,10 +817,9 @@ export default function EditRepairPage() {
                     <div className="relative">
                       <select value={technician} onChange={(e) => setTechnician(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
                         <option value="">Unassigned</option>
-                        <option value="John Smith">John Smith</option>
-                        <option value="Mike Chen">Mike Chen</option>
-                        <option value="Tom Wilson">Tom Wilson</option>
-                        <option value="Alex Kumar">Alex Kumar</option>
+                        {technicians.map((staff: any) => (
+                          <option key={staff.id} value={staff.id}>{staff.name || staff.fullName || staff.email}</option>
+                        ))}
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -787,16 +927,23 @@ export default function EditRepairPage() {
                    <h2 className="text-[22px] font-bold text-foreground mb-2 leading-tight">Are You Sure to Update this<br/>Repair Task?</h2>
                    <p className="text-[13px] text-muted-foreground mb-6">Modifications will overwrite previous details.</p>
                    
-                   <label className="flex items-center gap-2 mb-8 cursor-pointer group">
-                      <div className="h-4 w-4 border border-[#4F46E5] rounded-[4px] flex items-center justify-center bg-white group-hover:border-[#4338CA]">
-                         <div className="h-2 w-2 rounded-sm bg-[#4F46E5]" />
+                   <label className="flex items-center gap-2.5 mb-8 cursor-pointer group">
+                      <div className="relative flex items-center justify-center">
+                        <input 
+                          type="checkbox" 
+                          defaultChecked 
+                          className="peer h-4 w-4 appearance-none rounded border border-[#4F46E5] bg-white checked:bg-[#4F46E5] transition-all cursor-pointer" 
+                        />
+                        <Check className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={4} />
                       </div>
-                      <span className="text-[13px] font-medium text-muted-foreground">Automatically Create and store the Invoice</span>
+                      <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Automatically Create and store the Invoice</span>
                    </label>
 
                    <div className="flex w-full gap-4">
                       <button onClick={() => setIsConfirmModalOpen(false)} className="flex-1 h-11 rounded-xl border border-muted-foreground/30 text-foreground font-bold text-[14px] hover:bg-muted transition-colors focus:outline-none">Reject</button>
-                      <button onClick={handleCreateRepair} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold text-[14px] hover:bg-[#4338CA] transition-colors shadow-md shadow-indigo-500/20 focus:outline-none">Accept</button>
+                      <button onClick={handleCreateRepair} disabled={isUpdating} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold text-[14px] hover:bg-[#4338CA] transition-colors shadow-md shadow-indigo-500/20 focus:outline-none disabled:opacity-50">
+                        {isUpdating ? "Processing..." : "Accept"}
+                      </button>
                    </div>
                 </div>
              </div>
@@ -822,114 +969,130 @@ export default function EditRepairPage() {
              </div>
              
              {/* Invoice Paper */}
-             <div ref={printRef} className="w-full max-w-[800px] bg-white rounded-lg shadow-xl p-16 shrink-0 z-10">
-                 {/* Invoice Header */}
+             <div ref={printRef} className="w-full max-w-[800px] bg-white rounded-lg shadow-xl p-16 shrink-0 z-10" style={{ backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Inter, sans-serif' }}>
                  <div className="flex justify-between items-start mb-16">
                      <div>
-                        <h2 className="text-[24px] font-bold text-foreground mb-1">Alvish Baldha</h2>
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
+                           <h2 className="text-[24px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                        </div>
                         <div className="text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">
-                           <p>www.website.com</p>
-                           <p>hello@email.com</p>
-                           <p>+91 00000 00000</p>
+                           <p>Shop ID: {repair?.shopId || "N/A"}</p>
+                           <p>hello@servicepro.com</p>
+                           <p>+94 11 234 5678</p>
                         </div>
                      </div>
                      <div className="text-right text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">
-                           <p>Business address</p>
-                           <p>City, State, IN - 000 000</p>
-                           <p>TAX ID 00XXXXX1234X0XX</p>
+                           <p className="font-bold text-[#0F172A] uppercase tracking-widest mb-1">Premium Service Center</p>
+                           <p>Authorized {brand} Service</p>
+                           <p>TAX ID: SRM-TAX-2026</p>
                      </div>
                  </div>
 
-                 <div className="grid grid-cols-4 gap-4 mb-8">
-                     <div className="col-span-1">
+                 <div className="grid grid-cols-4 gap-8 mb-12">
+                     <div className="col-span-1 border-l-2 border-[#4F46E5] pl-4">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2 font-bold">Billed to,</p>
-                        <p className="text-[12px] font-bold text-foreground mb-1">{customer || "Walk-in Customer"}</p>
-                        <p className="text-[11px] text-muted-foreground font-medium leading-[1.6]">Business address<br/>City, Country - 00000<br/>+0 (000) 123-4567</p>
+                        <p className="text-[14px] font-black text-[#0F172A] mb-1">{customer || "Walk-in Customer"}</p>
+                        <p className="text-[11px] text-muted-foreground font-medium leading-[1.6]">
+                          ID: {repair?.customerId?.substring(0, 8) || "NEW"}<br/>
+                          {deviceType}: {brand} {model}
+                        </p>
                      </div>
-                     <div className="col-span-2">
+                     <div className="col-span-2 px-4">
                         <div className="grid grid-cols-2 gap-y-6">
                            <div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Invoice number</p>
-                              <p className="text-[12px] font-extrabold text-foreground">#AB2324-01</p>
-                           </div>
-                           <div />
-                           <div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Reference</p>
-                              <p className="text-[12px] font-extrabold text-foreground">{currentRef}</p>
-                           </div>
-                           <div />
-                           <div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Subject</p>
-                              <p className="text-[12px] font-extrabold text-foreground">Design System</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-bold">Invoice number</p>
+                              <p className="text-[12px] font-black text-[#0F172A] font-mono">#{currentRef.split('-').pop()}</p>
                            </div>
                            <div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Invoice date</p>
-                              <p className="text-[12px] font-extrabold text-foreground">01 Aug, 2023</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-bold">Invoice date</p>
+                              <p className="text-[12px] font-black text-[#0F172A]">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-bold">Reference</p>
+                              <p className="text-[12px] font-black text-[#0F172A]">{currentRef}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-bold">Subject</p>
+                              <p className="text-[12px] font-black text-[#0F172A] truncate pr-2">{issueCategory}</p>
                            </div>
                         </div>
                      </div>
-                     <div className="col-span-1 text-right">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Invoice of (USD)</p>
-                        <p className="text-[28px] font-black text-foreground tracking-tight">${pricingTotal.toLocaleString()}</p>
-                        <div className="mt-8">
-                           <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Due date</p>
-                           <p className="text-[12px] font-extrabold text-foreground">15 Aug, 2023</p>
+                     <div className="col-span-1 text-right bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-bold">Total Payable</p>
+                        <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter">Rs.{pricingTotal.toLocaleString()}</p>
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                           <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-bold">Status</p>
+                           <p className="text-[11px] font-black text-[#0F172A] uppercase">{status}</p>
                         </div>
                      </div>
                  </div>
 
                  {/* Table */}
-                 <div className="mt-16">
-                    <div className="grid grid-cols-12 pb-3 mb-6 border-b border-muted">
-                        <div className="col-span-6 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Item Detail</div>
-                        <div className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Qty</div>
-                        <div className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Rate</div>
-                        <div className="col-span-2 text-right text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Amount</div>
+                 <div className="mt-12">
+                    <div className="grid grid-cols-12 pb-3 mb-6 border-b-2 border-[#0F172A]">
+                        <div className="col-span-6 text-[10px] text-[#0F172A] uppercase tracking-widest font-black">Transactional Detail</div>
+                        <div className="col-span-2 text-[10px] text-[#0F172A] uppercase tracking-widest font-black text-center">Qty</div>
+                        <div className="col-span-2 text-[10px] text-[#0F172A] uppercase tracking-widest font-black text-center">Rate</div>
+                        <div className="col-span-2 text-right text-[10px] text-[#0F172A] uppercase tracking-widest font-black">Amount</div>
                     </div>
                     
-                    <div className="grid grid-cols-12 mb-6">
+                    <div className="grid grid-cols-12 mb-6 items-center">
                         <div className="col-span-6">
-                           <p className="text-[12px] font-extrabold text-foreground mb-0.5">Labor Detail</p>
-                           <p className="text-[11px] text-muted-foreground font-medium">Item description</p>
+                           <p className="text-[13px] font-black text-[#0F172A] mb-0.5">Labor Detail</p>
+                           <p className="text-[11px] text-muted-foreground font-medium">{issueDescription || "Expert Technical Diagnostics & Service"}</p>
                         </div>
-                        <div className="col-span-2 text-[12px] font-bold text-foreground pt-0.5">1</div>
-                        <div className="col-span-2 text-[12px] font-bold text-foreground pt-0.5">${laborCost}</div>
-                        <div className="col-span-2 text-right text-[12px] font-bold text-foreground pt-0.5">${laborCost}</div>
+                        <div className="col-span-2 text-[12px] font-bold text-[#0F172A] text-center">1</div>
+                        <div className="col-span-2 text-[12px] font-bold text-[#0F172A] text-center">Rs.{parseFloat(laborCost || "0").toLocaleString()}</div>
+                        <div className="col-span-2 text-right text-[12px] font-black text-[#0F172A]">Rs.{parseFloat(laborCost || "0").toLocaleString()}</div>
                     </div>
                     
-                    <div className="grid grid-cols-12 mb-12">
+                    <div className="grid grid-cols-12 mb-12 items-center">
                         <div className="col-span-6">
-                           <p className="text-[12px] font-extrabold text-foreground mb-0.5">Parts Material</p>
-                           <p className="text-[11px] text-muted-foreground font-medium">Item description</p>
+                           <p className="text-[13px] font-black text-[#0F172A] mb-0.5">Parts Material</p>
+                           <p className="text-[11px] text-muted-foreground font-medium">{partsRequired[0] || "OEM Grade Replacement Components"}</p>
                         </div>
-                        <div className="col-span-2 text-[12px] font-bold text-foreground pt-0.5">1</div>
-                        <div className="col-span-2 text-[12px] font-bold text-foreground pt-0.5">${partsCost}</div>
-                        <div className="col-span-2 text-right text-[12px] font-bold text-foreground pt-0.5">${partsCost}</div>
+                        <div className="col-span-2 text-[12px] font-bold text-[#0F172A] text-center">1</div>
+                        <div className="col-span-2 text-[12px] font-bold text-[#0F172A] text-center">Rs.{parseFloat(partsCost || "0").toLocaleString()}</div>
+                        <div className="col-span-2 text-right text-[12px] font-black text-[#0F172A]">Rs.{parseFloat(partsCost || "0").toLocaleString()}</div>
                     </div>
 
-                    <div className="flex justify-end pt-6 mt-8">
-                        <div className="w-[300px]">
-                            <div className="flex justify-between mb-4 text-[12px] font-extrabold text-foreground">
+                    <div className="flex justify-end pt-8 border-t border-slate-100">
+                        <div className="w-[280px] space-y-3">
+                            <div className="flex justify-between text-[13px] font-bold text-muted-foreground">
                                <span>Subtotal</span>
-                               <span>${(parseFloat(laborCost || "0") + parseFloat(partsCost || "0")).toLocaleString()}</span>
+                               <span className="text-[#0F172A]">Rs.{(parseFloat(laborCost || "0") + parseFloat(partsCost || "0")).toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between pb-5 border-b border-muted mb-5 text-[12px] font-extrabold text-foreground">
+                            {applyDiscount && (
+                               <div className="flex justify-between text-[13px] font-bold text-red-500">
+                                  <span>Discount</span>
+                                  <span>-Rs.{parseFloat(discount || "0").toLocaleString()}</span>
+                               </div>
+                            )}
+                            <div className="flex justify-between text-[13px] font-bold text-muted-foreground pb-3 border-b border-slate-100">
                                <span>Tax ({tax}%)</span>
-                               <span>${((parseFloat(laborCost || "0") + parseFloat(partsCost || "0")) * (parseFloat(tax || "0") / 100)).toLocaleString()}</span>
+                               <span className="text-[#0F172A]">Rs.{((Math.max(0, (parseFloat(laborCost || "0") + parseFloat(partsCost || "0")) - (applyDiscount ? parseFloat(discount || "0") : 0))) * (parseFloat(tax || "0") / 100)).toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between mb-2 text-[12px] font-extrabold text-foreground">
-                               <span>Total</span>
-                               <span>${pricingTotal.toLocaleString()}</span>
+                            <div className="flex justify-between items-center pt-2">
+                               <span className="text-[14px] font-black text-[#0F172A]">Total Amount</span>
+                               <span className="text-[20px] font-black text-[#4F46E5]">Rs.{pricingTotal.toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
                  </div>
 
                  {/* Footer */}
-                 <div className="mt-40">
-                    <p className="text-[12px] font-bold text-foreground mb-10">Thanks for the business.</p>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2 font-bold">Terms & Conditions</p>
-                    <p className="text-[11px] text-foreground font-medium">Please pay within 15 days of receiving this invoice.</p>
+                 <div className="mt-32 pt-12 border-t border-slate-50">
+                    <p className="text-[13px] font-black text-[#0F172A] mb-8">Thanks for the business.</p>
+                    <div className="flex justify-between items-end">
+                       <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-black">Terms & Conditions</p>
+                          <p className="text-[11px] text-[#0F172A] font-bold">Please pay within 15 days of receiving this invoice.</p>
+                       </div>
+                       <div className="text-[10px] text-muted-foreground font-bold italic">
+                          Generated by SRM Solutions Digital Hub
+                       </div>
+                    </div>
                  </div>
              </div>
           </div>

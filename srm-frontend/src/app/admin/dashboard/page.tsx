@@ -11,7 +11,7 @@ import { RevenueTrend } from "@/components/admin/dashboard/revenue-trend"
 import { RepairStatusChart } from "@/components/admin/dashboard/repair-status-chart"
 import { RecentActivity } from "@/components/admin/dashboard/recent-activity"
 import { TopTechnicians } from "@/components/admin/dashboard/top-technicians"
-import { DashboardFooter } from "@/components/admin/dashboard/footer"
+
 
 export default function DashboardPage() {
   return (
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             </div>
 
           </div>
-          <DashboardFooter />
+          {/* Footer removed */}
         </main>
       </div>
     </div>

@@ -9,6 +9,10 @@ export const authApiSlice = apiSlice.injectEndpoints({
         body: credentials,
       }),
     }),
+    getMe: builder.query({
+      query: () => '/v1/auth/me',
+      providesTags: ['User'],
+    }),
     listRegistrations: builder.query({
       query: (status) => ({
         url: '/v1/onboarding',
@@ -43,7 +47,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
     }),
     registerStaff: builder.mutation({
       query: (data) => ({
-        url: '/v1/onboarding/staff-request',
+        url: '/v1/staff/register',
         method: 'POST',
         body: data,
       }),
@@ -67,6 +71,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useLoginMutation,
+  useGetMeQuery,
   useListRegistrationsQuery,
   useRequestRegistrationMutation,
   useGetRegistrationStatusQuery,

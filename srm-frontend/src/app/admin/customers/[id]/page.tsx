@@ -10,10 +10,16 @@ import {
   Trash2, CopyPlus, Plus, Search
 } from "lucide-react"
 
+import { useGetCustomerByIdQuery } from "@/services/api/customersApiSlice"
+import { Loader2 } from "lucide-react"
+
 export default function CustomerDetailedPage() {
   const params = useParams()
   const id = params?.id as string
   const router = useRouter()
+  
+  const { data: customer, isLoading, error } = useGetCustomerByIdQuery(id)
+  
   const [activeTab, setActiveTab] = useState("overview")
   const [internalNote, setInternalNote] = useState("")
   
@@ -22,10 +28,13 @@ export default function CustomerDetailedPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [communicationModalType, setCommunicationModalType] = useState<'Phone' | 'Mail' | 'SMS' | null>(null)
   
-  const customerEmail = "kamal@example.com"
-  const customerPhone = "+94 77 123 4567"
+  const customerName = customer?.name || "Loading..."
+  const customerEmail = customer?.email || "N/A"
+  const customerPhone = customer?.phone || "N/A"
+  const customerAddress = customer?.address || "No address provided"
 
   const handleCopy = (text: string) => {
+    if (text === "N/A") return
     navigator.clipboard.writeText(text)
     alert("Copied to clipboard: " + text)
   }
@@ -47,6 +56,17 @@ export default function CustomerDetailedPage() {
     setInternalNote("")
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-[#F8FAFC]">
+        <DashboardSidebar />
+        <div className="flex-1 lg:ml-[200px] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-[#4F46E5] animate-spin" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex bg-[#F8FAFC] text-foreground min-h-screen">
       <DashboardSidebar />
@@ -61,7 +81,7 @@ export default function CustomerDetailedPage() {
             <ChevronRight className="h-3.5 w-3.5 opacity-50" />
             <Link href="/admin/customers" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">Customers</Link>
             <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-            <span className="text-[#0F172A]">Kamal Perera</span>
+            <span className="text-[#0F172A]">{customerName}</span>
           </div>
 
           <button onClick={() => router.push("/admin/customers")} className="flex items-center gap-2 text-[13px] font-bold text-muted-foreground hover:text-[#0F172A] transition-colors mb-6 focus:outline-none">
@@ -81,13 +101,13 @@ export default function CustomerDetailedPage() {
                  onClick={() => setActiveTab("repairs")} 
                  className={`pb-3 focus:outline-none transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'repairs' ? 'border-[#4F46E5] text-[#4F46E5]' : 'border-transparent hover:text-[#0F172A]'}`}
                >
-                 Repairs <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-black text-foreground">8</span>
+                 Repairs <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-black text-foreground">{customer?.repairs?.length || 0}</span>
                </button>
                <button 
                  onClick={() => setActiveTab("devices")} 
                  className={`pb-3 focus:outline-none transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'devices' ? 'border-[#4F46E5] text-[#4F46E5]' : 'border-transparent hover:text-[#0F172A]'}`}
                >
-                 Devices <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-black text-foreground">4</span>
+                 Devices <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-black text-foreground">{customer?.devices?.length || 0}</span>
                </button>
                <button 
                  onClick={() => setActiveTab("communications")} 

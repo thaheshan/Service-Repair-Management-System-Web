@@ -3,18 +3,10 @@ import { Smartphone, Laptop, Tablet, AlertCircle, Calendar, Eye, Edit2, MoreVert
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 
-export type RepairStatus = "All" | "Pending" | "In Progress" | "Ready" | "Completed" | "On Hold"
+export type RepairStatus = "All" | "Pending" | "In Progress" | "Ready" | "Completed" | "Paid" | "On Hold"
 export type PriorityLevel = "Urgent" | "High" | "Medium" | "Low"
 
-export const STATUS_OPTIONS: RepairStatus[] = ["Pending", "In Progress", "Ready", "Completed", "On Hold"]
-
-export const TECHNICIAN_LIST = [
-  { id: "1", name: "John Smith", initials: "JS", bg: "bg-[#4F46E5]" },
-  { id: "2", name: "Mike Chen", initials: "MC", bg: "bg-[#F59E0B]" },
-  { id: "3", name: "Tom Wilson", initials: "TW", bg: "bg-[#10B981]" },
-  { id: "4", name: "Alex Kumar", initials: "AK", bg: "bg-[#6366F1]" },
-  { id: "5", name: "Sarah Connor", initials: "SC", bg: "bg-[#EF4444]" }
-]
+export const STATUS_OPTIONS: RepairStatus[] = ["Pending", "In Progress", "Ready", "Completed", "Paid", "On Hold"]
 
 export interface RepairRow {
   id: string
@@ -24,7 +16,7 @@ export interface RepairRow {
   issue: string
   status: RepairStatus
   priority: PriorityLevel
-  technician: { name: string; initials: string; bg: string } | null
+  technician: { id: string; name: string; initials: string; bg: string } | null
   amount: string
   dueDate: { text: string; isOverdue: boolean }
   createdAt?: string // ISO date string e.g. "2026-03-29"
@@ -33,6 +25,7 @@ export interface RepairRow {
 interface RepairsTableProps {
   repairs: RepairRow[]
   allRepairs: RepairRow[]
+  technicians: { id: string; name: string; initials: string; bg: string }[]
   activeTab: string
   onTabChange: (tab: string) => void
   onStatusChangeRequest: (repairId: string, newStatus: RepairStatus) => void
@@ -66,6 +59,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
   "In Progress": { bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-200" },
   "Ready":       { bg: "bg-green-50",  text: "text-green-700",  border: "border-green-200" },
   "Completed":   { bg: "bg-emerald-50",text: "text-emerald-700",border: "border-emerald-200" },
+  "Paid":        { bg: "bg-emerald-100",text: "text-emerald-800",border: "border-emerald-300" },
   "On Hold":     { bg: "bg-gray-100",  text: "text-gray-600",   border: "border-gray-200" },
 }
 
@@ -86,11 +80,13 @@ const DEVICE_ACCENT: Record<string, string> = {
 // --- CARD VIEW ---
 function RepairCard({
   r,
+  technicians,
   onStatusChangeRequest,
   onTechnicianChange,
   onDeleteRequest
 }: {
   r: RepairRow
+  technicians: { id: string; name: string; initials: string; bg: string }[]
   onStatusChangeRequest: (id: string, status: RepairStatus) => void
   onTechnicianChange: (id: string, tech: any) => void
   onDeleteRequest?: (id: string, ref: string) => void
@@ -210,11 +206,11 @@ function RepairCard({
               {!r.technician && <Check className="h-3.5 w-3.5 text-[#4F46E5] ml-auto" />}
             </DropdownMenuItem>
             <div className="h-px bg-border my-1" />
-            {TECHNICIAN_LIST.map((tech) => (
+            {technicians.map((tech) => (
               <DropdownMenuItem key={tech.id} onClick={() => onTechnicianChange(r.id, tech)} className="cursor-pointer flex items-center gap-2">
                 <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white ${tech.bg}`}>{tech.initials}</div>
                 <span className="text-[12px] font-semibold flex-1">{tech.name}</span>
-                {r.technician?.name === tech.name && <Check className="h-3.5 w-3.5 text-[#4F46E5]" />}
+                {r.technician?.id === tech.id && <Check className="h-3.5 w-3.5 text-[#4F46E5]" />}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -230,7 +226,7 @@ function RepairCard({
   )
 }
 
-export function RepairsTable({ repairs, allRepairs, activeTab, onTabChange, onStatusChangeRequest, onTechnicianChange, onDeleteRequest, viewMode = "list", currentPage, perPage, totalFiltered, onPageChange, onPerPageChange }: RepairsTableProps) {
+export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTabChange, onStatusChangeRequest, onTechnicianChange, onDeleteRequest, viewMode = "list", currentPage, perPage, totalFiltered, onPageChange, onPerPageChange }: RepairsTableProps) {
   const tabs = [
     { id: "all", label: "All", count: allRepairs.length },
     { id: "pending", label: "Pending", count: allRepairs.filter(r => r.status === "Pending").length },
@@ -278,6 +274,7 @@ export function RepairsTable({ repairs, allRepairs, activeTab, onTabChange, onSt
                 <RepairCard
                   key={r.id}
                   r={r}
+                  technicians={technicians}
                   onStatusChangeRequest={onStatusChangeRequest}
                   onTechnicianChange={onTechnicianChange}
                   onDeleteRequest={onDeleteRequest}
@@ -401,11 +398,11 @@ export function RepairsTable({ repairs, allRepairs, activeTab, onTabChange, onSt
                             {!r.technician && <Check className="h-3.5 w-3.5 text-[#4F46E5] ml-auto" />}
                           </DropdownMenuItem>
                           <div className="h-px bg-border my-1" />
-                          {TECHNICIAN_LIST.map((tech) => (
+                          {technicians.map((tech) => (
                             <DropdownMenuItem key={tech.id} onClick={() => onTechnicianChange(r.id, tech)} className="cursor-pointer flex items-center gap-2">
                               <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white ${tech.bg}`}>{tech.initials}</div>
                               <span className="text-[12px] font-semibold flex-1">{tech.name}</span>
-                              {r.technician?.name === tech.name && <Check className="h-3.5 w-3.5 text-[#4F46E5]" />}
+                              {r.technician?.id === tech.id && <Check className="h-3.5 w-3.5 text-[#4F46E5]" />}
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>

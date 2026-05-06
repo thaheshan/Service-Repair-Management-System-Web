@@ -7,7 +7,7 @@ const hours = [
 ]
 
 export type Appointment = {
-  id: number
+  id: string | number
   dayIdx: number
   startHr: number
   duration: number
@@ -22,14 +22,14 @@ export type Appointment = {
 type ScheduleCalendarProps = {
   days: { name: string; date: string }[]
   appointments: Appointment[]
-  onUpdateAppointment: (id: number, newDayIdx: number, newStartHr: number) => void
-  onUpdateDuration: (id: number, newDuration: number) => void
+  onUpdateAppointment: (id: string | number, newDayIdx: number, newStartHr: number) => void
+  onUpdateDuration: (id: string | number, newDuration: number) => void
 }
 
 export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUpdateDuration }: ScheduleCalendarProps) {
   const router = useRouter()
   
-  const handleDragStart = (e: React.DragEvent, id: number) => {
+  const handleDragStart = (e: React.DragEvent, id: string | number) => {
     e.dataTransfer.setData("application/json", JSON.stringify({ id }))
   }
 
@@ -39,24 +39,16 @@ export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUp
 
   const handleDrop = (e: React.DragEvent, dayIdx: number) => {
     e.preventDefault()
-    
-    // Attempt to read data
     const dataStr = e.dataTransfer.getData("application/json")
     if (!dataStr) return
     const { id } = JSON.parse(dataStr)
 
-    // Calculate vertical snap position
-    // The relative container has 100px left padding, but the drop zones are flex-1 columns
-    // Use currentTarget which is the day column
     const rect = e.currentTarget.getBoundingClientRect()
-    // calculate Y offset relative to the day column
     const yOffset = e.clientY - rect.top
     
-    // Each hour is 80px block
-    // Snap to the nearest hour (e.g., 0-80 is 9AM, 80-160 is 10AM)
-    let snappedStartHr = Math.floor(yOffset / 80) + 9
+    // Snap to 15-minute intervals (20px per 15 mins)
+    let snappedStartHr = Math.floor(yOffset / 20) * 0.25 + 9
 
-    // Constrain bounds between 9AM and 6PM based on duration
     const appInfo = appointments.find(a => a.id === id)
     const dur = appInfo ? appInfo.duration : 1
     const maxStart = 18 - dur
@@ -65,14 +57,21 @@ export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUp
     if (snappedStartHr < 9) snappedStartHr = 9
 
     onUpdateAppointment(id, dayIdx, snappedStartHr)
+    setDraggingInfo(null)
   }
 
   // --- Resize Duration Logic ---
-  const [resizingState, setResizingState] = useState<{ id: number, startY: number, startDuration: number, startHr: number } | null>(null)
-  const [tempDurations, setTempDurations] = useState<{ [id: number]: number }>({})
+  const [resizingState, setResizingState] = useState<{ id: string | number, startY: number, startDuration: number, startHr: number } | null>(null)
+  const [tempDurations, setTempDurations] = useState<{ [id: string]: number }>({})
+  const [draggingInfo, setDraggingInfo] = useState<{ id: string | number, currentY: number, dayIdx: number } | null>(null)
 
-  const handleResizeStart = (e: React.MouseEvent, id: number, startDuration: number, startHr: number) => {
-    e.stopPropagation() // prevent drag drop from firing
+  const handleDrag = (e: React.DragEvent, id: string | number, dayIdx: number) => {
+    if (e.clientY === 0) return // avoid final (0,0) event
+    setDraggingInfo({ id, currentY: e.clientY, dayIdx })
+  }
+
+  const handleResizeStart = (e: React.MouseEvent, id: string | number, startDuration: number, startHr: number) => {
+    e.stopPropagation()
     setResizingState({ id, startY: e.clientY, startDuration, startHr })
     setTempDurations(prev => ({ ...prev, [id]: startDuration }))
   }
@@ -81,12 +80,13 @@ export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUp
     const handleMouseMove = (e: MouseEvent) => {
       if (!resizingState) return
       const deltaY = e.clientY - resizingState.startY
-      // Continuous extension: 80px per hour
-      const deltaHours = deltaY / 80
+      // Snap resize to 15-minute intervals
+      const deltaHours = Math.round((deltaY / 80) * 4) / 4
       let newDuration = resizingState.startDuration + deltaHours
-      if (newDuration < 0.25) newDuration = 0.25 // minimum 15 mins block
       
-      const maxDuration = 18 - resizingState.startHr // Cap at 6:00 PM
+      if (newDuration < 0.25) newDuration = 0.25
+      
+      const maxDuration = 18 - resizingState.startHr
       if (newDuration > maxDuration) newDuration = maxDuration
       
       setTempDurations(prev => ({ ...prev, [resizingState.id]: newDuration }))
@@ -167,19 +167,28 @@ export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUp
                >
                  {colAppointments.map(app => {
                    const topPx = (app.startHr - 9) * 80
-                   const activeDuration = resizingState?.id === app.id ? tempDurations[app.id] : app.duration
+                   const isResizing = resizingState?.id === app.id
+                   const activeDuration = isResizing ? tempDurations[app.id] : app.duration
                    const heightPx = activeDuration * 80
                    
+                   const formatTime = (hr: number) => {
+                     const h = Math.floor(hr);
+                     const m = Math.round((hr - h) * 60);
+                     const ampm = h >= 12 ? 'PM' : 'AM';
+                     const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                     return `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
+                   }
+
                    return (
                      <div 
                        key={app.id}
-                       draggable={resizingState === null} // disable drag when resizing
-                       onDragStart={(e) => handleDragStart(e, app.id)}
-                       className={`absolute left-[4px] right-[4px] p-2 rounded-md ${app.color} text-white shadow-sm pointer-events-auto hover:brightness-110 cursor-move transition-colors border border-white/20 flex flex-col`}
-                       style={{ top: `${topPx + 4}px`, height: `${heightPx - 8}px` }}
+                       draggable={resizingState === null}
+                       onDragStart={(e) => handleDragStart(e, app.id)} onDrag={(e) => handleDrag(e, app.id, colIdx)} onDragEnd={() => setDraggingInfo(null)}
+                       className={`absolute left-[4px] right-[4px] p-2 rounded-md ${app.color} text-white shadow-md pointer-events-auto hover:brightness-110 cursor-move transition-all border border-white/20 flex flex-col group/card ${draggingInfo?.id === app.id ? 'opacity-40 grayscale-[0.5]' : ''}`}
+                       style={{ top: `${topPx + 4}px`, height: `${heightPx - 8}px`, zIndex: isResizing || draggingInfo?.id === app.id ? 50 : 10 }}
                        onClick={() => router.push(`/admin/repairs/${app.id}?from=schedule`)}
                      >
-                       <div className="flex items-start gap-2 h-full overflow-hidden pointer-events-none mb-2">
+                       <div className="flex items-start gap-2 h-full overflow-hidden pointer-events-none mb-1 relative">
                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
                            {app.initials}
                          </div>
@@ -187,14 +196,24 @@ export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUp
                            <span className="text-[11px] font-bold leading-none truncate">{app.name}</span>
                            <span className="text-[10px] text-white/90 leading-none truncate">{app.device}</span>
                          </div>
+                         
+                         {isResizing && (
+                           <div className="absolute top-0 right-0 bg-black/40 backdrop-blur-sm px-1 py-0.5 rounded text-[8px] font-black tracking-tighter">
+                             {Math.floor(activeDuration)}h {Math.round((activeDuration % 1) * 60)}m
+                           </div>
+                         )}
+                       </div>
+
+                       <div className="mt-auto text-[9px] font-black text-white/60 tracking-tight flex justify-between items-center pointer-events-none">
+                          <span>{formatTime(app.startHr)}</span>
+                          <span>{formatTime(app.startHr + activeDuration)}</span>
                        </div>
                        
-                       {/* Resize Handle */}
                        <div 
                          onMouseDown={(e) => handleResizeStart(e, app.id, app.duration, app.startHr)}
-                         className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize flex items-end justify-center pb-[2px] opacity-0 hover:opacity-100 transition-opacity bg-gradient-to-t from-black/20 to-transparent z-10"
+                         className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize flex items-end justify-center pb-[1px] opacity-0 group-hover/card:opacity-100 transition-opacity bg-gradient-to-t from-black/20 to-transparent z-20"
                        >
-                         <div className="w-6 h-[3px] rounded-full bg-white/50" />
+                         <div className="w-8 h-[3px] rounded-full bg-white/50" />
                        </div>
                      </div>
                    )

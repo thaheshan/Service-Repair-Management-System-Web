@@ -1,13 +1,10 @@
 import { Star } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
+import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 
-const technicians = [
-  { name: "David Chen", rating: 4.9, avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&q=80" },
-  { name: "James Miller", rating: 4.8, avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&q=80" },
-  { name: "Alex Kumar", rating: 4.7, avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80" },
-  { name: "Ryan Thomas", rating: 4.6, avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&h=150&fit=crop&q=80" },
-  { name: "Kevin Lee", rating: 4.8, avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80" },
+const fallbackTechnicians = [
+  { name: "No Data", rating: 0, jobsCompleted: 0, avatar: "" }
 ]
 
 function StarRating({ rating }: { rating: number }) {
@@ -30,8 +27,14 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function TopTechnicians() {
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
+  
+  const technicians = response?.data?.topTechnicians?.length > 0 
+    ? response.data.topTechnicians 
+    : fallbackTechnicians;
+
   return (
-    <div className="flex h-full flex-col rounded-xl border border-border bg-card">
+    <div className="flex h-full min-h-[550px] flex-col rounded-xl border border-border bg-card">
       {/* Header */}
       <div className="px-5 pt-5 pb-3">
         <h3 className="text-base font-semibold text-foreground">Top Technicians This Week</h3>
@@ -39,29 +42,35 @@ export function TopTechnicians() {
 
       {/* Table Header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-2">
-        <span className="text-xs font-medium text-muted-foreground">Name</span>
-        <span className="text-xs font-medium text-muted-foreground">Avg Rating</span>
+        <span className="text-xs font-medium text-muted-foreground w-1/2">Name</span>
+        <span className="text-xs font-medium text-muted-foreground text-center w-1/4">Jobs</span>
+        <span className="text-xs font-medium text-muted-foreground text-right w-1/4">Rating</span>
       </div>
 
       {/* List */}
       <div className="flex flex-col">
-        {technicians.map((tech, index) => (
+        {technicians.map((tech: any, index: number) => (
           <div
-            key={tech.name}
+            key={tech.name + index}
             className={`flex items-center justify-between px-5 py-3 ${
               index !== technicians.length - 1 ? "border-b border-border" : ""
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-1/2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={tech.avatar} alt={tech.name} className="object-cover" />
+                <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(tech.name)}&background=random`} alt={tech.name} className="object-cover" />
                 <AvatarFallback className="bg-muted text-xs text-muted-foreground">
-                  {tech.name.split(" ").map(n => n[0]).join("")}
+                  {tech.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium text-foreground">{tech.name}</span>
+              <span className="text-sm font-medium text-foreground truncate">{tech.name}</span>
             </div>
-            <StarRating rating={tech.rating} />
+            <div className="w-1/4 text-center">
+              <span className="text-sm font-semibold text-foreground">{tech.jobsCompleted}</span>
+            </div>
+            <div className="w-1/4 flex justify-end">
+              <StarRating rating={Number(tech.rating)} />
+            </div>
           </div>
         ))}
       </div>

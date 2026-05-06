@@ -2,24 +2,20 @@
 
 import { useState } from "react"
 import { Plus, X, Calendar, Clock } from "lucide-react"
+import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
+import { useGetRepairsQuery } from "@/services/api/repairsApiSlice"
 
-// Mock Unassigned Tasks
-const UNASSIGNED_TASKS = [
-  { id: "task1", label: "#REP-2026-001235 - iPad Pro Battery (John Smith)" },
-  { id: "task2", label: "#REP-2026-001236 - Samsung S22 Screen (Sarah Johnson)" },
-  { id: "task3", label: "#REP-2026-001237 - iPhone 14 Pro Back Glass (Mike Davis)" }
-]
-
-const TECHNICIANS = [
-  { id: "1", name: "John Doe" },
-  { id: "2", name: "Jane Smith" },
-  { id: "3", name: "Mike Johnson" },
-]
+// Data will be fetched via hooks
 
 export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAddAppointment?: (data: any) => void, currentWeekStart?: Date }) {
   const [isOpen, setIsOpen] = useState(false)
   const [task, setTask] = useState("")
-  const [technician, setTechnician] = useState("1")
+  const [technician, setTechnician] = useState("")
+
+  const { data: staffData } = useGetStaffListQuery({})
+  const { data: repairsData } = useGetRepairsQuery({})
+
+  const unassignedRepairs = (repairsData?.data || []).filter((r: any) => r.status === 'NOT_STARTED')
   
   const defaultDateStr = currentWeekStart ? currentWeekStart.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
   const [date, setDate] = useState(defaultDateStr)
@@ -27,12 +23,16 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
   const [duration, setDuration] = useState("1")
 
   const handleApply = () => {
+    if (!task || !technician) {
+      alert("Please select both a task and a technician.");
+      return;
+    }
     if (onAddAppointment) {
        onAddAppointment({ task, technician, date, time, duration })
     }
     setIsOpen(false)
     setTask("")
-    setTechnician("1")
+    setTechnician("")
     setDate(defaultDateStr)
     setTime("10:00")
     setDuration("1")
@@ -73,7 +73,11 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
                   className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
                 >
                   <option value="" disabled>Select a pending repair...</option>
-                  {UNASSIGNED_TASKS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  {unassignedRepairs.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.reference} - {t.device?.brand} {t.device?.model} ({t.customer?.name})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -85,7 +89,9 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
                   className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
                 >
                   <option value="" disabled>Select a technician...</option>
-                  {TECHNICIANS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {(staffData?.staff || []).map((t: any) => (
+                    <option key={t.id} value={t.id}>{t.fullName || t.email}</option>
+                  ))}
                 </select>
               </div>
 

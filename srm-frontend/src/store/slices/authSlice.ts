@@ -2,11 +2,13 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface User {
   id: string;
-  email: string;
-  fullName: string;
+  email: string | null;
+  fullName?: string | null;
   role: 'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'CUSTOMER';
   tenantId: string;
   shopId: string | null;
+  shopCode?: string | null;
+  shopName?: string | null;
 }
 
 interface AuthState {
@@ -33,12 +35,14 @@ const authSlice = createSlice({
       state,
       action: PayloadAction<{ user: User; accessToken: string }>
     ) => {
+      console.log("Redux: Setting Credentials", action.payload);
       state.user = action.payload.user;
       state.token = action.payload.accessToken;
       state.isAuthenticated = true;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', action.payload.accessToken);
       }
+      console.log("Redux: New State User:", state.user);
     },
     logout: (state) => {
       state.user = null;

@@ -1,11 +1,11 @@
 "use client"
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import Link from "next/link"
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
-import { DashboardFooter } from "@/components/admin/dashboard/footer"
+import { DevicesTable } from "@/components/admin/devices/devices-table"
 import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight } from "lucide-react"
 import { INITIAL_DEVICES, Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, BRANDS } from "./device-data"
 import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
@@ -46,8 +46,52 @@ function WarrantyIcon({w}:{w:WarrantyStatus}) {
   return <Shield className="h-3 w-3"/>
 }
 
+import { useGetDevicesQuery, useCreateDeviceMutation, useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/services/api/devicesApiSlice"
+import { useCreateCustomerMutation } from "@/services/api/customersApiSlice"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+import { toast } from "sonner"
+
 export default function DevicesPage() {
-  const [devices, setDevices] = useState<Device[]>(INITIAL_DEVICES)
+  const { data: response, isLoading } = useGetDevicesQuery({});
+  const [createDevice] = useCreateDeviceMutation();
+  const [updateDevice] = useUpdateDeviceMutation();
+  const [deleteDeviceMutation] = useDeleteDeviceMutation();
+  const [createCustomer] = useCreateCustomerMutation();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const devices = useMemo(() => {
+    const apiDevices = (response as any)?.data || response?.devices || [];
+    return apiDevices.map((d: any) => ({
+      id: d.id,
+      name: d.model || d.name || "Unknown Device",
+      brand: d.brand || "Apple",
+      type: d.type || "Mobile Phone",
+      imei: d.serialNumber || d.imei || "N/A",
+      color: "bg-[#4F46E5]",
+      owner: {
+        name: d.customer?.firstName ? `${d.customer.firstName} ${d.customer.lastName || ""}` : (d.customer?.name || "Shop Stock"),
+        phone: d.customer?.phone || "—"
+      },
+      warranty: {
+        status: d.warrantyStatus || "Active",
+        expiryDate: d.warrantyExpiry ? new Date(d.warrantyExpiry).toLocaleDateString() : "—"
+      },
+      totalRepairs: d.repairs ? d.repairs.length : 0,
+      lastService: {
+        date: d.lastServiceDate ? new Date(d.lastServiceDate).toLocaleDateString() : "",
+        type: d.lastServiceType || ""
+      },
+      registered: d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+      status: d.status || "Available",
+      price: d.price || 0
+    }));
+  }, [response]);
   const [viewMode, setViewMode] = useState<"list"|"grid">("list")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("name-az")
@@ -163,40 +207,101 @@ export default function DevicesPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length/perPage))
   const paginated = filtered.slice((currentPage-1)*perPage, currentPage*perPage)
 
-  const handleAdd = () => {
-    if (!form.name || !form.imei) return
-    const d: Device = {
-      id: Date.now().toString(), name: form.name, brand: form.brand, type: form.type,
-      imei: form.imei, color: "bg-[#4F46E5]",
-      owner: {name: form.ownerName||"Shop Stock", phone: form.ownerPhone||"—"},
-      warranty: {status: form.warrantyStatus, expiryDate: form.warrantyExpiry||"—"},
-      totalRepairs: 0, lastService: {date:"",type:""}, registered: new Date().toLocaleDateString("en-US",{month:"short",year:"numeric"}),
-      status: form.status,
-      price: form.price || 0
+  const handleAdd = async () => {
+    console.log("Add Device Button Clicked!");
+    if (!form.name || !form.imei) {
+      toast.error("Name and IMEI are required.");
+      return;
     }
-    setDevices(p => [d,...p])
-    setShowAddModal(false)
-    setForm({name:"",brand:"Apple",type:"Mobile Phone",imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active",warrantyExpiry:"",status:"Available",price:0})
+    
+    if (!user || !user.shopId) {
+      console.error("SESSION CHECK FAILED!");
+      console.log("Full User Object:", user);
+      if (user) {
+        console.log("User Keys:", Object.keys(user));
+        console.log("User ShopId Value:", user.shopId);
+        console.log("User Role Value:", user.role);
+      }
+      toast.error("Session invalid. Please log in again.");
+      return;
+    }
+    
+    try {
+      console.log("Step 1: Creating customer...");
+      // 1. Create Customer
+      const customerIdResult = await createCustomer({
+        name: form.ownerName || "Walk-in Customer",
+        phone: form.ownerPhone || "0000000000",
+      }).unwrap();
+
+      console.log("Step 1 Success:", customerIdResult);
+      const customerId = customerIdResult.customerId || customerIdResult.id || (customerIdResult as any).data?.id;
+      
+      if (!customerId) {
+        throw new Error("Customer ID missing in response");
+      }
+
+      console.log("Step 2: Registering device...");
+      // 2. Register Device
+      const deviceResult = await createDevice({
+        shopId: user.shopId,
+        customerId: customerId,
+        brand: form.brand,
+        model: form.name,
+        imei: form.imei,
+      }).unwrap();
+
+      console.log("Step 2 Success:", deviceResult);
+      toast.success("Device Registered Successfully!");
+      setShowAddModal(false);
+      setForm({name:"",brand:"Apple",type:"Mobile Phone",imei:"",ownerName:"",ownerPhone:"",warrantyStatus:"Active",warrantyExpiry:"",status:"Available",price:0});
+    } catch (e: any) {
+      console.error("Device registration FAILED:", e);
+      const msg = e.data?.message || e.data?.error || e.message || "Registration failed";
+      toast.error(msg);
+    }
   }
 
-  const handleStatusUpdate = (autoNotify: boolean, newStatus: DeviceStatus) => {
+  const handleStatusUpdate = async (autoNotify: boolean, newStatus: DeviceStatus) => {
     if (!pendingStatusUpdate) return
-    setDevices(p => p.map(d => d.id===pendingStatusUpdate.id ? {...d, status: newStatus} : d))
-    setIsStatusModalOpen(false)
-    setPendingStatusUpdate(null)
-    setActiveDropdown(null)
+    try {
+      await updateDevice({
+        id: pendingStatusUpdate.id,
+        status: newStatus
+      }).unwrap();
+      setPendingStatusUpdate(null)
+      setIsStatusModalOpen(false)
+      setActiveDropdown(null)
+    } catch(err) {
+      console.error("Failed to update status", err)
+    }
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editDevice) return
-    setDevices(p => p.map(d => d.id===editDevice.id ? editDevice : d))
-    setEditDevice(null)
+    try {
+      await updateDevice({
+        id: editDevice.id,
+        model: editDevice.name, // Mapping UI 'name' to API 'model'
+        status: editDevice.status,
+        warrantyStatus: editDevice.warranty.status
+      }).unwrap();
+      toast.success("Device updated successfully!");
+      setEditDevice(null)
+    } catch(err: any) {
+      console.error("Failed to update device", err)
+      toast.error(err.data?.message || "Failed to update device.");
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteDevice) return
-    setDevices(p => p.filter(d => d.id!==deleteDevice.id))
-    setDeleteDevice(null)
+    try {
+      await deleteDeviceMutation(deleteDevice.id).unwrap();
+      setDeleteDevice(null)
+    } catch(err) {
+      console.error("Failed to delete device", err)
+    }
   }
 
   const handleExportCSV = () => {
@@ -472,7 +577,7 @@ export default function DevicesPage() {
               </div>
             </div>
           </div>
-          <DashboardFooter/>
+          {/* Footer removed */}
         </main>
       </div>
 
@@ -640,7 +745,7 @@ export default function DevicesPage() {
                 <div className="text-right text-[12px] text-slate-400 font-black uppercase tracking-widest leading-relaxed pt-2">
                       <p>Premium Service Center</p>
                       <p>Colombo 07, Sri Lanka</p>
-                      <p className="text-[#4F46E5] mt-1 italic underline underline-offset-4 decoration-slate-200">Generated: {new Date().toLocaleString()}</p>
+                      <p className="text-[#4F46E5] mt-1 italic underline underline-offset-4 decoration-slate-200">Generated: {mounted ? new Date().toLocaleString() : ""}</p>
                 </div>
             </div>
 

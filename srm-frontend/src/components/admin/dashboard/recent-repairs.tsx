@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronDown, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
@@ -11,10 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { StatusUpdateModal } from "@/components/admin/repairs/status-update-modal"
+import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
+import { useUpdateRepairStatusMutation } from "@/services/api/repairsApiSlice"
+import { toast } from "sonner"
 
-type RepairStatus = "In Progress" | "Completed" | "Pending"
+type RepairStatus = "In Progress" | "Completed" | "Pending" | "Ready" | "Paid"
 
 interface Repair {
+  id: string
   name: string
   device: string
   status: RepairStatus
@@ -26,56 +30,53 @@ const statusStyles: Record<RepairStatus, string> = {
   "In Progress": "bg-[#DBEAFE] text-[#1E40AF]",
   Completed: "bg-[#D1FAE5] text-[#065F46]",
   Pending: "bg-[#FEF3C7] text-[#92400E]",
+  Ready: "bg-green-100 text-green-700",
+  Paid: "bg-emerald-100 text-emerald-800",
 }
 
 const statusDot: Record<RepairStatus, string> = {
   "In Progress": "bg-[#1E40AF]",
   Completed: "bg-[#065F46]",
   Pending: "bg-[#92400E]",
+  Ready: "bg-green-600",
+  Paid: "bg-emerald-700",
 }
 
-const statusOptions: RepairStatus[] = ["In Progress", "Completed", "Pending"]
+const statusOptions: RepairStatus[] = ["Pending", "In Progress", "Ready", "Completed", "Paid"]
 
-const initialRepairs: Repair[] = [
-  {
-    name: "John Smith",
-    device: "iPhone 13 - Screen Replacement",
-    status: "In Progress",
-    amount: "Rs. 2,500",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&q=80",
-  },
-  {
-    name: "Sarah Johnson",
-    device: "Samsung S21 - Battery Issue",
-    status: "Completed",
-    amount: "Rs. 1,800",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80",
-  },
-  {
-    name: "Mike Davis",
-    device: "iPad Pro - Water Damage",
-    status: "Pending",
-    amount: "Rs. 4,200",
-    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop&q=80",
-  },
-  {
-    name: "Emily Wilson",
-    device: "MacBook Air - Keyboard Fix",
-    status: "In Progress",
-    amount: "Rs. 3,500",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&q=80",
-  },
-  {
-    name: "Robert Brown",
-    device: "OnePlus 9 - Charging Port",
-    status: "Completed",
-    amount: "Rs. 1,200",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&q=80",
-  },
-]
+const initialRepairs: Repair[] = []
 
 export function RecentRepairs() {
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
+  const apiRepairs = response?.data?.recentRepairs || [];
+  
+  // Map backend data to frontend format
+  const mappedRepairs = apiRepairs.map((r: any) => {
+    let displayStatus: RepairStatus = "Pending";
+    if (r.status === "IN_PROGRESS") displayStatus = "In Progress";
+    if (r.status === "COMPLETED" || r.status === "DELIVERED") displayStatus = "Completed";
+    if (r.status === "READY_TO_TAKE") displayStatus = "Ready";
+    if (r.status === "PAID") displayStatus = "Paid";
+
+    return {
+      id: r.id,
+      name: r.customerName,
+      device: r.device,
+      status: displayStatus,
+      amount: `LKR ${r.amount || 0}`,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(r.customerName)}&background=random`,
+    };
+  });
+
   const [repairs, setRepairs] = useState<Repair[]>(initialRepairs)
+  const [updateRepairStatus] = useUpdateRepairStatusMutation();
+  
+  useEffect(() => {
+    if (mappedRepairs.length > 0) {
+      setRepairs(mappedRepairs);
+    }
+  }, [apiRepairs.length]);
+
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     repairIndex: number | null
@@ -117,9 +118,30 @@ export function RecentRepairs() {
     )
   }
 
-  const handleConfirm = (autoUpdateCustomer: boolean, newStatus: string) => {
+  const handleConfirm = async (autoUpdateCustomer: boolean, newStatus: string) => {
     if (confirmDialog.repairIndex !== null && confirmDialog.targetStatus) {
-      applyStatusChange(confirmDialog.repairIndex, confirmDialog.targetStatus)
+      const repairId = repairs[confirmDialog.repairIndex].id;
+      
+      const backendStatusMap: Record<string, string> = {
+        "Pending": "NOT_STARTED",
+        "In Progress": "IN_PROGRESS",
+        "Completed": "DELIVERED",
+        "Ready": "READY_TO_TAKE",
+        "Paid": "PAID"
+      };
+
+      try {
+        await updateRepairStatus({ 
+          id: repairId, 
+          status: backendStatusMap[confirmDialog.targetStatus] || "NOT_STARTED" 
+        }).unwrap();
+        
+        applyStatusChange(confirmDialog.repairIndex, confirmDialog.targetStatus)
+        toast.success(`Status updated to ${confirmDialog.targetStatus}`);
+      } catch (err: any) {
+        console.error("Failed to update status:", err);
+        toast.error(err.data?.message || err.message || "Failed to update status");
+      }
     }
     setConfirmDialog({
       open: false,
@@ -155,7 +177,7 @@ export function RecentRepairs() {
         <div className="flex flex-col">
           {repairs.map((repair, index) => (
             <div
-              key={repair.name}
+              key={repair.id}
               className={`flex items-center justify-between px-5 py-3 ${
                 index !== repairs.length - 1 ? "border-b border-border" : ""
               }`}

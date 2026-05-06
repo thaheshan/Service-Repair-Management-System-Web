@@ -13,16 +13,12 @@ import {
   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ChevronLeft, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, Calendar, SlidersHorizontal, ArrowUpRight
 } from "lucide-react"
 
-// Exact Mock Dataset parsing Image 1 + Modified with Types
-const mockInvoices = [
-  { id: 1, invoiceId: "#REP-2026-001234", type: "client_repair", name: "Ahmed Hassan", phone: "+94 77 123 4567", amount: 8500, status: "Paid", date: "2026-01-25", staff: "John Smith", device: "iPhone 13 Pro" },
-  { id: 2, invoiceId: "#REP-2026-001233", type: "client_repair", name: "Sarah Perera", phone: "+94 71 987 6543", amount: 6200, status: "Pending", date: "2026-01-25", staff: "Mike Chen", device: "iPad Air 5th Gen" },
-  { id: 3, invoiceId: "#INV-2026-001232", type: "inventory_item", name: "TechSupplier Inc", phone: "+94 76 234 5678", amount: 12500, status: "Paid", date: "2025-01-25", staff: "Admin", device: "Internal" },
-  { id: 4, invoiceId: "#INV-2026-001231", type: "inventory_item", name: "Retail Walk-In", phone: "+94 75 345 6789", amount: 15000, status: "Pending", date: "2025-11-20", staff: "Admin", device: "Internal" },
-  { id: 5, invoiceId: "#REP-2026-001230", type: "client_repair", name: "Raj Jayawardena", phone: "+94 72 456 7890", amount: 9800, status: "Paid", date: "2026-02-14", staff: "Sarah Connor", device: "PlayStation 5" },
-  { id: 6, invoiceId: "#REP-2024-001100", type: "client_repair", name: "Kamal Perera", phone: "+94 70 123 4567", amount: 5000, status: "Paid", date: "2024-03-15", staff: "Alex Kumar", device: "Samsung Galaxy S23" },
-  { id: 7, invoiceId: "#INV-2026-001235", type: "inventory_item", name: "Ruwan Silva", phone: "#94 71 222 3333", amount: 22000, status: "Overdue", date: "2026-02-10", staff: "Admin", device: "Internal" },
-]
+import {
+  useGetInvoicesQuery,
+  useCreateInvoiceMutation,
+  useUpdateInvoiceStatusMutation,
+  useDeleteInvoiceMutation,
+} from "@/services/api/invoicesApiSlice"
 
 const STAFF_LIST = ["John Smith", "Mike Chen", "Sarah Connor", "Alex Kumar", "Admin"]
 const DEVICE_TYPES = ["phone", "tablet", "laptop", "console", "Internal"]
@@ -55,9 +51,21 @@ const PDF_STATUS_STYLE: Record<string, string> = {
 }
 
 export default function InvoicesManagementPage() {
+  const { data: apiResponse, isLoading } = useGetInvoicesQuery({});
+  const [createInvoiceMutation] = useCreateInvoiceMutation();
+  const [updateInvoiceStatus] = useUpdateInvoiceStatusMutation();
+  const [deleteInvoiceMutation] = useDeleteInvoiceMutation();
+
+  const invoicesState = useMemo(() => {
+    return (apiResponse?.invoices || []).map((inv: any) => ({
+      ...inv,
+      // Ensure numeric id fallback for key usage
+      id: inv.id,
+    }));
+  }, [apiResponse]);
+
   const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("list")
   const [activeTab, setActiveTab] = useState("All")
-  const [invoicesState, setInvoicesState] = useState(mockInvoices)
   
   // Interactive Engines
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null)
@@ -172,14 +180,23 @@ export default function InvoicesManagementPage() {
     setFilterDateFrom(""); setFilterDateTo(""); setSearchTerm("")
   }
 
-  const handleStatusUpdate = (id: number, newStatus: string) => {
-    setInvoicesState(p => p.map(inv => inv.id === id ? { ...inv, status: newStatus } : inv))
+  const handleStatusUpdate = async (id: string, newStatus: string) => {
+    const dbStatus = newStatus === 'Paid' ? 'COMPLETED' : newStatus === 'Pending' ? 'PENDING' : 'FAILED';
+    try {
+      await updateInvoiceStatus({ id, status: dbStatus }).unwrap();
+    } catch (err) {
+      console.error('Failed to update invoice status', err);
+    }
   }
-  
-  const confirmDelete = () => {
+
+  const confirmDelete = async () => {
     if (deleteFormTarget) {
-       setInvoicesState(invoicesState.filter(inv => inv.id !== deleteFormTarget.id))
-       setDeleteFormTarget(null)
+      try {
+        await deleteInvoiceMutation(deleteFormTarget.id).unwrap();
+        setDeleteFormTarget(null);
+      } catch (err) {
+        console.error('Failed to delete invoice', err);
+      }
     }
   }
 
@@ -612,23 +629,34 @@ export default function InvoicesManagementPage() {
                  <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
                     <button onClick={() => setIsAddInvoiceOpen(false)} className="px-6 h-14 rounded-2xl border border-slate-200 bg-white text-slate-500 text-[15px] font-black hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none">Discard Changes</button>
                     <button 
-                      onClick={() => {
-                        const name = (document.getElementById('inv_name') as HTMLInputElement)?.value || "New Project";
-                        const amount = addInvoiceType === 'inventory_item' ? invoiceItems.reduce((acc, curr) => acc + (curr.qty * curr.price), 0) : +(document.getElementById('rep_amount') as HTMLInputElement)?.value || 7500;
+                      onClick={async () => {
+                        const name = (document.getElementById('inv_name') as HTMLInputElement)?.value;
+                        const phone = (document.getElementById('inv_phone') as HTMLInputElement)?.value;
+                        const amount = addInvoiceType === 'inventory_item' 
+                          ? invoiceItems.reduce((acc, curr) => acc + (curr.qty * curr.price), 0) 
+                          : +(document.getElementById('rep_amount') as HTMLInputElement)?.value || 0;
                         
-                        const newInv = {
-                           id: Date.now(),
-                           invoiceId: addInvoiceType === 'client_repair' ? `#REP-${Math.floor(1000 + Math.random() * 9000)}` : `#INV-${Math.floor(1000 + Math.random() * 9000)}`,
-                           type: addInvoiceType, 
-                           name: name,
-                           phone: (document.getElementById('inv_phone') as HTMLInputElement)?.value || "+94 77 XXX XXXX",
-                           amount: amount,
-                           status: "Pending", 
-                           date: new Date().toISOString().split('T')[0]
-                        };
-                        setInvoicesState(p => [newInv as any, ...p]);
-                        setIsAddInvoiceOpen(false);
-                        setInvoiceItems([{ id: 1, name: "", sku: "", qty: 1, price: 0 }]);
+                        if (!name || !amount) {
+                          alert("Please provide at least a name and amount");
+                          return;
+                        }
+
+                        try {
+                          await createInvoiceMutation({
+                            name,
+                            phone,
+                            amount,
+                            paymentMethod: 'CASH',
+                            paymentType: addInvoiceType === 'client_repair' ? 'SERVICE' : 'SALE',
+                            notes: addInvoiceType === 'client_repair' ? 'Manual repair invoice' : 'Inventory sale',
+                          }).unwrap();
+                          
+                          setIsAddInvoiceOpen(false);
+                          setInvoiceItems([{ id: 1, name: "", sku: "", qty: 1, price: 0 }]);
+                        } catch (err) {
+                          console.error("Failed to create invoice", err);
+                          alert("Error creating invoice");
+                        }
                       }}
                       className={`flex-1 h-14 rounded-2xl text-white text-[15px] font-black shadow-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] focus:outline-none ${addInvoiceType === 'client_repair' ? 'bg-[#4F46E5] shadow-indigo-200' : 'bg-[#EA580C] shadow-orange-200'}`}
                     >
@@ -639,7 +667,77 @@ export default function InvoicesManagementPage() {
            </div>
         )}
 
-        {/* VIEW INVOICE MODAL (FULL PAGE OVERHAUL) */}
+        {/* EDIT INVOICE MODAL */}
+        {editInvoiceTarget && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[4px] animate-in fade-in duration-300 p-4">
+              <div className="bg-white w-full max-w-[500px] rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
+                 
+                 <div className="flex justify-between items-center p-8 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-4">
+                       <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-[#4F46E5] text-white shadow-sm">
+                          <Edit2 className="h-6 w-6" />
+                       </div>
+                       <div>
+                          <h2 className="text-[22px] font-black text-[#0F172A] tracking-tight">Edit Invoice</h2>
+                          <p className="text-[13px] text-muted-foreground font-bold">{editInvoiceTarget.invoiceId}</p>
+                       </div>
+                    </div>
+                    <button onClick={() => setEditInvoiceTarget(null)} className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all focus:outline-none"><X className="h-5 w-5" /></button>
+                 </div>
+
+                 <div className="p-8 space-y-6">
+                    <div>
+                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Invoice Amount (LKR)</label>
+                       <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">Rs.</span>
+                          <input 
+                            id="edit_inv_amount" 
+                            type="number" 
+                            defaultValue={editInvoiceTarget.amount} 
+                            className="w-full h-12 rounded-xl border border-slate-200 pl-12 pr-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all" 
+                          />
+                       </div>
+                    </div>
+
+                    <div>
+                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Payment Status</label>
+                       <select 
+                         id="edit_inv_status" 
+                         defaultValue={editInvoiceTarget.status} 
+                         className="w-full h-12 rounded-xl border border-slate-200 px-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all"
+                       >
+                          <option value="Paid">Paid</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Overdue">Overdue</option>
+                       </select>
+                    </div>
+                 </div>
+                 
+                 <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
+                    <button onClick={() => setEditInvoiceTarget(null)} className="flex-1 h-12 rounded-xl border border-slate-200 bg-white text-slate-500 text-[14px] font-black hover:bg-slate-50 transition-all">Cancel</button>
+                    <button 
+                      onClick={async () => {
+                        const amount = +(document.getElementById('edit_inv_amount') as HTMLInputElement).value;
+                        const status = (document.getElementById('edit_inv_status') as HTMLSelectElement).value;
+                        
+                        try {
+                          await handleStatusUpdate(editInvoiceTarget.id, status);
+                          // If amount changed, we might need another mutation or update status to support amount
+                          await updateInvoiceStatus({ id: editInvoiceTarget.id, status: status === 'Paid' ? 'COMPLETED' : status === 'Pending' ? 'PENDING' : 'FAILED', amount }).unwrap();
+                          setEditInvoiceTarget(null);
+                        } catch (err) {
+                          console.error("Update failed", err);
+                        }
+                      }}
+                      className="flex-1 h-12 rounded-xl bg-[#4F46E5] text-white text-[14px] font-black shadow-lg shadow-indigo-100 hover:bg-[#4338CA] transition-all"
+                    >
+                       Save Changes
+                    </button>
+                 </div>
+              </div>
+           </div>
+        )}
+
         {viewDocumentTarget && (
            <div className="fixed inset-0 z-[120] flex flex-col items-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto py-12 px-4">
               
@@ -1031,11 +1129,21 @@ export default function InvoicesManagementPage() {
                   <div className="flex w-full gap-3">
                      <button onClick={() => setEditInvoiceTarget(null)} className="flex-1 h-12 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 transition-all">Cancel</button>
                      <button 
-                       onClick={() => {
+                       onClick={async () => {
                           const amt = +(document.getElementById('edit_amount') as HTMLInputElement).value;
                           const st = (document.getElementById('edit_status') as HTMLSelectElement).value;
-                          setInvoicesState(p => p.map(inv => inv.id === editInvoiceTarget.id ? { ...inv, amount: amt, status: st } : inv));
-                          setEditInvoiceTarget(null);
+                          const dbStatus = st === 'Paid' ? 'COMPLETED' : st === 'Pending' ? 'PENDING' : 'FAILED';
+                          
+                          try {
+                            await updateInvoiceStatus({ 
+                              id: editInvoiceTarget.id, 
+                              status: dbStatus, 
+                              amount: amt 
+                            }).unwrap();
+                            setEditInvoiceTarget(null);
+                          } catch (err) {
+                            console.error('Failed to update invoice', err);
+                          }
                        }} 
                        className="flex-1 h-12 rounded-xl bg-[#4F46E5] text-white font-black shadow-lg shadow-indigo-200 hover:bg-[#4338CA] transition-all"
                      >

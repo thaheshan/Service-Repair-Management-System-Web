@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
@@ -23,10 +23,16 @@ import {
   Building,
   Upload,
 } from "lucide-react"
+import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/services/api/settingsApiSlice"
+import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
 
 type SettingsTab = "general" | "business" | "notifications" | "security" | "team"
 
 export default function SettingsView() {
+  const { data: apiSettings, isLoading: settingsLoading } = useGetSettingsQuery({});
+  const [updateSettings] = useUpdateSettingsMutation();
+  const { data: staffResponse } = useGetStaffListQuery({});
+
   const [activeTab, setActiveTab] = useState<SettingsTab>("general")
   const [isSaving, setIsSaving] = useState(false)
 
@@ -34,15 +40,31 @@ export default function SettingsView() {
   const [theme, setTheme] = useState("light")
   const [accentColor, setAccentColor] = useState("#4F46E5")
   const [businessSettings, setBusinessSettings] = useState({
-    name: "SRM Premium Repairs",
-    tin: "TIN-994852-X",
-    address: "123 Innovation Drive, Tech District, Colombo 03, Sri Lanka",
-    email: "support@srmpremium.com",
-    phone: "+94 77 123 4567",
-    website: "https://srmpremium.com",
+    name: "",
+    tin: "",
+    address: "",
+    email: "",
+    phone: "",
+    website: "",
     language: "English (United States)",
     timezone: "(GMT +05:30) Colombo, Sri Lanka"
   })
+
+  // Populate from API when loaded
+  useEffect(() => {
+    if (apiSettings) {
+      setBusinessSettings(prev => ({
+        ...prev,
+        name: apiSettings.shop?.name ?? prev.name,
+        email: apiSettings.shop?.email ?? prev.email,
+        phone: apiSettings.shop?.phone ?? prev.phone,
+        address: apiSettings.shop?.address ?? prev.address,
+        website: apiSettings.shop?.website ?? prev.website,
+        tin: apiSettings.shop?.taxNumber ?? prev.tin,
+        timezone: apiSettings.settings?.timezone ?? prev.timezone,
+      }));
+    }
+  }, [apiSettings]);
 
   // Notifications State
   const [notifications, setNotifications] = useState({
@@ -86,41 +108,65 @@ export default function SettingsView() {
   }, [theme, accentColor])
   
   // Team Management State
-  const [teamMembers, setTeamMembers] = useState([
-    { name: "John Smith", role: "Super Admin", email: "john@srm.com", status: "Active" },
-    { name: "Sarah Wayne", role: "Junior Technician", email: "sarah@srm.com", status: "Active" },
-    { name: "Robert Fox", role: "Logistics Manager", email: "robert@srm.com", status: "Pending" }
-  ])
+  const teamMembers = useMemo(() => {
+    const apiStaff = staffResponse?.staff || [];
+    if (apiStaff.length > 0) {
+      return apiStaff.map((s: any) => ({
+        name: s.fullName,
+        role: s.role,
+        email: s.email ?? '',
+        status: s.isActive ? 'Active' : 'Inactive',
+      }));
+    }
+    return [];
+  }, [staffResponse]);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [activeEditMember, setActiveEditMember] = useState<any>(null)
   
   // New Invite Draft
   const [newInvite, setNewInvite] = useState({ name: "", email: "", role: "Junior Technician" })
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
-      // Save theme to localStorage to mock persistence
+    try {
+      await updateSettings({
+        // Business Profile
+        shopName: businessSettings.name,
+        address: businessSettings.address,
+        phone: businessSettings.phone,
+        email: businessSettings.email,
+        website: businessSettings.website,
+        taxNumber: businessSettings.tin,
+        
+        // System Settings
+        timezone: businessSettings.timezone,
+        notificationPreferences: notifications,
+      }).unwrap();
+
       if (typeof window !== "undefined") {
         localStorage.setItem("srm_theme", theme)
-        localStorage.setItem("srm_business", JSON.stringify(businessSettings))
       }
-      alert("Settings and configurations successfully saved and persisted!")
-    }, 1200)
+      
+      alert("Settings saved successfully!");
+    } catch (err) {
+      console.error('Failed to save settings', err);
+      alert("Failed to save settings. Please try again.");
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleInviteSubmit = () => {
     if (!newInvite.name || !newInvite.email) return alert("Please fill in required fields.")
-    setTeamMembers([...teamMembers, { ...newInvite, status: "Pending" }])
+    // Staff invitations go through the Staff module
+    alert(`Invitation sent to ${newInvite.email}. Use the Staff module to manage team members.`)
     setNewInvite({ name: "", email: "", role: "Junior Technician" })
     setIsInviteModalOpen(false)
   }
 
   const handleEditMemberSubmit = () => {
     if (!activeEditMember) return
-    const updated = teamMembers.map(m => m.email === activeEditMember.email ? activeEditMember : m)
-    setTeamMembers(updated)
+    // Role/status changes are handled in the Staff module
     setActiveEditMember(null)
   }
 

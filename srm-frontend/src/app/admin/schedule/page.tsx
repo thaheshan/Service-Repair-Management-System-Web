@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
@@ -9,8 +9,18 @@ import { ScheduleCalendar } from "@/components/admin/schedule/schedule-calendar"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { ScheduleFilters } from "@/components/admin/schedule/schedule-filter-popover"
 
+import { 
+  useGetAppointmentsQuery, 
+  useCreateAppointmentMutation, 
+  useUpdateAppointmentMutation, 
+  useDeleteAppointmentMutation 
+} from "@/services/api/scheduleApiSlice"
+import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+
 export type Appointment = {
-  id: number
+  id: string | number
   dayIdx: number
   startHr: number
   duration: number
@@ -81,7 +91,12 @@ const generateDemoAppointments = (weekStartDate: Date): Appointment[] => {
 }
 
 export default function SchedulePage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const { data: apiResponse, isLoading } = useGetAppointmentsQuery({});
+  const [createAppointment] = useCreateAppointmentMutation();
+  const [updateAppointment] = useUpdateAppointmentMutation();
+  const [deleteAppointment] = useDeleteAppointmentMutation();
+  const { data: staffResponse } = useGetStaffListQuery({});
+  const { user } = useSelector((state: RootState) => state.auth);
   
   const [filters, setFilters] = useState<ScheduleFilters>({
     statuses: ["bg-[#4F46E5]", "bg-[#10B981]", "bg-[#F59E0B]"],
@@ -89,13 +104,41 @@ export default function SchedulePage() {
     serviceTypeId: "all"
   })
   
-  // Date State (Starts on Monday Jan 12, 2026 for the Jan 13 mockup week)
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(new Date("2026-01-12T00:00:00"))
+  // Date State
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+    return new Date(d.setDate(diff));
+  });
 
-  // Whenever the week changes, generate logic for new appointments
-  useEffect(() => {
-    setAppointments(generateDemoAppointments(currentWeekStart))
-  }, [currentWeekStart])
+  const appointments = useMemo(() => {
+    if (!apiResponse?.data) return [];
+    
+    return apiResponse.data.map((a: any) => {
+      const date = new Date(a.scheduledAt);
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setHours(0,0,0,0);
+      
+      const diffTime = date.getTime() - weekStart.getTime();
+      const dayIdx = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const startHr = date.getHours();
+      
+      return {
+        id: a.id,
+        dayIdx,
+        startHr,
+        duration: (a.duration || 60) / 60,
+        initials: a.technicianName.split(" ").map((n: string) => n[0]).join("").toUpperCase(),
+        name: a.technicianName,
+        device: a.customerName + (a.repairReference ? ` - ${a.repairReference}` : ""),
+        color: a.status === 'COMPLETED' ? "bg-[#10B981]" : a.status === 'IN_PROGRESS' ? "bg-[#F59E0B]" : "bg-[#4F46E5]",
+        technicianId: a.technicianId || "unassigned",
+        serviceTypeId: "1"
+      };
+    }).filter((a: any) => a.dayIdx >= 0 && a.dayIdx < 7);
+  }, [apiResponse, currentWeekStart]);
 
   // Generate dynamic 7-day array
   const currentDays = Array.from({ length: 7 }).map((_, i) => {
@@ -123,50 +166,47 @@ export default function SchedulePage() {
     })
   }
 
-  const handleUpdateAppointment = (id: number, newDayIdx: number, newStartHr: number) => {
-    setAppointments(prev => prev.map(app => 
-      app.id === id ? { ...app, dayIdx: newDayIdx, startHr: newStartHr } : app
-    ))
+  const handleUpdateAppointment = async (id: any, newDayIdx: number, newStartHr: number) => {
+    const date = new Date(currentWeekStart);
+    date.setDate(date.getDate() + newDayIdx);
+    date.setHours(newStartHr, 0, 0, 0);
+    
+    try {
+      await updateAppointment({ id, scheduledAt: date.toISOString() }).unwrap();
+    } catch (err) {
+      console.error('Failed to update appointment', err);
+    }
   }
 
-  const handleUpdateDuration = (id: number, newDuration: number) => {
-    setAppointments(prev => prev.map(app => 
-      app.id === id ? { ...app, duration: newDuration } : app
-    ))
+  const handleUpdateDuration = async (id: any, newDuration: number) => {
+    try {
+      await updateAppointment({ id, duration: newDuration * 60 }).unwrap();
+    } catch (err) {
+      console.error('Failed to update duration', err);
+    }
   }
 
   const handleApplyFilters = (newFilters: ScheduleFilters) => {
     setFilters(newFilters)
   }
 
-  const handleAddAppointment = (params: any) => {
-    const appDate = new Date(params.date)
-    appDate.setHours(0,0,0,0)
-    const weekStart = new Date(currentWeekStart)
-    weekStart.setHours(0,0,0,0)
-    const diffDays = Math.round((appDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
-    
-    const tech = TECHNICIANS.find(t => t.id === params.technician) || TECHNICIANS[0]
-    
-    // Fallback device name
-    let deviceName = "Walk-in Repair"
-    if (params.task === "task1") deviceName = "iPad Pro - Battery"
-    else if (params.task === "task2") deviceName = "Samsung S22 - Screen"
-    else if (params.task === "task3") deviceName = "iPhone 14 Pro - Back Glass"
+  const handleAddAppointment = async (params: any) => {
+    const scheduledAt = new Date(params.date);
+    const [hours] = params.time.split(':');
+    scheduledAt.setHours(parseInt(hours) || 9, 0, 0, 0);
 
-    const newApp: Appointment = {
-      id: Math.max(0, ...appointments.map(a => a.id)) + 1,
-      dayIdx: (diffDays >= 0 && diffDays < 7) ? diffDays : 0, 
-      startHr: parseInt(params.time.split(":")[0]) || 9,
-      duration: parseInt(params.duration) || 1,
-      initials: tech.initials,
-      name: tech.name,
-      device: deviceName,
-      color: "bg-[#10B981]", 
-      technicianId: tech.id,
-      serviceTypeId: "1"
+    try {
+      await createAppointment({
+        tenantId: user?.tenantId,
+        shopId: user?.shopId,
+        repairId: params.task, // This comes from the unassigned repairs select
+        technicianId: params.technician === "all" ? undefined : params.technician,
+        scheduledAt: scheduledAt.toISOString(),
+        duration: (parseInt(params.duration) || 1) * 60,
+      }).unwrap();
+    } catch (err) {
+      console.error('Failed to create appointment', err);
     }
-    setAppointments(prev => [...prev, newApp])
   }
 
   // Filter appointments based on active filter state

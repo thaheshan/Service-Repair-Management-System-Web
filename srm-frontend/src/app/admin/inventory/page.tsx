@@ -1,12 +1,15 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+import { toast } from "sonner"
 import Link from "next/link"
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
-import { DashboardFooter } from "@/components/admin/dashboard/footer"
+
 import {
   Search,
   Filter,
@@ -47,19 +50,6 @@ import {
   Area,
 } from "recharts"
 
-const fastMovingItemsData = [
-  { name: "iPhone 13 Screen", count: 48 },
-  { name: "Samsung S21 Battery", count: 42 },
-  { name: "iPad Pro Glass", count: 35 },
-  { name: "OnePlus 9 Camera", count: 30 },
-  { name: "Xiaomi Note 10 LCD", count: 28 },
-  { name: "Oppo A74 Display", count: 22 },
-  { name: "Vivo Y20 Battery", count: 20 },
-  { name: "Realme 8 Chg Port", count: 18 },
-  { name: "Nokia 7.2 Screen", count: 15 },
-  { name: "Moto G60 Camera", count: 12 },
-].sort((a, b) => b.count - a.count)
-
 const stockTrendDataMap: Record<string, { label: string, value: number }[]> = {
   "Last 7 days": [
     { label: "Mon", value: 2.75 }, { label: "Tue", value: 2.78 }, { label: "Wed", value: 2.80 }, 
@@ -79,80 +69,59 @@ const stockTrendDataMap: Record<string, { label: string, value: number }[]> = {
     { label: "Apr", value: 2.5 }, { label: "May", value: 2.6 }, { label: "Jun", value: 2.8 }
   ]
 }
-const stockTrendData = [
-  { month: "Jan", value: 2.1 },
-  { month: "Feb", value: 2.3 },
-  { month: "Mar", value: 2.2 },
-  { month: "Apr", value: 2.5 },
-  { month: "May", value: 2.6 },
-  { month: "Jun", value: 2.8 },
-]
 
-const initialInventoryData = [
-  {
-    code: "SCR-001",
-    name: "iPhone 13 Pro LCD Screen",
-    brand: "Apple",
-    category: "Screens",
-    stock: 45,
-    maxStock: 50,
-    price: 12000,
-    supplier: "Tech Supplies Inc",
-    location: "A-12",
-    status: "In Stock" as const,
-  },
-  {
-    code: "BAT-045",
-    name: "Samsung Galaxy S21 Battery",
-    brand: "Samsung",
-    category: "Batteries",
-    stock: 12,
-    maxStock: 50,
-    price: 2500,
-    supplier: "Mobile Parts Co",
-    location: "B-05",
-    status: "Low Stock" as const,
-  },
-  {
-    code: "CHG-023",
-    name: "iPhone 12 Charging Port Flex",
-    brand: "Apple",
-    category: "Charging Ports",
-    stock: 0,
-    maxStock: 50,
-    price: 1200,
-    supplier: "Quick Parts Ltd",
-    location: "C-18",
-    status: "Out of Stock" as const,
-  },
-  {
-    code: "CAM-112",
-    name: "Xiaomi Redmi Note 10 Rear Camera",
-    brand: "Xiaomi",
-    category: "Cameras",
-    stock: 45,
-    maxStock: 50,
-    price: 4500,
-    supplier: "Tech Supplies Inc",
-    location: "A-08",
-    status: "In Stock" as const,
-  },
-  {
-    code: "TOL-089",
-    name: "Professional Screwdriver Set",
-    brand: "Tool Masters",
-    category: "Tools",
-    stock: 45,
-    maxStock: 50,
-    price: 850,
-    supplier: "Tool Masters",
-    location: "D-22",
-    status: "In Stock" as const,
-  },
-]
+import { 
+  useGetInventoryItemsQuery, 
+  useCreateInventoryItemMutation, 
+  useUpdateInventoryItemMutation, 
+  useDeleteInventoryItemMutation,
+  useGetInventoryUsageQuery,
+  useGetInventorySummaryQuery
+} from "@/services/api/inventoryApiSlice"
 
 export default function InventoryManagementPage() {
-  const [inventoryState, setInventoryState] = useState(initialInventoryData)
+  const { data: response, isLoading } = useGetInventoryItemsQuery({});
+  const { data: usageResponse } = useGetInventoryUsageQuery({});
+  const { data: summaryResponse } = useGetInventorySummaryQuery({});
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  const [createInventoryItem] = useCreateInventoryItemMutation();
+  const [updateInventoryItem] = useUpdateInventoryItemMutation();
+  const [deleteInventoryItem] = useDeleteInventoryItemMutation();
+
+  const invSummary = summaryResponse?.summary;
+
+  const fastMovingItemsData = useMemo(() => {
+    if (!usageResponse?.usageReport) return [];
+    const report = usageResponse.usageReport;
+    return report.map((r: any) => ({
+      name: r.partName,
+      count: r.totalQuantityUsed
+    })).sort((a: any, b: any) => b.count - a.count).slice(0, 10);
+  }, [usageResponse]);
+
+  const inventoryState = useMemo(() => {
+    const apiItems = response?.items || [];
+    return apiItems.map((item: any) => ({
+      id: item.id,
+      code: item.partNumber || item.sku || `ITM-${item.id?.substring(0, 4).toUpperCase() || 'NEW'}`,
+      name: item.partName || item.name || "Unnamed Item",
+      brand: (item.compatibleBrands && item.compatibleBrands[0]) || item.brand || "Generic",
+      category: item.category || "Parts",
+      stock: item.quantityInStock ?? item.stockQuantity ?? 0,
+      maxStock: (item.minimumStockLevel || 5) * 5,
+      price: item.sellingPrice || item.price || 0,
+      supplier: item.supplierName || item.supplier || "Main Supplier",
+      location: item.location || "Store",
+      status: (item.quantityInStock ?? item.stockQuantity ?? 0) === 0 ? "Out of Stock" : (item.quantityInStock ?? item.stockQuantity ?? 0) <= (item.minimumStockLevel || 5) ? "Low Stock" : "In Stock"
+    }));
+  }, [response]);
+
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState("All Categories")
   const [filterStatus, setFilterStatus] = useState("All Status")
@@ -177,6 +146,65 @@ export default function InventoryManagementPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+
+  // Forms
+  const [addItemForm, setAddItemForm] = useState({
+    name: "", sku: "", brand: "Apple", category: "Screens", price: 0, stockQuantity: 0, supplier: "Tech Supplies Inc"
+  });
+
+  const handleAddItem = async () => {
+    if (!addItemForm.name) {
+      toast.error("Item name is required.");
+      return;
+    }
+    
+    if (!user || !user.shopId) {
+      toast.error("Session invalid. Please log in again.");
+      console.error("Inventory Session Check Failed:", { user });
+      return;
+    }
+
+    try {
+      console.log("Adding inventory item with correct field mapping...");
+      await createInventoryItem({
+        partName: addItemForm.name,
+        partNumber: addItemForm.sku,
+        category: addItemForm.category,
+        compatibleBrands: [addItemForm.brand],
+        compatibleModels: [],
+        supplierName: addItemForm.supplier,
+        quantityInStock: Number(addItemForm.stockQuantity),
+        minimumStockLevel: 5,
+        unitCost: Number(addItemForm.price) * 0.7, // Estimate cost at 70% of price
+        sellingPrice: Number(addItemForm.price),
+      }).unwrap();
+      
+      toast.success("Item added successfully!");
+      setIsAddItemOpen(false);
+      setAddItemForm({ name: "", sku: "", brand: "Apple", category: "Screens", price: 0, stockQuantity: 0, supplier: "Tech Supplies Inc" });
+    } catch(err: any) {
+      console.error("Failed to add inventory item:", err);
+      const msg = err.data?.message || err.data?.error || err.message || "Failed to add item";
+      toast.error(`Error: ${msg}`);
+    }
+  };
+
+  const handleUpdateItem = async () => {
+    if (!editItemTarget) return;
+    try {
+      await updateInventoryItem({
+        id: editItemTarget.id,
+        name: editItemTarget.name,
+        category: editItemTarget.category,
+        supplier: editItemTarget.supplier,
+        price: Number(editItemTarget.price),
+        location: editItemTarget.location
+      }).unwrap();
+      setEditItemTarget(null);
+    } catch(err) {
+      console.error("Failed to update inventory item", err);
+    }
+  };
 
   // PO Drafting State
   const [poItems, setPoItems] = useState([{ id: 1, name: "SCR-001 (iPhone 13 Pro...)", qty: 10 }])
@@ -283,9 +311,14 @@ export default function InventoryManagementPage() {
     )
   }
 
-  const handleDeleteItem = (code: string) => {
-    setInventoryState(prev => prev.filter(item => item.code !== code))
-    setActiveMenuId(null)
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await deleteInventoryItem(id).unwrap();
+      setActiveMenuId(null);
+      setDeleteFormTarget(null);
+    } catch (err) {
+      console.error("Failed to delete item", err);
+    }
   }
 
   return (
@@ -336,14 +369,23 @@ export default function InventoryManagementPage() {
             {/* Quick Overview Section */}
             <div className="mb-8">
               <h2 className="text-lg font-bold text-[#0F172A] mb-4">Quick Overview</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] flex items-center justify-center">
-                    <ArrowUpRight className="h-6 w-6 text-muted-foreground" />
+                  <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center">
+                    <Package className="h-6 w-6 text-[#4F46E5]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Stock Movements (This Week)</span>
-                    <span className="text-xl font-bold text-[#0F172A]">156 transactions</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Stock Value</span>
+                    <span className="text-xl font-bold text-[#0F172A]">Rs. {(invSummary?.totalValue || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#ECFDF5] flex items-center justify-center">
+                    <ArrowUpRight className="h-6 w-6 text-[#10B981]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Inventory</span>
+                    <span className="text-xl font-bold text-[#0F172A]">{invSummary?.totalItems || 0} SKUs</span>
                   </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
@@ -351,8 +393,8 @@ export default function InventoryManagementPage() {
                     <Clock className="h-6 w-6 text-[#D97706]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pending Purchase Orders</span>
-                    <span className="text-xl font-bold text-[#0F172A]">5 orders</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Low Stock Items</span>
+                    <span className="text-xl font-bold text-[#D97706]">{invSummary?.lowStockCount || 0} items</span>
                   </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
@@ -360,8 +402,8 @@ export default function InventoryManagementPage() {
                     <AlertTriangle className="h-6 w-6 text-[#EF4444]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Items Expiring Soon</span>
-                    <span className="text-xl font-bold text-[#0F172A]">12 items</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Out of Stock</span>
+                    <span className="text-xl font-bold text-[#EF4444]">{invSummary?.outOfStockCount || 0} items</span>
                   </div>
                 </div>
               </div>
@@ -668,7 +710,7 @@ export default function InventoryManagementPage() {
 
           </div>
           <div className="h-12" /> {/* Layout Spacer */}
-          <DashboardFooter />
+          {/* Footer removed */}
         </main>
 
         {/* 🔵 OVERLAY MODALS */}
@@ -694,7 +736,7 @@ export default function InventoryManagementPage() {
                   <div className="text-right text-[12px] text-slate-400 font-black uppercase tracking-widest leading-relaxed pt-2">
                         <p>Head Office Warehouse</p>
                         <p>Colombo 07, Sri Lanka</p>
-                        <p className="text-[#4F46E5] mt-1 italic underline underline-offset-4 decoration-slate-200">Generated: {new Date().toLocaleString()}</p>
+                         <p className="text-[#4F46E5] mt-1 italic underline underline-offset-4 decoration-slate-200">Generated: {mounted ? new Date().toLocaleString() : ""}</p>
                   </div>
               </div>
 
@@ -797,15 +839,15 @@ export default function InventoryManagementPage() {
                 <div className="p-10 grid grid-cols-2 gap-x-8 gap-y-6">
                    <div className="col-span-2 md:col-span-1">
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Item Name</label>
-                      <input type="text" placeholder="e.g. iPhone 13 Pro Screen" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
+                      <input value={addItemForm.name} onChange={e=>setAddItemForm(p=>({...p,name:e.target.value}))} type="text" placeholder="e.g. iPhone 13 Pro Screen" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
                    </div>
                    <div className="col-span-2 md:col-span-1">
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">SKU / Item Code</label>
-                      <input type="text" placeholder="SCR-001" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
+                      <input value={addItemForm.sku} onChange={e=>setAddItemForm(p=>({...p,sku:e.target.value}))} type="text" placeholder="SCR-001" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Brand</label>
-                      <select className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all bg-[#F8FAFC]">
+                      <select value={addItemForm.brand} onChange={e=>setAddItemForm(p=>({...p,brand:e.target.value}))} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all bg-[#F8FAFC]">
                          <option>Apple</option>
                          <option>Samsung</option>
                          <option>Xiaomi</option>
@@ -814,7 +856,7 @@ export default function InventoryManagementPage() {
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-                      <select className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all bg-[#F8FAFC]">
+                      <select value={addItemForm.category} onChange={e=>setAddItemForm(p=>({...p,category:e.target.value}))} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all bg-[#F8FAFC]">
                          <option>Screens</option>
                          <option>Batteries</option>
                          <option>Charging Ports</option>
@@ -823,16 +865,16 @@ export default function InventoryManagementPage() {
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Selling Price (LKR)</label>
-                      <input type="number" placeholder="12500" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
+                      <input value={addItemForm.price || ""} onChange={e=>setAddItemForm(p=>({...p,price:Number(e.target.value)}))} type="number" placeholder="12500" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Current Stock</label>
-                      <input type="number" placeholder="45" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
+                      <input value={addItemForm.stockQuantity || ""} onChange={e=>setAddItemForm(p=>({...p,stockQuantity:Number(e.target.value)}))} type="number" placeholder="45" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
                    </div>
                    <div className="col-span-2 pt-6">
                       <div className="flex gap-4">
                          <button onClick={() => setIsAddItemOpen(false)} className="flex-1 h-14 rounded-2xl border border-border bg-white text-[14px] font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-tight">Discard</button>
-                         <button onClick={() => { setIsAddItemOpen(false); alert("Product Created Successfully!"); }} className="flex-[2] h-14 rounded-2xl bg-[#4F46E5] text-white text-[14px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">Create Product Record</button>
+                         <button onClick={handleAddItem} className="flex-[2] h-14 rounded-2xl bg-[#4F46E5] text-white text-[14px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">Create Product Record</button>
                       </div>
                    </div>
                 </div>
@@ -854,11 +896,11 @@ export default function InventoryManagementPage() {
                 <div className="p-10 grid grid-cols-2 gap-x-8 gap-y-6">
                    <div className="col-span-2">
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Item Display Name</label>
-                      <input type="text" defaultValue={editItemTarget.name} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
+                      <input value={editItemTarget.name} onChange={e=>setEditItemTarget(p=>p?{...p,name:e.target.value}:p)} type="text" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-                      <select defaultValue={editItemTarget.category} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold outline-none bg-[#F8FAFC]">
+                      <select value={editItemTarget.category} onChange={e=>setEditItemTarget(p=>p?{...p,category:e.target.value}:p)} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold outline-none bg-[#F8FAFC]">
                          <option>Screens</option>
                          <option>Batteries</option>
                          <option>Charging Ports</option>
@@ -867,7 +909,7 @@ export default function InventoryManagementPage() {
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Supplier</label>
-                      <select defaultValue={editItemTarget.supplier} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold outline-none bg-[#F8FAFC]">
+                      <select value={editItemTarget.supplier} onChange={e=>setEditItemTarget(p=>p?{...p,supplier:e.target.value}:p)} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold outline-none bg-[#F8FAFC]">
                          <option>Tech Supplies Inc</option>
                          <option>Mobile Parts Co</option>
                          <option>Tool Masters</option>
@@ -875,14 +917,14 @@ export default function InventoryManagementPage() {
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Update Price (LKR)</label>
-                      <input type="number" defaultValue={editItemTarget.price} className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black" />
+                      <input value={editItemTarget.price || ""} onChange={e=>setEditItemTarget(p=>p?{...p,price:Number(e.target.value)}:p)} type="number" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black" />
                    </div>
                    <div>
                       <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Storage Location</label>
-                      <input type="text" defaultValue={editItemTarget.location} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold" />
+                      <input value={editItemTarget.location || ""} onChange={e=>setEditItemTarget(p=>p?{...p,location:e.target.value}:p)} type="text" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold" />
                    </div>
                    <div className="col-span-2 pt-6">
-                      <button onClick={() => { setEditItemTarget(null); alert("Data Updated Successfully"); }} className="w-full h-14 rounded-2xl bg-[#4F46E5] text-white text-[15px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">Update Item Record</button>
+                      <button onClick={handleUpdateItem} className="w-full h-14 rounded-2xl bg-[#4F46E5] text-white text-[15px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">Update Item Record</button>
                    </div>
                 </div>
              </div>

@@ -9,98 +9,74 @@ import {
   DialogTitle,
 } from "@/components/ui/ui-admin-dashboard/dialog"
 
-// Expanded mock data
-const allActivities = [
-  {
-    id: 1,
-    type: "Repair",
-    icon: CheckCircle2,
-    iconBg: "bg-[#D1FAE5]",
-    iconColor: "text-[#10B981]",
-    title: "Completed repair for",
-    highlight: "Priya Sharma",
-    description: "iPhone 13 Pro - Screen Replacement • Rs. 8,500",
-    time: "2 hours ago",
-    timestamp: new Date(Date.now() - 2 * 3600 * 1000).getTime(),
-  },
-  {
-    id: 2,
-    type: "Repair",
-    icon: Wrench,
-    iconBg: "bg-[#DBEAFE]",
-    iconColor: "text-[#3B82F6]",
-    title: "Started repair for",
-    highlight: "Vikram Singh",
-    description: "MacBook Pro - Keyboard Replacement",
-    time: "3 hours ago",
-    timestamp: new Date(Date.now() - 3 * 3600 * 1000).getTime(),
-  },
-  {
-    id: 3,
-    type: "Inventory",
-    icon: Package,
-    iconBg: "bg-[#FEF3C7]",
-    iconColor: "text-[#F59E0B]",
-    title: "Parts received for",
-    highlight: "Arjun Patel",
-    description: "Samsung Galaxy S23 - Battery replacement part",
-    time: "5 hours ago",
-    timestamp: new Date(Date.now() - 5 * 3600 * 1000).getTime(),
-  },
-  {
-    id: 4,
-    type: "Diagnostic",
-    icon: ClipboardCheck,
-    iconBg: "bg-[#F3E8FF]",
-    iconColor: "text-[#A855F7]",
-    title: "Diagnostic completed for",
-    highlight: "Meera Joshi",
-    description: "OnePlus 11 - Water damage assessment",
-    time: "Yesterday at 4:30 PM",
-    timestamp: new Date(Date.now() - 24 * 3600 * 1000).getTime(),
-  },
-  {
-    id: 5,
-    type: "System",
-    icon: CheckCircle2,
-    iconBg: "bg-muted",
-    iconColor: "text-muted-foreground",
-    title: "System Update",
-    highlight: "v2.1.4",
-    description: "Security patches and performance improvements applied.",
-    time: "Yesterday at 1:00 PM",
-    timestamp: new Date(Date.now() - 28 * 3600 * 1000).getTime(),
-  },
-  {
-    id: 6,
-    type: "Inventory",
-    icon: Package,
-    iconBg: "bg-[#FEF3C7]",
-    iconColor: "text-[#F59E0B]",
-    title: "Low stock alert",
-    highlight: "iPhone Batteries",
-    description: "iPhone 12 & 13 batteries dropped below 5 units.",
-    time: "2 days ago",
-    timestamp: new Date(Date.now() - 48 * 3600 * 1000).getTime(),
-  },
-  {
-    id: 7,
-    type: "Repair",
-    icon: Wrench,
-    iconBg: "bg-[#DBEAFE]",
-    iconColor: "text-[#3B82F6]",
-    title: "Repair paused",
-    highlight: "David Chen",
-    description: "Awaiting customer approval for motherboard repair.",
-    time: "2 days ago",
-    timestamp: new Date(Date.now() - 50 * 3600 * 1000).getTime(),
-  },
-]
+import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
+
+const formatTimeAgo = (date: any) => {
+  if (!date) return "Just now";
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMs = now.getTime() - past.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHrs = Math.floor(diffInMins / 60);
+  const diffInDays = Math.floor(diffInHrs / 24);
+
+  if (diffInMins < 1) return "Just now";
+  if (diffInMins < 60) return `${diffInMins} min ago`;
+  if (diffInHrs < 24) return `${diffInHrs} ${diffInHrs === 1 ? 'hour' : 'hours'} ago`;
+  return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+}
+
+const getActivityStyles = (type: string, title: string) => {
+  if (type === "REPAIR") {
+    if (title.includes("completed")) {
+      return { icon: CheckCircle2, iconBg: "bg-[#D1FAE5]", iconColor: "text-[#10B981]" };
+    }
+    return { icon: Wrench, iconBg: "bg-[#DBEAFE]", iconColor: "text-[#3B82F6]" };
+  }
+  if (type === "INVENTORY") {
+    return { icon: Package, iconBg: "bg-[#FEF3C7]", iconColor: "text-[#F59E0B]" };
+  }
+  return { icon: ClipboardCheck, iconBg: "bg-[#F3E8FF]", iconColor: "text-[#A855F7]" };
+}
 
 export function RecentActivity() {
+  const { data: response, isLoading, isError } = useGetDashboardAnalyticsQuery(7);
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filterType, setFilterType] = useState("All")
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+
+  const allActivities = useMemo(() => {
+    const rawNotifications = response?.data?.notifications || [];
+    if (rawNotifications.length === 0) return [];
+    
+    return rawNotifications.map((n: any) => {
+      const type = n.type || "SYSTEM";
+      const title = n.title || "Shop Event";
+      const styles = getActivityStyles(type, title.toLowerCase());
+      
+      // Parse highlight (heuristic)
+      let highlight = "";
+      const desc = n.description || n.message || "";
+      if (desc.includes("by")) {
+        const parts = desc.split("by");
+        highlight = parts[parts.length - 1].trim();
+      } else if (desc.includes("for")) {
+        const parts = desc.split("for");
+        highlight = parts[parts.length - 1].trim();
+      }
+
+      return {
+        id: n.id,
+        type: type === "REPAIR" ? "Repair" : type === "INVENTORY" ? "Inventory" : "System",
+        ...styles,
+        title: title,
+        highlight: highlight,
+        description: desc,
+        time: formatTimeAgo(n.time || n.createdAt),
+        timestamp: (n.time || n.createdAt) ? new Date(n.time || n.createdAt).getTime() : Date.now()
+      }
+    });
+  }, [response])
 
   // For the dashboard widget, always show only the 4 newest
   const widgetActivities = allActivities.slice(0, 4)
@@ -121,7 +97,7 @@ export function RecentActivity() {
     })
 
     return result
-  }, [filterType, sortOrder])
+  }, [allActivities, filterType, sortOrder])
 
   const handleDownloadPdf = () => {
     alert("Downloading Activity Report PDF...")
@@ -136,16 +112,31 @@ export function RecentActivity() {
         </div>
 
         {/* Activity List */}
-        <div className="flex flex-col px-5 pb-5">
-          {widgetActivities.map((activity, index) => (
+        <div className="flex flex-col px-5 pb-5 flex-1 min-h-[200px]">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full py-12">
+              <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-xs text-muted-foreground">Loading activity...</p>
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center h-full py-12 text-destructive">
+              <p className="text-xs font-medium">Failed to load activity</p>
+            </div>
+          ) : widgetActivities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
+              <p className="text-xs font-medium">No recent activity</p>
+            </div>
+          ) : (
+            widgetActivities.map((activity, index) => (
             <div
               key={activity.id}
-              className={`flex gap-3.5 py-3.5 ${
+              onClick={() => activity.link && router.push(activity.link)}
+              className={`flex gap-3.5 py-3.5 group ${
                 index !== widgetActivities.length - 1 ? "border-b border-border" : ""
-              }`}
+              } ${activity.link ? "cursor-pointer hover:bg-muted/50 transition-colors px-1 rounded-lg" : ""}`}
             >
               {/* Icon */}
-              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity.iconBg}`}>
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity.iconBg} group-hover:scale-110 transition-transform`}>
                 <activity.icon className={`h-4.5 w-4.5 ${activity.iconColor}`} />
               </div>
               {/* Content */}
@@ -154,11 +145,12 @@ export function RecentActivity() {
                   {activity.title}{" "}
                   <span className="font-semibold">{activity.highlight}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">{activity.description}</p>
+                <p className="text-xs text-muted-foreground line-clamp-1">{activity.description}</p>
                 <p className="text-xs text-muted-foreground">{activity.time}</p>
               </div>
             </div>
-          ))}
+          ))
+        )}
         </div>
 
         {/* Footer Link */}
@@ -223,8 +215,18 @@ export function RecentActivity() {
             </div>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto w-full p-2 bg-[#F8FAFC]/50">
-            {filteredActivities.length === 0 ? (
+          <div className="flex-1 overflow-y-auto w-full p-2 bg-[#F8FAFC]/50 min-h-[400px]">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-full py-20">
+                <div className="h-8 w-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-sm font-medium text-muted-foreground">Fetching activity log...</p>
+              </div>
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center h-full py-20 text-destructive text-center px-6">
+                <X className="h-10 w-10 mb-4 opacity-20" />
+                <p className="text-sm font-medium">Unable to load activity log. Please try again later.</p>
+              </div>
+            ) : filteredActivities.length === 0 ? (
                <div className="flex flex-col items-center justify-center h-full py-12 text-center text-muted-foreground">
                  <Filter className="h-10 w-10 mb-4 opacity-20" />
                  <p className="text-sm font-medium">No activity found for this category.</p>
