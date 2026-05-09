@@ -26,6 +26,7 @@ interface Repair {
   avatar: string
 }
 
+import { useTranslation } from "react-i18next"
 const statusStyles: Record<RepairStatus, string> = {
   "In Progress": "bg-[#DBEAFE] text-[#1E40AF]",
   Completed: "bg-[#D1FAE5] text-[#065F46]",
@@ -47,6 +48,10 @@ const statusOptions: RepairStatus[] = ["Pending", "In Progress", "Ready", "Compl
 const initialRepairs: Repair[] = []
 
 export function RecentRepairs() {
+  const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
   const apiRepairs = response?.data?.recentRepairs || [];
   
@@ -169,8 +174,8 @@ export function RecentRepairs() {
       <div className="flex flex-col h-full rounded-xl border border-border bg-card">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
-          <h3 className="text-base font-semibold text-foreground">Recent Repairs</h3>
-          <Link href="/admin/repairs" className="text-sm font-medium text-primary hover:underline">View All</Link>
+          <h3 className="text-base font-semibold text-foreground">{mounted ? t('dashboard.recentRepairs') : 'Recent Repairs'}</h3>
+          <Link href="/admin/repairs" className="text-sm font-medium text-primary hover:underline">{mounted ? t('common.viewAll') : 'View All'}</Link>
         </div>
 
         {/* Repair List */}
@@ -208,7 +213,7 @@ export function RecentRepairs() {
                     <button
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-primary ${statusStyles[repair.status]}`}
                     >
-                      {repair.status}
+                      {mounted ? t(`dashboard.status.${repair.status.toLowerCase().replace(/\s+/g, '')}`) : repair.status}
                       <ChevronDown className="h-3 w-3" />
                     </button>
                   </DropdownMenuTrigger>
@@ -222,7 +227,7 @@ export function RecentRepairs() {
                         <span
                           className={`mr-2 inline-block h-2 w-2 rounded-full ${statusDot[status]}`}
                         />
-                        {status}
+                        {mounted ? t(`dashboard.status.${status.toLowerCase().replace(/\s+/g, '')}`) : status}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>

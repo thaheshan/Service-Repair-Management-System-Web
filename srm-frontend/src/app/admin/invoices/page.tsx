@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
@@ -51,6 +52,10 @@ const PDF_STATUS_STYLE: Record<string, string> = {
 }
 
 export default function InvoicesManagementPage() {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { data: apiResponse, isLoading } = useGetInvoicesQuery({});
   const [createInvoiceMutation] = useCreateInvoiceMutation();
   const [updateInvoiceStatus] = useUpdateInvoiceStatusMutation();
@@ -254,18 +259,18 @@ export default function InvoicesManagementPage() {
           <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col">
             
             <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
-              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">Dashboard</Link>
+              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title') : 'Dashboard'}</Link>
               <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-              <span className="text-[#0F172A]">Invoices</span>
+              <span className="text-[#0F172A]">{mounted ? t('invoicesPage.title') : 'Invoice Management'}</span>
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <h1 className="text-[28px] font-black text-[#0F172A] tracking-tight">Invoice Management</h1>
+              <h1 className="text-[28px] font-black text-[#0F172A] tracking-tight">{mounted ? t('invoicesPage.title') : 'Invoice Management'}</h1>
               <button 
                 onClick={() => setIsAddInvoiceOpen(true)}
                 className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white shadow-sm hover:bg-[#4338CA] transition-colors focus:outline-none"
               >
-                <Plus className="h-4 w-4" /> Add Invoice
+                <Plus className="h-4 w-4" /> {mounted ? t('invoicesPage.add') : 'Add Invoice'}
               </button>
             </div>
 
@@ -274,7 +279,7 @@ export default function InvoicesManagementPage() {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input 
                   type="text"
-                  placeholder="Search by name, client, or invoice #"
+                  placeholder={mounted ? t('invoicesPage.search') : "Search by name, client, or invoice #"}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full h-10 pl-10 pr-4 rounded-lg border border-border bg-white text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]"
@@ -288,7 +293,7 @@ export default function InvoicesManagementPage() {
                     className={`flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 rounded-lg border text-[13px] font-bold transition-all focus:outline-none whitespace-nowrap ${isFiltersOpen ? 'bg-[#4F46E5] border-[#4F46E5] text-white shadow-lg' : 'bg-white border-border text-[#0F172A] hover:bg-muted shadow-sm hover:shadow'}`}
                   >
                     <Filter className={`h-4 w-4 ${isFiltersOpen ? 'text-white' : 'text-muted-foreground'}`} /> 
-                    Filters {(filterTypes.length + filterStatuses.length) > 0 && <span className="flex items-center justify-center h-4 w-4 bg-white text-[#4F46E5] rounded-full text-[10px] ml-1">{filterTypes.length + filterStatuses.length}</span>}
+                    {mounted ? t('invoicesPage.filters') : 'Filters'} {(filterTypes.length + filterStatuses.length) > 0 && <span className="flex items-center justify-center h-4 w-4 bg-white text-[#4F46E5] rounded-full text-[10px] ml-1">{filterTypes.length + filterStatuses.length}</span>}
                   </button>
                   
                   <div className="relative flex-1 sm:flex-none">
@@ -487,9 +492,9 @@ export default function InvoicesManagementPage() {
                        </div>
                        <div>
                           <h2 className="text-[22px] font-black text-[#0F172A] tracking-tight">
-                            {addInvoiceType === 'client_repair' ? 'Generate Repair Invoice' : 'Create Inventory / Sale Ledger'}
+                            {mounted ? (addInvoiceType === 'client_repair' ? t('invoicesPage.generateRepair') : t('invoicesPage.createInventoryLedger')) : (addInvoiceType === 'client_repair' ? 'Generate Repair Invoice' : 'Create Inventory / Sale Ledger')}
                           </h2>
-                          <p className="text-[13px] text-muted-foreground font-bold">Comprehensive invoicing for professional workflows.</p>
+                          <p className="text-[13px] text-muted-foreground font-bold">{mounted ? t('invoicesPage.subtitle') : 'Comprehensive invoicing for professional workflows.'}</p>
                        </div>
                     </div>
                     <button onClick={() => setIsAddInvoiceOpen(false)} className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all focus:outline-none"><X className="h-5 w-5" /></button>
@@ -502,26 +507,26 @@ export default function InvoicesManagementPage() {
                             onClick={() => setAddInvoiceType("client_repair")}
                             className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'client_repair' ? 'bg-white text-[#4F46E5] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                           >
-                            <Wrench className="h-4 w-4" /> Repair Intake
+                             <Wrench className="h-4 w-4" /> {mounted ? t('invoicesPage.repairIntake') : 'Repair Intake'}
                           </button>
                           <button 
                             onClick={() => setAddInvoiceType("inventory_item")}
                             className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'inventory_item' ? 'bg-white text-[#EA580C] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                           >
-                            <ShoppingCart className="h-4 w-4" /> Bulk Sale / Inventory
+                             <ShoppingCart className="h-4 w-4" /> {mounted ? t('invoicesPage.bulkSale') : 'Bulk Sale / Inventory'}
                           </button>
                        </div>
 
                        <div className="grid grid-cols-2 gap-6 mb-10">
                           <div className="col-span-2 lg:col-span-1">
-                             <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer / Client Name</label>
+                             <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('invoicesPage.customerName') : 'Customer / Client Name'}</label>
                              <div className="relative group">
                                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-[#4F46E5] transition-colors" />
-                                <input id="inv_name" type="text" placeholder="Search or Enter Name..." className="w-full h-12 rounded-xl border border-slate-200 pl-10 pr-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
+                                <input id="inv_name" type="text" placeholder={mounted ? t('invoicesPage.searchOrEnter') : "Search or Enter Name..."} className="w-full h-12 rounded-xl border border-slate-200 pl-10 pr-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
                              </div>
                           </div>
                           <div className="col-span-2 lg:col-span-1">
-                             <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Contact Number</label>
+                             <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('invoicesPage.contactNumber') : 'Contact Number'}</label>
                              <input id="inv_phone" type="text" placeholder="+94 7X XXX XXXX" className="w-full h-12 rounded-xl border border-slate-200 px-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
                           </div>
                        </div>
@@ -533,7 +538,7 @@ export default function InvoicesManagementPage() {
                                 <Box className="h-4 w-4 text-[#EA580C]" /> Line Items
                               </h3>
                               <button onClick={() => setInvoiceItems(p => [...p, { id: Date.now(), name: "", sku: "", qty: 1, price: 0 }])} className="text-[12px] font-black text-[#EA580C] flex items-center gap-1.5 hover:bg-orange-50 px-3 py-1.5 rounded-lg transition-colors">
-                                <Plus className="h-3.5 w-3.5" /> Add Row
+                                <Plus className="h-3.5 w-3.5" /> {mounted ? t('invoicesPage.addRow') : 'Add Row'}
                               </button>
                            </div>
 
@@ -541,11 +546,11 @@ export default function InvoicesManagementPage() {
                               <table className="w-full text-left border-collapse">
                                  <thead className="bg-slate-100/50">
                                     <tr>
-                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Item / Description</th>
-                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">SKU / IMEI</th>
-                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Qty</th>
-                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Unit Price</th>
-                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Total</th>
+                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{mounted ? t('invoicesPage.itemDescription') : 'Item / Description'}</th>
+                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{mounted ? t('invoicesPage.skuImei') : 'SKU / IMEI'}</th>
+                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">{mounted ? t('invoicesPage.qty') : 'Qty'}</th>
+                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">{mounted ? t('invoicesPage.unitPrice') : 'Unit Price'}</th>
+                                       <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">{mounted ? t('invoicesPage.total') : 'Total'}</th>
                                        <th className="px-4 py-3 w-12"></th>
                                     </tr>
                                  </thead>
@@ -660,7 +665,7 @@ export default function InvoicesManagementPage() {
                       }}
                       className={`flex-1 h-14 rounded-2xl text-white text-[15px] font-black shadow-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] focus:outline-none ${addInvoiceType === 'client_repair' ? 'bg-[#4F46E5] shadow-indigo-200' : 'bg-[#EA580C] shadow-orange-200'}`}
                     >
-                      {addInvoiceType === 'client_repair' ? 'Finalize Repair Invoice' : 'Generate Bulk Sale Record'}
+                       {mounted ? (addInvoiceType === 'client_repair' ? t('invoicesPage.finalizeRepair') : t('invoicesPage.generateBulkSale')) : (addInvoiceType === 'client_repair' ? 'Finalize Repair Invoice' : 'Generate Bulk Sale Record')}
                     </button>
                  </div>
               </div>

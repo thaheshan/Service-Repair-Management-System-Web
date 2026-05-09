@@ -1,10 +1,11 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
-import { Search, Filter, ChevronDown, UserPlus, FileDown, Grid, List as ListIcon, MapPin, Mail, Phone, MessageSquare, X, ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Check, Loader2 } from "lucide-react"
+import { Search, Filter, ChevronDown, UserPlus, FileDown, Grid, List as ListIcon, MapPin, Mail, Phone, MessageSquare, X, ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Check, Loader2, Shield } from "lucide-react"
 import { INITIAL_CUSTOMERS, Customer, CustomerType, getInitials, getAvatarColor, formatSpent } from "./customer-data"
 
 type SortKey = "name-az"|"name-za"|"repairs-desc"|"repairs-asc"|"spent-desc"|"spent-asc"|"latest-visit"|"oldest-visit"
@@ -32,6 +33,10 @@ const INITIAL_ROLES: Role[] = [
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
 
 export default function CustomerManagementPage() {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { data: response, isLoading } = useGetCustomersQuery({});
   const [createCustomer] = useCreateCustomerMutation();
 
@@ -209,15 +214,15 @@ export default function CustomerManagementPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
-                <h1 className="text-[26px] font-black text-[#0F172A] tracking-tight">Customer Management</h1>
-                <span className="px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] text-[13px] font-bold">{filtered.length} Customers</span>
+                <h1 className="text-[26px] font-black text-[#0F172A] tracking-tight">{mounted ? t('customers.title') : 'Customer Management'}</h1>
+                <span className="px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] text-[13px] font-bold">{filtered.length} {mounted ? t('customers.total') : 'Customers'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={()=>setShowRolesModal(true)} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted shadow-sm transition-colors focus:outline-none">
-                  <UserPlus className="h-4 w-4 text-muted-foreground" /> Manage Roles
+                  <UserPlus className="h-4 w-4 text-muted-foreground" /> {mounted ? t('customers.manageRoles') : 'Manage Roles'}
                 </button>
                 <button onClick={()=>setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm transition-colors focus:outline-none">
-                  <Plus className="h-4 w-4" /> Add Customer
+                  <Plus className="h-4 w-4" /> {mounted ? t('customers.add') : 'Add Customer'}
                 </button>
               </div>
             </div>
@@ -234,7 +239,7 @@ export default function CustomerManagementPage() {
               <div className="relative">
                 <button onClick={()=>{setShowExportMenu(p=>!p);setShowSortMenu(false)}} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-semibold text-[#0F172A] hover:bg-muted shadow-sm focus:outline-none">
                   {isExporting?<Loader2 className="h-4 w-4 animate-spin"/>:<FileDown className="h-4 w-4 text-muted-foreground"/>}
-                  Export <ChevronDown className="h-3.5 w-3.5 text-muted-foreground"/>
+                  {mounted ? t('customers.export') : 'Export'} <ChevronDown className="h-3.5 w-3.5 text-muted-foreground"/>
                 </button>
                 {showExportMenu&&(
                   <div className="absolute top-12 left-0 w-44 bg-white border border-border rounded-xl shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -263,7 +268,7 @@ export default function CustomerManagementPage() {
 
               {/* Filter button */}
               <button onClick={()=>setIsFiltersOpen(p=>!p)} className={`flex items-center gap-2 h-10 px-5 rounded-lg border font-bold text-[13px] focus:outline-none shadow-sm transition-colors ${isFiltersOpen?"bg-[#EEF2FF] text-[#4F46E5] border-[#4F46E5]/30":"bg-white text-[#0F172A] border-border hover:bg-muted"}`}>
-                <Filter className={`h-4 w-4 ${isFiltersOpen?"text-[#4F46E5]":"text-muted-foreground"}`}/> Filters
+                <Filter className={`h-4 w-4 ${isFiltersOpen?"text-[#4F46E5]":"text-muted-foreground"}`}/> {mounted ? t('customers.filters') : 'Filters'}
                 {(filterTypes.length||filterLastVisit||filterRegFrom||filterRegTo||filterRepairsMax<50||filterSpentMax<100)?<span className="h-5 w-5 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold flex items-center justify-center">!</span>:null}
               </button>
 
@@ -357,7 +362,7 @@ export default function CustomerManagementPage() {
                       <div className="h-8 w-px bg-border"/>
                       <div className="flex flex-col items-center flex-1"><span className="text-[17px] font-black text-[#0F172A]">{visitLabel(c.lastVisitDays)}</span><span className="text-[10px] text-muted-foreground font-bold tracking-wider">LAST VISIT</span></div>
                     </div>
-                    <Link href={`/admin/customers/${c.id}`} className="w-full h-9 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors focus:outline-none shadow-sm mb-3 flex items-center justify-center">View Profile</Link>
+                    <Link href={`/admin/customers/${c.id}`} className="w-full h-9 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors focus:outline-none shadow-sm mb-3 flex items-center justify-center">{mounted ? t('customers.viewProfile') : 'View Profile'}</Link>
                     <div className="flex items-center justify-center gap-2">
                       {(["Phone","Mail","SMS"] as const).map(t=>(
                         <button key={t} onClick={()=>setCommModal({type:t,customer:c})} className="h-8 w-10 flex items-center justify-center rounded-lg border border-border bg-white text-muted-foreground hover:text-[#4F46E5] hover:border-[#4F46E5]/30 hover:bg-[#EEF2FF] transition-all focus:outline-none">
@@ -405,7 +410,7 @@ export default function CustomerManagementPage() {
 
             {/* Pagination */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-t border-border">
-              <span className="text-[13px] text-muted-foreground font-medium">Showing <span className="font-bold text-[#0F172A]">{filtered.length===0?0:(currentPage-1)*perPage+1}–{Math.min(currentPage*perPage,filtered.length)}</span> of <span className="font-bold text-[#0F172A]">{filtered.length}</span> customers</span>
+              <span className="text-[13px] text-muted-foreground font-medium">{mounted ? t('customers.showing') : 'Showing'} <span className="font-bold text-[#0F172A]">{filtered.length===0?0:(currentPage-1)*perPage+1}–{Math.min(currentPage*perPage,filtered.length)}</span> {mounted ? t('customers.of') : 'of'} <span className="font-bold text-[#0F172A]">{filtered.length}</span> {mounted ? t('customers.total') : 'customers'}</span>
               <div className="flex items-center gap-1">
                 <button onClick={()=>setCurrentPage(p=>Math.max(1,p-1))} disabled={currentPage===1} className="flex items-center h-8 px-3 text-[13px] font-semibold text-muted-foreground hover:bg-muted rounded disabled:opacity-40 focus:outline-none"><ChevronLeft className="h-4 w-4 mr-1"/>Previous</button>
                 {Array.from({length:totalPages},(_,i)=>i+1).filter(p=>p===1||p===totalPages||Math.abs(p-currentPage)<=1).reduce((acc,p,i,arr)=>{
@@ -430,27 +435,27 @@ export default function CustomerManagementPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-[560px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]"/>Add New Customer</h2>
+              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]"/>{mounted ? t('customers.addCustomerTitle', 'Add New Customer') : 'Add New Customer'}</h2>
               <button onClick={()=>setShowAddModal(false)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Full Name *</label>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('customers.fullName', 'Full Name *') : 'Full Name *'}</label>
                 <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Sarah Anderson" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="email@example.com" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone *</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('customers.email', 'Email') : 'Email'}</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="email@example.com" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('customers.phone', 'Phone *') : 'Phone *'}</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Address</label><input value={form.address} onChange={e=>setForm(p=>({...p,address:e.target.value}))} placeholder="City, Sri Lanka" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('customers.address', 'Address') : 'Address'}</label><input value={form.address} onChange={e=>setForm(p=>({...p,address:e.target.value}))} placeholder="City, Sri Lanka" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Customer Type</label>
                 <div className="flex gap-3">{(["Regular","VIP","New"] as CustomerType[]).map(t=>(
                   <label key={t} onClick={e=>{e.preventDefault();setForm(p=>({...p,type:t}))}} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-[13px] font-semibold transition-colors ${form.type===t?"bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]":"border-border text-muted-foreground hover:bg-muted"}`}>{form.type===t&&<Check className="h-3.5 w-3.5"/>}{t}</label>
                 ))}</div>
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
-                <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">Cancel</button>
-                <button onClick={handleAddCustomer} disabled={!form.name||!form.phone} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50">Save Customer</button>
+                <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">{mounted ? t('customers.cancel', 'Cancel') : 'Cancel'}</button>
+                <button onClick={handleAddCustomer} disabled={!form.name||!form.phone} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50">{mounted ? t('customers.saveCustomer', 'Save Customer') : 'Save Customer'}</button>
               </div>
             </div>
           </div>
@@ -462,7 +467,7 @@ export default function CustomerManagementPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-[500px] rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]"/>Manage Customer Roles</h2>
+              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><Shield className="h-5 w-5 text-[#4F46E5]"/>{mounted ? t('customers.manageRoles', 'Manage Customer Roles') : 'Manage Customer Roles'}</h2>
               <button onClick={()=>{setShowRolesModal(false);setEditingRole(null)}} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="divide-y divide-border">

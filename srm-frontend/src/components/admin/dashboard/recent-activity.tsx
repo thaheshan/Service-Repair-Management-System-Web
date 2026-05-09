@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/ui-admin-dashboard/dialog"
 
 import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
+import { useTranslation } from "react-i18next"
+import { useEffect } from "react"
 
 const formatTimeAgo = (date: any) => {
   if (!date) return "Just now";
@@ -40,6 +42,10 @@ const getActivityStyles = (type: string, title: string) => {
 }
 
 export function RecentActivity() {
+  const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   const { data: response, isLoading, isError } = useGetDashboardAnalyticsQuery(7);
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filterType, setFilterType] = useState("All")
@@ -108,7 +114,7 @@ export function RecentActivity() {
       <div className="flex flex-col rounded-xl border border-border bg-card h-full">
         {/* Header */}
         <div className="px-5 pt-5 pb-4">
-          <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
+          <h3 className="text-base font-semibold text-foreground">{mounted ? t('dashboard.recentActivity') : 'Recent Activity'}</h3>
         </div>
 
         {/* Activity List */}
@@ -124,7 +130,7 @@ export function RecentActivity() {
             </div>
           ) : widgetActivities.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
-              <p className="text-xs font-medium">No recent activity</p>
+              <p className="text-xs font-medium">{mounted ? t('common.noActivity') || 'No recent activity' : 'No recent activity'}</p>
             </div>
           ) : (
             widgetActivities.map((activity, index) => (
@@ -159,7 +165,7 @@ export function RecentActivity() {
             onClick={() => setIsModalOpen(true)}
             className="text-sm font-medium text-primary hover:underline focus:outline-none"
           >
-            View all activity
+            {mounted ? t('common.viewAll') : 'View all activity'}
           </button>
         </div>
       </div>
@@ -169,12 +175,12 @@ export function RecentActivity() {
           
           <DialogHeader className="p-6 pb-4 border-b border-border bg-[#F8FAFC]">
             <div className="flex items-center justify-between mb-4 pr-8">
-              <DialogTitle className="text-xl font-bold text-[#0F172A]">Activity Log</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-[#0F172A]">{mounted ? t('dashboard.activityLog') || 'Activity Log' : 'Activity Log'}</DialogTitle>
               <button 
                 onClick={handleDownloadPdf}
                 className="flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors focus:outline-none shadow-sm"
               >
-                <Download className="h-4 w-4" /> Download PDF
+                <Download className="h-4 w-4" /> {mounted ? t('common.download') : 'Download PDF'}
               </button>
             </div>
 
@@ -183,16 +189,16 @@ export function RecentActivity() {
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+                  <span className="text-sm font-medium text-muted-foreground">{mounted ? t('common.filter') || 'Filter' : 'Filter'}:</span>
                 </div>
                 <select 
                   className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
                 >
-                  <option value="All">All Categories</option>
-                  <option value="Repair">Repairs</option>
-                  <option value="Inventory">Inventory</option>
+                  <option value="All">{mounted ? t('common.allCategories') || 'All Categories' : 'All Categories'}</option>
+                  <option value="Repair">{mounted ? t('dashboard.repairs') : 'Repairs'}</option>
+                  <option value="Inventory">{mounted ? t('dashboard.inventory') : 'Inventory'}</option>
                   <option value="Diagnostic">Diagnostics</option>
                   <option value="System">System</option>
                 </select>
@@ -201,7 +207,7 @@ export function RecentActivity() {
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="flex items-center gap-2">
                   <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Sort By:</span>
+                  <span className="text-sm font-medium text-muted-foreground">{mounted ? t('common.sortBy') || 'Sort By' : 'Sort By'}:</span>
                 </div>
                 <select 
                   className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"

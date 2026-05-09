@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 
 import { StoreProvider } from "@/components/providers/store-provider";
 import { AuthLoader } from "@/components/auth/auth-loader";
+import { ThemeProvider } from "@/components/theme-provider";
+import { I18nProvider } from "@/components/providers/i18n-provider";
 
 export default function RootLayout({
   children,
@@ -26,13 +28,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <StoreProvider>
           <AuthLoader>
-            {children}
+            <I18nProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                {children}
+              </ThemeProvider>
+            </I18nProvider>
           </AuthLoader>
         </StoreProvider>
       </body>

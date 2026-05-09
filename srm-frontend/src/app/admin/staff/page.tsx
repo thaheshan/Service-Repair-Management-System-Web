@@ -1,5 +1,6 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
@@ -29,6 +30,10 @@ const INIT_ROLES: Role[] = [
 import { useGetStaffListQuery, useCreateStaffMutation, useUpdateStaffMutation, useDeleteStaffMutation } from "@/services/api/staffApiSlice"
 
 export default function StaffManagementPage() {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { data: response, isLoading } = useGetStaffListQuery({});
   const [createStaff] = useCreateStaffMutation();
   const [updateStaff] = useUpdateStaffMutation();
@@ -167,13 +172,13 @@ export default function StaffManagementPage() {
             <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
               <Link href="/admin/dashboard" className="text-[#4F46E5] hover:underline">Dashboard</Link>
               <ChevronRight className="h-3.5 w-3.5 opacity-50"/>
-              <span className="text-[#0F172A]">Staff Management</span>
+              <span className="text-[#0F172A]">{mounted ? t('staffPage.title') : 'Staff Management'}</span>
             </div>
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
-                <h1 className="text-[26px] font-black text-[#0F172A] tracking-tight">Staff Management</h1>
+                <h1 className="text-[26px] font-black text-[#0F172A] tracking-tight">{mounted ? t('staffPage.title') : 'Staff Management'}</h1>
                 <span className="px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] text-[13px] font-bold">{filtered.length} Members</span>
               </div>
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -193,7 +198,7 @@ export default function StaffManagementPage() {
                   )}
                 </div>
                 <button onClick={()=>setShowAddModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm focus:outline-none">
-                  <Plus className="h-4 w-4"/> Add Staff
+                  <Plus className="h-4 w-4"/> {mounted ? t('staffPage.addStaff') : 'Add Staff'}
                 </button>
               </div>
             </div>
@@ -409,35 +414,35 @@ export default function StaffManagementPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-[560px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]"/>Add Staff Member</h2>
+              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]"/>{mounted ? t('staffPage.addStaffMember') : 'Add Staff Member'}</h2>
               <button onClick={()=>setShowAddModal(false)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <div>
-                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Full Name *</label>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.fullName') : 'Full Name *'}</label>
                 <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="John Doe" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email *</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Phone</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.email') : 'Email *'}</label><input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.phone') : 'Phone'}</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
               <div>
-                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Password *</label>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.password') : 'Password *'}</label>
                 <input value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))} type="password" placeholder="Min 8 characters" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Role</label>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.role') : 'Role'}</label>
                   <select value={form.role} onChange={e=>setForm(p=>({...p,role:e.target.value as StaffRole}))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
                     {ROLES.map(r=><option key={r}>{r}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Branch</label>
+                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.branch') : 'Branch'}</label>
                   <select value={form.branch} onChange={e=>setForm(p=>({...p,branch:e.target.value}))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
                     {BRANCHES.map(b=><option key={b}>{b}</option>)}
                   </select>
                 </div>
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Specialties</label>
+              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.specialties') : 'Specialties'}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SPECIALTIES.map(sp=>(
                     <label key={sp} onClick={e=>{e.preventDefault();setForm(p=>({...p,specialties:p.specialties.includes(sp)?p.specialties.filter(x=>x!==sp):[...p.specialties,sp]}))}} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-[12px] font-medium transition-colors ${form.specialties.includes(sp)?"bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]":"border-border text-muted-foreground hover:bg-muted"}`}>
@@ -446,7 +451,7 @@ export default function StaffManagementPage() {
                   ))}
                 </div>
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Initial Status</label>
+              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.initialStatus') : 'Initial Status'}</label>
                 <div className="flex gap-2 flex-wrap">{STATUSES.map(s=>(
                   <label key={s} onClick={e=>{e.preventDefault();setForm(p=>({...p,status:s}))}} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer text-[12px] font-semibold transition-colors ${form.status===s?"bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]":"border-border text-muted-foreground hover:bg-muted"}`}>
                     <span className={`h-2 w-2 rounded-full ${STATUS_DOT[s]}`}/>{s}
@@ -454,8 +459,8 @@ export default function StaffManagementPage() {
                 ))}</div>
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
-                <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-                <button onClick={handleAdd} disabled={!form.name||!form.email||!form.password} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none disabled:opacity-50">Save Staff Member</button>
+                <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">{mounted ? t('staffPage.cancel') : 'Cancel'}</button>
+                <button onClick={handleAdd} disabled={!form.name||!form.email||!form.password} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none disabled:opacity-50">{mounted ? t('staffPage.saveStaffMember') : 'Save Staff Member'}</button>
               </div>
             </div>
           </div>
@@ -580,7 +585,7 @@ export default function StaffManagementPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-[500px] rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><Shield className="h-5 w-5 text-[#4F46E5]"/>Manage Staff Roles</h2>
+              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><Shield className="h-5 w-5 text-[#4F46E5]"/>{mounted ? t('staffPage.manageRoles') : 'Manage Staff Roles'}</h2>
               <button onClick={()=>{setShowRolesModal(false);setEditingRole(null);setNewRoleModal(false)}} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
             </div>
             <div className="divide-y divide-border">
@@ -619,7 +624,7 @@ export default function StaffManagementPage() {
                   </div>
                 </div>
               ):(
-                <button onClick={()=>setNewRoleModal(true)} className="flex items-center gap-1.5 text-[13px] font-bold text-[#4F46E5] hover:underline focus:outline-none"><Plus className="h-4 w-4"/>Create New Role</button>
+                <button onClick={()=>setNewRoleModal(true)} className="flex items-center gap-1.5 text-[13px] font-bold text-[#4F46E5] hover:underline focus:outline-none"><Plus className="h-4 w-4"/>{mounted ? t('staffPage.createNewRole') : 'Create New Role'}</button>
               )}
             </div>
           </div>

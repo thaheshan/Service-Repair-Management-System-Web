@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
+import { useTheme } from "next-themes"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
@@ -22,9 +24,12 @@ import {
   CreditCard,
   Building,
   Upload,
+  Trash2,
+  CloudUpload,
+  CheckCircle2,
 } from "lucide-react"
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/services/api/settingsApiSlice"
-import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
+import { useGetStaffListQuery, useCreateStaffMutation, useUpdateStaffMutation, useDeleteStaffMutation } from "@/services/api/staffApiSlice"
 
 type SettingsTab = "general" | "business" | "notifications" | "security" | "team"
 
@@ -36,7 +41,16 @@ export default function SettingsView() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general")
   const [isSaving, setIsSaving] = useState(false)
 
+  // API Mutations
+  const [createStaff] = useCreateStaffMutation();
+  const [updateStaffMutation] = useUpdateStaffMutation();
+  const [deleteStaffMutation] = useDeleteStaffMutation();
+
   // --- STATE MANAGEMENT ---
+  const { t, i18n } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const { setTheme: setNextTheme } = useTheme()
   const [theme, setTheme] = useState("light")
   const [accentColor, setAccentColor] = useState("#4F46E5")
   const [businessSettings, setBusinessSettings] = useState({
@@ -46,13 +60,35 @@ export default function SettingsView() {
     email: "",
     phone: "",
     website: "",
-    language: "English (United States)",
-    timezone: "(GMT +05:30) Colombo, Sri Lanka"
+    language: "en",
+    timezone: "(GMT +05:30) Colombo, Sri Lanka",
+    currency: "LKR",
   })
+
+  const [appearance, setAppearance] = useState({
+    theme: "light",
+    accentColor: "#4F46E5",
+    logoUrl: ""
+  })
+
+  const [securityRules, setSecurityRules] = useState({
+    twoFactorEnabled: false,
+    passwordRotationDays: 90,
+    minPasswordLength: 12,
+  })
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   // Populate from API when loaded
   useEffect(() => {
     if (apiSettings) {
+      const mapLanguage = (lang: string | undefined) => {
+        if (!lang) return "en";
+        if (lang === "English (United States)") return "en";
+        if (lang === "Sinhala (Sri Lanka)") return "si";
+        if (lang === "Tamil (Sri Lanka)") return "ta";
+        return lang;
+      };
+
       setBusinessSettings(prev => ({
         ...prev,
         name: apiSettings.shop?.name ?? prev.name,
@@ -62,7 +98,39 @@ export default function SettingsView() {
         website: apiSettings.shop?.website ?? prev.website,
         tin: apiSettings.shop?.taxNumber ?? prev.tin,
         timezone: apiSettings.settings?.timezone ?? prev.timezone,
+        currency: apiSettings.settings?.currency ?? prev.currency,
+        language: mapLanguage(apiSettings.settings?.language),
       }));
+      
+      if (apiSettings.settings?.language) {
+        i18n.changeLanguage(mapLanguage(apiSettings.settings.language));
+      }
+
+      if (apiSettings.settings?.appearance) {
+        const loadedLogo = apiSettings.logoUrl || apiSettings.settings.appearance.logoUrl;
+        setAppearance(prev => ({
+          ...prev,
+          ...apiSettings.settings.appearance,
+          logoUrl: loadedLogo ?? prev.logoUrl
+        }));
+        if (loadedLogo) setLogoPreview(loadedLogo);
+        setTheme(apiSettings.settings.appearance.theme ?? "light");
+        setAccentColor(apiSettings.settings.appearance.accentColor ?? "#4F46E5");
+      }
+
+      if (apiSettings.settings?.securityRules) {
+        setSecurityRules(prev => ({
+          ...prev,
+          ...apiSettings.settings.securityRules
+        }));
+      }
+
+      if (apiSettings.settings?.notificationPreferences) {
+        setNotifications(prev => ({
+          ...prev,
+          ...apiSettings.settings.notificationPreferences
+        }));
+      }
     }
   }, [apiSettings]);
 
@@ -85,33 +153,23 @@ export default function SettingsView() {
   // Sync Theme and Colors to Document
   useEffect(() => {
     const root = document.documentElement
-    root.style.setProperty('--primary', accentColor)
     
-    // Quick Demo Dark Mode injection
-    if (theme === 'dark') {
-      root.classList.add('dark')
-      root.style.setProperty('--background', '#0F172A')
-      root.style.setProperty('--foreground', '#F8FAFC')
-      root.style.setProperty('--card', '#1E293B')
-      root.style.setProperty('--border', '#334155')
-      root.style.setProperty('--muted', '#1E293B')
-      root.style.setProperty('--muted-foreground', '#94A3B8')
-    } else {
-      root.classList.remove('dark')
-      root.style.removeProperty('--background')
-      root.style.removeProperty('--foreground')
-      root.style.removeProperty('--card')
-      root.style.removeProperty('--border')
-      root.style.removeProperty('--muted')
-      root.style.removeProperty('--muted-foreground')
+    // Apply Class-based Dark Mode via next-themes
+    setNextTheme(theme)
+
+    // Apply dynamic branding color
+    if (accentColor) {
+      root.style.setProperty('--primary', accentColor)
+      root.style.setProperty('--ring', accentColor)
     }
-  }, [theme, accentColor])
+  }, [theme, accentColor, setNextTheme])
   
   // Team Management State
   const teamMembers = useMemo(() => {
     const apiStaff = staffResponse?.staff || [];
     if (apiStaff.length > 0) {
       return apiStaff.map((s: any) => ({
+        id: s.id,
         name: s.fullName,
         role: s.role,
         email: s.email ?? '',
@@ -140,34 +198,72 @@ export default function SettingsView() {
         
         // System Settings
         timezone: businessSettings.timezone,
+        currency: businessSettings.currency,
+        language: businessSettings.language,
         notificationPreferences: notifications,
+        appearance: {
+          ...appearance,
+          theme,
+          accentColor
+        },
+        securityRules,
       }).unwrap();
 
       if (typeof window !== "undefined") {
         localStorage.setItem("srm_theme", theme)
       }
       
-      alert("Settings saved successfully!");
-    } catch (err) {
+      setShowSuccessModal(true);
+    } catch (err: any) {
       console.error('Failed to save settings', err);
-      alert("Failed to save settings. Please try again.");
+      const errorMsg = err.data?.message || err.data?.error || "Failed to save settings. Please try again.";
+      alert(errorMsg);
     } finally {
       setIsSaving(false)
     }
   }
 
-  const handleInviteSubmit = () => {
+  const handleInviteSubmit = async () => {
     if (!newInvite.name || !newInvite.email) return alert("Please fill in required fields.")
-    // Staff invitations go through the Staff module
-    alert(`Invitation sent to ${newInvite.email}. Use the Staff module to manage team members.`)
-    setNewInvite({ name: "", email: "", role: "Junior Technician" })
-    setIsInviteModalOpen(false)
+    try {
+      await createStaff({
+        fullName: newInvite.name,
+        email: newInvite.email,
+        role: newInvite.role.toUpperCase().replace(/\s+/g, '_')
+      }).unwrap();
+      
+      alert(`Invitation sent to ${newInvite.email}.`);
+      setNewInvite({ name: "", email: "", role: "Senior Technician" })
+      setIsInviteModalOpen(false)
+    } catch (err: any) {
+      alert(err.data?.message || "Failed to invite member.");
+    }
   }
 
-  const handleEditMemberSubmit = () => {
+  const handleEditMemberSubmit = async () => {
     if (!activeEditMember) return
-    // Role/status changes are handled in the Staff module
-    setActiveEditMember(null)
+    try {
+      await updateStaffMutation({
+        id: activeEditMember.id,
+        role: activeEditMember.role.toUpperCase().replace(/\s+/g, '_'),
+        isActive: activeEditMember.status === 'Active'
+      }).unwrap();
+      
+      alert("Staff member updated successfully.");
+      setActiveEditMember(null)
+    } catch (err: any) {
+      alert(err.data?.message || "Failed to update member.");
+    }
+  }
+
+  const handleDeleteMember = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this team member?")) return;
+    try {
+      await deleteStaffMutation(id).unwrap();
+      alert("Staff member removed successfully.");
+    } catch (err: any) {
+      alert(err.data?.message || "Failed to remove member.");
+    }
   }
 
   return (
@@ -183,8 +279,8 @@ export default function SettingsView() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-3xl font-black text-[#0F172A] tracking-tight">System Settings</h1>
-                <p className="text-sm text-muted-foreground font-medium">Configure your platform preferences and business rules</p>
+                <h1 className="text-3xl font-black text-foreground tracking-tight">{mounted ? t('settings.title') : 'System Settings'}</h1>
+                <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.subtitle') : 'Configure your platform preferences and business rules'}</p>
               </div>
               <button 
                 onClick={handleSave}
@@ -192,7 +288,7 @@ export default function SettingsView() {
                 className={`flex items-center gap-2 h-11 px-6 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg transition-all active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-primary/20'}`}
               >
                 {isSaving ? <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> : <Save className="h-4 w-4" />}
-                {isSaving ? "Saving Changes..." : "Save Settings"}
+                {isSaving ? (mounted ? t('settings.savingChanges') : 'Saving Changes...') : (mounted ? t('settings.saveSettings') : 'Save Settings')}
               </button>
             </div>
 
@@ -204,69 +300,69 @@ export default function SettingsView() {
                 <nav className="flex flex-col gap-1.5">
                   <button 
                     onClick={() => setActiveTab("general")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'general' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-[#0F172A]'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'general' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
-                    <Settings className="h-4 w-4" /> General Configuration
+                    <Settings className="h-4 w-4" /> {mounted ? t('settings.general') : 'General Configuration'}
                   </button>
                   <button 
                     onClick={() => setActiveTab("business")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'business' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-[#0F172A]'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'business' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
-                    <Store className="h-4 w-4" /> Business Profile
+                    <Store className="h-4 w-4" /> {mounted ? t('settings.business') : 'Business Profile'}
                   </button>
                   <button 
                     onClick={() => setActiveTab("notifications")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'notifications' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-[#0F172A]'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'notifications' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
-                    <Bell className="h-4 w-4" /> Notification Rules
+                    <Bell className="h-4 w-4" /> {mounted ? t('settings.notifications') : 'Notification Rules'}
                   </button>
                   <button 
                     onClick={() => setActiveTab("security")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'security' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-[#0F172A]'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'security' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
-                    <Lock className="h-4 w-4" /> Security & Privacy
+                    <Lock className="h-4 w-4" /> {mounted ? t('settings.security') : 'Security & Privacy'}
                   </button>
                   <button 
                     onClick={() => setActiveTab("team")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-[#0F172A]'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
-                    <Users className="h-4 w-4" /> Team Management
+                    <Users className="h-4 w-4" /> {mounted ? t('settings.team') : 'Team Management'}
                   </button>
                 </nav>
 
                 <div className="mt-8 p-6 rounded-2xl bg-indigo-50 border border-indigo-100 hidden lg:block">
-                  <h4 className="text-[13px] font-black text-indigo-900 mb-2">Need Assistance?</h4>
-                  <p className="text-[12px] text-indigo-700/80 leading-relaxed mb-4 font-medium">Check our technical documentation for advanced configuration options.</p>
-                  <button className="text-[12px] font-bold text-indigo-600 hover:underline">View Documentation</button>
+                  <h4 className="text-[13px] font-black text-indigo-900 mb-2">{mounted ? t('settings.needAssistance') : 'Need Assistance?'}</h4>
+                  <p className="text-[12px] text-indigo-700/80 leading-relaxed mb-4 font-medium">{mounted ? t('settings.assistanceDesc') : 'Check our technical documentation for advanced configuration options.'}</p>
+                  <button className="text-[12px] font-bold text-indigo-600 hover:underline">{mounted ? t('settings.viewDocs') : 'View Documentation'}</button>
                 </div>
               </aside>
 
               {/* Settings Content Area */}
               <div className="flex-1 min-w-0 pb-12">
-                <div className="bg-white rounded-[24px] border border-border shadow-sm overflow-hidden min-h-[600px]">
+                <div className="bg-card rounded-[24px] border border-border shadow-sm overflow-hidden min-h-[600px]">
                   
                   {/* General Settings */}
                   {activeTab === "general" && (
                     <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
                       <div className="mb-8 border-b border-border pb-6">
-                        <h3 className="text-xl font-black text-[#0F172A] mb-1">General Configuration</h3>
-                        <p className="text-sm text-muted-foreground font-medium">Global system behavior and personalization</p>
+                        <h3 className="text-xl font-black text-foreground mb-1">{mounted ? t('settings.general') : 'General Configuration'}</h3>
+                        <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.generalDesc') : 'Global system behavior and personalization'}</p>
                       </div>
 
                       <div className="space-y-8">
                         {/* Appearance Area */}
                         <div>
-                          <label className="block text-[12px] font-black text-[#0F172A] uppercase tracking-widest mb-4">Platform Appearance</label>
+                          <label className="block text-[12px] font-black text-foreground uppercase tracking-widest mb-4">Platform Appearance</label>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <button 
                               onClick={() => setTheme('light')}
                               className={`flex flex-col gap-3 p-4 rounded-xl border-2 transition-all text-left ${theme === 'light' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-transparent bg-muted/30 hover:border-border'}`}
                             >
-                              <div className="h-12 w-full bg-white rounded-lg border border-border flex items-center px-3 gap-2">
+                              <div className="h-12 w-full bg-card rounded-lg border border-border flex items-center px-3 gap-2">
                                 <div className="h-2 w-2 rounded-full bg-primary" />
                                 <div className="h-1.5 w-16 bg-muted rounded-full" />
                               </div>
-                              <span className={`text-[13px] font-bold flex items-center justify-between w-full ${theme === 'light' ? 'text-primary' : 'text-muted-foreground'}`}>Light Mode {theme === 'light' && <Check className="h-3.5 w-3.5" />}</span>
+                              <span className={`text-[13px] font-bold flex items-center justify-between w-full ${theme === 'light' ? 'text-primary' : 'text-muted-foreground'}`}>{mounted ? t('settings.lightMode') : 'Light Mode'} {theme === 'light' && <Check className="h-3.5 w-3.5" />}</span>
                             </button>
                             <button 
                               onClick={() => setTheme('dark')}
@@ -274,9 +370,9 @@ export default function SettingsView() {
                             >
                               <div className="h-12 w-full bg-[#0F172A] rounded-lg border border-border flex items-center px-3 gap-2">
                                 <div className="h-2 w-2 rounded-full bg-primary" />
-                                <div className="h-1.5 w-16 bg-white/20 rounded-full" />
+                                <div className="h-1.5 w-16 bg-card/20 rounded-full" />
                               </div>
-                              <span className={`text-[13px] font-bold flex items-center justify-between w-full ${theme === 'dark' ? 'text-primary' : 'text-muted-foreground'}`}>Dark Mode {theme === 'dark' && <Check className="h-3.5 w-3.5" />}</span>
+                              <span className={`text-[13px] font-bold flex items-center justify-between w-full ${theme === 'dark' ? 'text-primary' : 'text-muted-foreground'}`}>{mounted ? t('settings.darkMode') : 'Dark Mode'} {theme === 'dark' && <Check className="h-3.5 w-3.5" />}</span>
                             </button>
                             <button 
                               onClick={() => setTheme('system')}
@@ -285,7 +381,7 @@ export default function SettingsView() {
                               <div className="h-12 w-full bg-gradient-to-r from-white to-[#0F172A] rounded-lg border border-border flex items-center px-3 gap-2">
                                 <div className="h-2.5 w-2.5 rounded-full bg-primary" />
                               </div>
-                              <span className={`text-[13px] font-bold flex items-center justify-between w-full ${theme === 'system' ? 'text-primary' : 'text-muted-foreground'}`}>System Default {theme === 'system' && <Check className="h-3.5 w-3.5" />}</span>
+                              <span className={`text-[13px] font-bold flex items-center justify-between w-full ${theme === 'system' ? 'text-primary' : 'text-muted-foreground'}`}>{mounted ? t('settings.systemDefault') : 'System Default'} {theme === 'system' && <Check className="h-3.5 w-3.5" />}</span>
                             </button>
                           </div>
                         </div>
@@ -293,7 +389,7 @@ export default function SettingsView() {
                         {/* Brand Management */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-4">
-                            <label className="block text-[12px] font-black text-[#0F172A] uppercase tracking-widest">Accent Color</label>
+                            <label className="block text-[12px] font-black text-foreground uppercase tracking-widest">Accent Color</label>
                             <div className="flex flex-wrap gap-2">
                               {["#4F46E5", "#0EA5E9", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#F472B6"].map((color) => (
                                 <button 
@@ -309,7 +405,7 @@ export default function SettingsView() {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[12px] font-black text-[#0F172A] uppercase tracking-widest mb-4 text-left">Platform Branding</label>
+                            <label className="block text-[12px] font-black text-foreground uppercase tracking-widest mb-4 text-left">{mounted ? t('settings.branding') : 'Platform Branding'}</label>
                             <div className="flex items-center gap-4">
                                <input 
                                  type="file" 
@@ -318,8 +414,15 @@ export default function SettingsView() {
                                  accept="image/*"
                                  onChange={(e) => {
                                    if(e.target.files && e.target.files[0]) {
-                                     setLogoPreview(URL.createObjectURL(e.target.files[0]))
-                                     setLogoFileName(e.target.files[0].name)
+                                     const file = e.target.files[0];
+                                     const reader = new FileReader();
+                                     reader.onloadend = () => {
+                                       const base64String = reader.result as string;
+                                       setLogoPreview(base64String);
+                                       setAppearance(prev => ({ ...prev, logoUrl: base64String }));
+                                     };
+                                     reader.readAsDataURL(file);
+                                     setLogoFileName(file.name)
                                    }
                                  }}
                                />
@@ -337,37 +440,41 @@ export default function SettingsView() {
                                   )}
                                </div>
                                <div className="flex flex-col">
-                                  <span className="text-[13px] font-bold text-[#0F172A]">{logoFileName}</span>
-                                  <span className="text-[11px] text-muted-foreground font-medium">Recommended: 512x512px SVG or PNG</span>
-                                  <button onClick={() => fileInputRef.current?.click()} className="text-[11px] font-bold text-primary hover:underline mt-1 text-left">Replace Graphic</button>
+                                  <span className="text-[13px] font-bold text-foreground">{logoFileName}</span>
+                                  <span className="text-[11px] text-muted-foreground font-medium">{mounted ? t('settings.logoRecommended') : 'Recommended: 512x512px SVG or PNG'}</span>
+                                  <button onClick={() => fileInputRef.current?.click()} className="text-[11px] font-bold text-primary hover:underline mt-1 text-left">{mounted ? t('settings.replaceGraphic') : 'Replace Graphic'}</button>
                                </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Localization */}
+                         {/* Localization */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                            <div className="space-y-2">
-                             <label className="block text-[12px] font-bold text-[#0F172A]">Default Language</label>
+                             <label className="block text-[12px] font-bold text-foreground">{t('settings.language')}</label>
                              <div className="relative">
                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                <select 
                                  value={businessSettings.language}
-                                 onChange={(e) => setBusinessSettings({...businessSettings, language: e.target.value})}
-                                 className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-[#F8FAFC] text-[13px] font-bold shadow-inner focus:bg-white transition-all outline-none"
+                                 onChange={(e) => {
+                                   const newLang = e.target.value;
+                                   setBusinessSettings({...businessSettings, language: newLang});
+                                   i18n.changeLanguage(newLang);
+                                 }}
+                                 className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-muted/50 text-[13px] font-bold shadow-inner focus:bg-card transition-all outline-none"
                                >
-                                  <option>English (United States)</option>
-                                  <option>Sinhala (Sri Lanka)</option>
-                                  <option>Tamil (Sri Lanka)</option>
+                                  <option value="en">English (United States)</option>
+                                  <option value="si">Sinhala (Sri Lanka)</option>
+                                  <option value="ta">Tamil (Sri Lanka)</option>
                                </select>
                              </div>
                            </div>
                            <div className="space-y-2">
-                             <label className="block text-[12px] font-bold text-[#0F172A]">System Timezone</label>
+                             <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.timezone') : 'System Timezone'}</label>
                              <select 
                                value={businessSettings.timezone}
                                onChange={(e) => setBusinessSettings({...businessSettings, timezone: e.target.value})}
-                               className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[13px] font-bold shadow-inner focus:bg-white transition-all outline-none"
+                               className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[13px] font-bold shadow-inner focus:bg-card transition-all outline-none"
                              >
                                 <option>(GMT +05:30) Colombo, Sri Lanka</option>
                                 <option>(GMT +00:00) London, United Kingdom</option>
@@ -382,94 +489,102 @@ export default function SettingsView() {
                   {activeTab === "business" && (
                     <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
                       <div className="mb-8 border-b border-border pb-6">
-                        <h3 className="text-xl font-black text-[#0F172A] mb-1">Business Profile</h3>
-                        <p className="text-sm text-muted-foreground font-medium">Manage your shop identity and contact details</p>
+                        <h3 className="text-xl font-black text-foreground mb-1">{mounted ? t('settings.business') : 'Business Profile'}</h3>
+                        <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.businessDesc') : 'Manage your shop identity and contact details'}</p>
                       </div>
 
                       <div className="space-y-6">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                              <label className="block text-[12px] font-bold text-[#0F172A]">Official Business Name</label>
+                              <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.businessName') : 'Official Business Name'}</label>
                               <input 
                                 type="text" 
                                 value={businessSettings.name} 
                                 onChange={(e) => setBusinessSettings({...businessSettings, name: e.target.value})}
-                                className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white transition-all outline-none" 
+                                className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card transition-all outline-none" 
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="block text-[12px] font-bold text-[#0F172A]">Tax Identification Number (TIN)</label>
+                              <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.tin') : 'Tax Identification Number (TIN)'}</label>
                               <input 
                                 type="text" 
                                 value={businessSettings.tin} 
                                 onChange={(e) => setBusinessSettings({...businessSettings, tin: e.target.value})}
-                                className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white transition-all outline-none" 
+                                className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card transition-all outline-none" 
                               />
                             </div>
                          </div>
 
                          <div className="space-y-2">
-                           <label className="block text-[12px] font-bold text-[#0F172A]">Headquarters Address</label>
+                           <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.hqAddress') : 'Headquarters Address'}</label>
                            <textarea 
                              rows={3} 
                              value={businessSettings.address}
                              onChange={(e) => setBusinessSettings({...businessSettings, address: e.target.value})}
-                             className="w-full p-4 rounded-xl border border-border bg-[#F8FAFC] text-[13px] font-medium focus:bg-white transition-all outline-none resize-none" 
+                             className="w-full p-4 rounded-xl border border-border bg-muted/50 text-[13px] font-medium focus:bg-card transition-all outline-none resize-none" 
                            />
                          </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                             <div className="space-y-2">
-                              <label className="block text-[12px] font-bold text-[#0F172A]">Customer Support Email</label>
+                              <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.supportEmail') : 'Customer Support Email'}</label>
                               <div className="relative">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <input 
                                   type="email" 
                                   value={businessSettings.email} 
                                   onChange={(e) => setBusinessSettings({...businessSettings, email: e.target.value})}
-                                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-[#F8FAFC] text-[13px] font-bold outline-none" 
+                                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-muted/50 text-[13px] font-bold outline-none" 
                                 />
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <label className="block text-[12px] font-bold text-[#0F172A]">Primary Contact</label>
+                              <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.primaryContact') : 'Primary Contact'}</label>
                               <div className="relative">
                                 <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <input 
                                   type="text" 
                                   value={businessSettings.phone} 
                                   onChange={(e) => setBusinessSettings({...businessSettings, phone: e.target.value})}
-                                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-[#F8FAFC] text-[13px] font-bold outline-none" 
+                                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-muted/50 text-[13px] font-bold outline-none" 
                                 />
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <label className="block text-[12px] font-bold text-[#0F172A]">Official Website</label>
+                              <label className="block text-[12px] font-bold text-foreground">{mounted ? t('settings.website') : 'Official Website'}</label>
                               <div className="relative">
                                 <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <input 
                                   type="text" 
                                   value={businessSettings.website} 
                                   onChange={(e) => setBusinessSettings({...businessSettings, website: e.target.value})}
-                                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-[#F8FAFC] text-[13px] font-bold outline-none" 
+                                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-muted/50 text-[13px] font-bold outline-none" 
                                 />
                               </div>
                             </div>
                          </div>
 
                          <div className="pt-8 space-y-4">
-                           <label className="block text-[12px] font-black text-[#0F172A] uppercase tracking-widest">Billing & Currency</label>
-                           <div className="p-6 rounded-2xl border border-border bg-[#F8FAFC] flex items-center justify-between shadow-inner">
+                           <label className="block text-[12px] font-black text-foreground uppercase tracking-widest">{mounted ? t('settings.billing') : 'Billing & Currency'}</label>
+                           <div className="p-6 rounded-2xl border border-border bg-muted/50 flex items-center justify-between shadow-inner">
                               <div className="flex items-center gap-4">
-                                 <div className="h-12 w-12 rounded-xl bg-white shadow-sm border border-border flex items-center justify-center">
+                                 <div className="h-12 w-12 rounded-xl bg-card shadow-sm border border-border flex items-center justify-center">
                                     <CreditCard className="h-6 w-6 text-primary" />
                                  </div>
                                  <div className="flex flex-col">
-                                    <span className="text-[14px] font-black text-[#0F172A]">System Currency: LKR (Rs.)</span>
-                                    <span className="text-[12px] text-muted-foreground font-medium">All financial reports and invoices use this currency.</span>
+                                    <span className="text-[14px] font-black text-foreground">{mounted ? t('settings.systemCurrency') : 'System Currency: LKR (Rs.)'}</span>
+                                    <span className="text-[12px] text-muted-foreground font-medium">{mounted ? t('settings.currencyDesc') : 'All financial reports and invoices use this currency.'}</span>
                                  </div>
                               </div>
-                              <button className="h-10 px-4 rounded-lg border border-border bg-white text-[12px] font-bold text-[#0F172A] hover:bg-muted transition-all">Change Currency</button>
+                              <select 
+                                value={businessSettings.currency}
+                                onChange={(e) => setBusinessSettings({...businessSettings, currency: e.target.value})}
+                                className="h-10 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-foreground outline-none"
+                              >
+                                 <option value="LKR">LKR (Rs.)</option>
+                                 <option value="USD">USD ($)</option>
+                                 <option value="EUR">EUR (€)</option>
+                              </select>
                            </div>
                          </div>
                       </div>
@@ -480,8 +595,8 @@ export default function SettingsView() {
                   {activeTab === "notifications" && (
                     <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
                       <div className="mb-8 border-b border-border pb-6">
-                        <h3 className="text-xl font-black text-[#0F172A] mb-1">Notification Rules</h3>
-                        <p className="text-sm text-muted-foreground font-medium">Control how and when your team and customers get notified</p>
+                        <h3 className="text-xl font-black text-foreground mb-1">{mounted ? t('settings.notifications') : 'Notification Rules'}</h3>
+                        <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.notificationsDesc') : 'Control how and when your team and customers get notified'}</p>
                       </div>
 
                       <div className="space-y-10">
@@ -497,9 +612,9 @@ export default function SettingsView() {
                                ].map((rule) => {
                                  const config = (notifications as any)[rule.key];
                                  return (
-                                 <div key={rule.title} className="flex items-center justify-between p-5 rounded-2xl border border-border hover:bg-[#F8FAFC] transition-all">
+                                 <div key={rule.title} className="flex items-center justify-between p-5 rounded-2xl border border-border hover:bg-muted/50 transition-all">
                                     <div className="max-w-[70%]">
-                                       <h5 className="text-[14px] font-black text-[#0F172A]">{rule.title}</h5>
+                                       <h5 className="text-[14px] font-black text-foreground">{rule.title}</h5>
                                        <p className="text-[12px] text-muted-foreground font-medium">{rule.desc}</p>
                                     </div>
                                     <div className="flex items-center gap-6">
@@ -508,7 +623,7 @@ export default function SettingsView() {
                                             onClick={() => setNotifications({ ...notifications, [rule.key]: { ...config, email: !config.email }})}
                                             className={`h-6 w-11 rounded-full relative transition-all cursor-pointer ${config.email ? 'bg-primary' : 'bg-muted'}`}
                                           >
-                                             <div className={`h-4 w-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${config.email ? 'left-6' : 'left-1'}`} />
+                                             <div className={`h-4 w-4 rounded-full bg-card absolute top-1 shadow-sm transition-all ${config.email ? 'left-6' : 'left-1'}`} />
                                           </div>
                                           <span className="text-[10px] font-black text-muted-foreground uppercase">Email</span>
                                        </div>
@@ -517,7 +632,7 @@ export default function SettingsView() {
                                             onClick={() => setNotifications({ ...notifications, [rule.key]: { ...config, sms: !config.sms }})}
                                             className={`h-6 w-11 rounded-full relative transition-all cursor-pointer ${config.sms ? 'bg-primary' : 'bg-muted'}`}
                                           >
-                                             <div className={`h-4 w-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${config.sms ? 'left-6' : 'left-1'}`} />
+                                             <div className={`h-4 w-4 rounded-full bg-card absolute top-1 shadow-sm transition-all ${config.sms ? 'left-6' : 'left-1'}`} />
                                           </div>
                                           <span className="text-[10px] font-black text-muted-foreground uppercase">SMS</span>
                                        </div>
@@ -538,9 +653,9 @@ export default function SettingsView() {
                                ].map((rule) => {
                                  const config = (notifications as any)[rule.key];
                                  return (
-                                 <div key={rule.title} className="flex items-center justify-between p-5 rounded-2xl border border-border hover:bg-[#F8FAFC] transition-all">
+                                 <div key={rule.title} className="flex items-center justify-between p-5 rounded-2xl border border-border hover:bg-muted/50 transition-all">
                                     <div className="max-w-[70%]">
-                                       <h5 className="text-[14px] font-black text-[#0F172A]">{rule.title}</h5>
+                                       <h5 className="text-[14px] font-black text-foreground">{rule.title}</h5>
                                        <p className="text-[12px] text-muted-foreground font-medium">{rule.desc}</p>
                                     </div>
                                     <div className="flex items-center gap-6">
@@ -549,7 +664,7 @@ export default function SettingsView() {
                                             onClick={() => setNotifications({ ...notifications, [rule.key]: { ...config, app: !config.app }})}
                                             className={`h-6 w-11 rounded-full relative transition-all cursor-pointer ${config.app ? 'bg-primary' : 'bg-muted'}`}
                                           >
-                                             <div className={`h-4 w-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${config.app ? 'left-6' : 'left-1'}`} />
+                                             <div className={`h-4 w-4 rounded-full bg-card absolute top-1 shadow-sm transition-all ${config.app ? 'left-6' : 'left-1'}`} />
                                           </div>
                                           <span className="text-[10px] font-black text-muted-foreground uppercase">App</span>
                                        </div>
@@ -558,7 +673,7 @@ export default function SettingsView() {
                                             onClick={() => setNotifications({ ...notifications, [rule.key]: { ...config, email: !config.email }})}
                                             className={`h-6 w-11 rounded-full relative transition-all cursor-pointer ${config.email ? 'bg-primary' : 'bg-muted'}`}
                                           >
-                                             <div className={`h-4 w-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${config.email ? 'left-6' : 'left-1'}`} />
+                                             <div className={`h-4 w-4 rounded-full bg-card absolute top-1 shadow-sm transition-all ${config.email ? 'left-6' : 'left-1'}`} />
                                           </div>
                                           <span className="text-[10px] font-black text-muted-foreground uppercase">Email</span>
                                        </div>
@@ -575,40 +690,45 @@ export default function SettingsView() {
                   {activeTab === "security" && (
                     <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
                       <div className="mb-8 border-b border-border pb-6">
-                        <h3 className="text-xl font-black text-[#0F172A] mb-1">Security & Privacy</h3>
-                        <p className="text-sm text-muted-foreground font-medium">Protect your data and manage account security</p>
+                        <h3 className="text-xl font-black text-foreground mb-1">{mounted ? t('settings.security') : 'Security & Privacy'}</h3>
+                        <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.securityDesc') : 'Protect your data and manage account security'}</p>
                       </div>
 
                       <div className="space-y-10">
                          {/* Audit Log Panel */}
                          <section>
-                            <label className="block text-[12px] font-black text-primary uppercase tracking-widest mb-6">Advanced Security Features</label>
+                            <label className="block text-[12px] font-black text-primary uppercase tracking-widest mb-6">{mounted ? t('settings.securityFeatures') : 'Advanced Security Features'}</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                               <div className="p-6 rounded-2xl border border-border bg-[#F8FAFC] flex flex-col gap-4">
+                               <div className="p-6 rounded-2xl border border-border bg-muted/50 flex flex-col gap-4">
                                   <div className="flex items-center gap-3">
-                                     <div className="h-10 w-10 rounded-xl bg-white shadow-sm border border-border flex items-center justify-center">
+                                     <div className="h-10 w-10 rounded-xl bg-card shadow-sm border border-border flex items-center justify-center">
                                         <Lock className="h-5 w-5 text-primary" />
                                      </div>
-                                     <span className="text-[15px] font-black text-[#0F172A]">Two-Factor (2FA)</span>
+                                     <span className="text-[15px] font-black text-foreground">{mounted ? t('settings.twoFactor') : 'Two-Factor (2FA)'}</span>
                                   </div>
-                                  <p className="text-[12px] text-muted-foreground font-medium leading-relaxed">Adds an extra layer of security to your admin account by requiring a code from your phone.</p>
-                                  <button className="w-full h-10 rounded-lg bg-[#0F172A] text-white text-[12px] font-black uppercase tracking-tight hover:bg-black transition-all">Enable Secure 2FA</button>
+                                  <p className="text-[12px] text-muted-foreground font-medium leading-relaxed">{mounted ? t('settings.twoFactorDesc') : 'Adds an extra layer of security to your admin account by requiring a code from your phone.'}</p>
+                                  <button 
+                                    onClick={() => setSecurityRules({...securityRules, twoFactorEnabled: !securityRules.twoFactorEnabled})}
+                                    className={`w-full h-10 rounded-lg text-white text-[12px] font-black uppercase tracking-tight transition-all ${securityRules.twoFactorEnabled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#0F172A] hover:bg-black'}`}
+                                  >
+                                    {securityRules.twoFactorEnabled ? (mounted ? t('settings.twoFactorEnabled') : '2FA Enabled') : (mounted ? t('settings.enable2fa') : 'Enable Secure 2FA')}
+                                  </button>
                                </div>
-                               <div className="p-6 rounded-2xl border border-border bg-[#F8FAFC] flex flex-col gap-4">
+                               <div className="p-6 rounded-2xl border border-border bg-muted/50 flex flex-col gap-4">
                                   <div className="flex items-center gap-3">
-                                     <div className="h-10 w-10 rounded-xl bg-white shadow-sm border border-border flex items-center justify-center">
+                                     <div className="h-10 w-10 rounded-xl bg-card shadow-sm border border-border flex items-center justify-center">
                                         <Shield className="h-5 w-5 text-emerald-600" />
                                      </div>
-                                     <span className="text-[15px] font-black text-[#0F172A]">Login Sessions</span>
+                                     <span className="text-[15px] font-black text-foreground">{mounted ? t('settings.loginSessions') : 'Login Sessions'}</span>
                                   </div>
-                                  <p className="text-[12px] text-muted-foreground font-medium leading-relaxed">You are currently logged in on <strong className="text-[#0F172A]">2 active devices</strong>. Clear all other sessions to secure account.</p>
-                                  <button className="w-full h-10 rounded-lg border border-border bg-white text-[12px] font-black uppercase tracking-tight hover:bg-muted transition-all">Revoke All Sessions</button>
+                                  <p className="text-[12px] text-muted-foreground font-medium leading-relaxed">You are currently logged in on <strong className="text-foreground">2 active devices</strong>. Clear all other sessions to secure account.</p>
+                                  <button className="w-full h-10 rounded-lg border border-border bg-card text-[12px] font-black uppercase tracking-tight hover:bg-muted transition-all">{mounted ? t('settings.revokeAll') : 'Revoke All Sessions'}</button>
                                </div>
                             </div>
                          </section>
 
                          <section>
-                            <h4 className="text-[12px] font-black text-[#0F172A] uppercase tracking-widest mb-4">Password Requirements</h4>
+                            <h4 className="text-[12px] font-black text-foreground uppercase tracking-widest mb-4">{mounted ? t('settings.passwordReqs') : 'Password Requirements'}</h4>
                             <div className="space-y-3">
                                {[
                                  "Minimum 12 characters required",
@@ -628,10 +748,10 @@ export default function SettingsView() {
 
                          <section className="bg-red-50 p-8 rounded-[24px] border border-red-100">
                             <h4 className="text-[14px] font-black text-red-900 uppercase tracking-widest mb-2 flex items-center gap-2">
-                               <Building className="h-5 w-5" /> Account Deactivation
+                               <Building className="h-5 w-5" /> {mounted ? t('settings.deactivation') : 'Account Deactivation'}
                             </h4>
                             <p className="text-[13px] text-red-700/80 mb-6 font-medium leading-relaxed">Permanently delete your business profile and all associated data. This action cannot be undone and will erase all repair history and customer records.</p>
-                            <button className="h-11 px-8 rounded-xl bg-red-600 text-white text-[13px] font-black uppercase tracking-tight hover:bg-red-700 shadow-lg shadow-red-200 transition-all">Request Deletion</button>
+                            <button className="h-11 px-8 rounded-xl bg-red-600 text-white text-[13px] font-black uppercase tracking-tight hover:bg-red-700 shadow-lg shadow-red-200 transition-all">{mounted ? t('settings.requestDeletion') : 'Request Deletion'}</button>
                          </section>
                       </div>
                     </div>
@@ -642,39 +762,42 @@ export default function SettingsView() {
                     <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
                       <div className="mb-8 border-b border-border pb-6 flex items-center justify-between">
                         <div>
-                          <h3 className="text-xl font-black text-[#0F172A] mb-1">Team Management</h3>
-                          <p className="text-sm text-muted-foreground font-medium">Manage permissions and team access levels</p>
+                          <h3 className="text-xl font-black text-foreground mb-1">{mounted ? t('settings.team') : 'Team Management'}</h3>
+                          <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.teamDesc') : 'Manage permissions and team access levels'}</p>
                         </div>
                         <button onClick={() => setIsInviteModalOpen(true)} className="h-10 px-4 rounded-lg bg-primary text-white text-[12px] font-bold hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md">
-                           <Users className="h-4 w-4" /> Invite Member
+                           <Users className="h-4 w-4" /> {mounted ? t('settings.inviteMember') : 'Invite Member'}
                         </button>
                       </div>
 
                       <div className="space-y-4">
                          {teamMembers.map((member) => (
-                           <div key={member.email} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 rounded-2xl border border-border hover:shadow-md transition-all group bg-white gap-4 sm:gap-0">
+                           <div key={member.email} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 rounded-2xl border border-border hover:shadow-md transition-all group bg-card gap-4 sm:gap-0">
                               <div className="flex items-center gap-4">
                                  <img src={`https://i.pravatar.cc/150?u=${member.name}`} className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover shadow-sm bg-muted shrink-0" alt="" />
                                  <div className="flex flex-col min-w-0 pr-2">
-                                    <span className="text-[14px] sm:text-[15px] font-black text-[#0F172A] truncate">{member.name}</span>
+                                    <span className="text-[14px] sm:text-[15px] font-black text-foreground truncate">{member.name}</span>
                                     <span className="text-[11px] sm:text-[12px] text-muted-foreground font-medium truncate">{member.email}</span>
                                  </div>
                               </div>
                               
                               <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 sm:gap-8 bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none">
                                  <div className="flex flex-col items-start sm:items-end">
-                                    <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">System Role</span>
+                                    <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">{mounted ? t('settings.systemRole') : 'System Role'}</span>
                                     <span className="text-[12px] sm:text-[13px] font-bold text-primary">{member.role}</span>
                                  </div>
                                  <div className="flex flex-col items-start sm:items-end min-w-[70px] sm:min-w-[80px]">
-                                    <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">Status</span>
+                                    <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">{mounted ? t('common.status') : 'Status'}</span>
                                     <span className={`text-[11px] sm:text-[12px] font-bold ${member.status === 'Active' ? 'text-emerald-600' : 'text-amber-500'}`}>{member.status}</span>
                                  </div>
                                  <button 
                                    onClick={() => setActiveEditMember(member)}
-                                   className="h-9 w-9 rounded-lg border border-border bg-white sm:bg-transparent flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors focus:outline-none shadow-sm sm:shadow-none"
+                                   className="h-9 w-9 rounded-lg border border-border bg-card sm:bg-transparent flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors focus:outline-none shadow-sm sm:shadow-none"
                                  >
                                     <Settings className="h-4 w-4" />
+                                 </button>
+                                 <button onClick={() => handleDeleteMember(member.id)} className="h-9 w-9 rounded-lg border border-red-100 bg-red-50 sm:bg-transparent flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors focus:outline-none shadow-sm sm:shadow-none">
+                                    <Trash2 className="h-4 w-4" />
                                  </button>
                               </div>
                            </div>
@@ -695,38 +818,38 @@ export default function SettingsView() {
       {/* MODAL: INVITE TEAM MEMBER */}
       {isInviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-[450px] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-border bg-[#F8FAFC]">
-               <h3 className="text-xl font-black text-[#0F172A]">Invite Team Member</h3>
+          <div className="bg-card rounded-3xl w-full max-w-[450px] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-border bg-muted/50">
+               <h3 className="text-xl font-black text-foreground">{mounted ? t('settings.inviteTeamMember') : 'Invite Team Member'}</h3>
                <p className="text-sm text-muted-foreground font-medium mt-1">Send a registration link to join the system.</p>
             </div>
             <div className="p-6 space-y-5">
                <div className="space-y-2">
-                 <label className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wide">Full Name</label>
+                 <label className="text-[12px] font-bold text-foreground uppercase tracking-wide">{mounted ? t('settings.fullName') : 'Full Name'}</label>
                  <input 
                    type="text" 
                    value={newInvite.name} 
                    onChange={e => setNewInvite({...newInvite, name: e.target.value})}
                    placeholder="e.g. Liam Smith" 
-                   className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white outline-none focus:ring-2 focus:ring-[#4F46E5]/20" 
+                   className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card outline-none focus:ring-2 focus:ring-[#4F46E5]/20" 
                  />
                </div>
                <div className="space-y-2">
-                 <label className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wide">Corporate Email</label>
+                 <label className="text-[12px] font-bold text-foreground uppercase tracking-wide">{mounted ? t('settings.corporateEmail') : 'Corporate Email'}</label>
                  <input 
                    type="email" 
                    value={newInvite.email} 
                    onChange={e => setNewInvite({...newInvite, email: e.target.value})}
                    placeholder="liam@srm.com" 
-                   className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white outline-none focus:ring-2 focus:ring-[#4F46E5]/20" 
+                   className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card outline-none focus:ring-2 focus:ring-[#4F46E5]/20" 
                  />
                </div>
                <div className="space-y-2">
-                 <label className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wide">System Role</label>
+                 <label className="text-[12px] font-bold text-foreground uppercase tracking-wide">{mounted ? t('settings.systemRole') : 'System Role'}</label>
                  <select 
                    value={newInvite.role} 
                    onChange={e => setNewInvite({...newInvite, role: e.target.value})}
-                   className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white outline-none focus:ring-2 focus:ring-[#4F46E5]/20"
+                   className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card outline-none focus:ring-2 focus:ring-[#4F46E5]/20"
                  >
                    <option>Super Admin</option>
                    <option>Logistics Manager</option>
@@ -736,7 +859,7 @@ export default function SettingsView() {
                  </select>
                </div>
                <div className="flex gap-3 pt-4 border-t border-border">
-                  <button onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[13px] font-bold hover:bg-muted transition-all">Cancel</button>
+                  <button onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-11 rounded-xl border border-border bg-card text-[13px] font-bold hover:bg-muted transition-all">Cancel</button>
                   <button onClick={handleInviteSubmit} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white text-[13px] font-black shadow-lg shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all">Send Invitation</button>
                </div>
             </div>
@@ -747,18 +870,18 @@ export default function SettingsView() {
       {/* MODAL: EDIT TEAM MEMBER */}
       {activeEditMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-[450px] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-border bg-[#F8FAFC]">
-               <h3 className="text-xl font-black text-[#0F172A]">Edit Platform Access</h3>
+          <div className="bg-card rounded-3xl w-full max-w-[450px] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-border bg-muted/50">
+               <h3 className="text-xl font-black text-foreground">Edit Platform Access</h3>
                <p className="text-sm text-muted-foreground font-medium mt-1">Modify permissions for {activeEditMember.name}.</p>
             </div>
             <div className="p-6 space-y-5">
                <div className="space-y-2">
-                 <label className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wide">System Role</label>
+                 <label className="text-[12px] font-bold text-foreground uppercase tracking-wide">System Role</label>
                  <select 
                    value={activeEditMember.role} 
                    onChange={e => setActiveEditMember({...activeEditMember, role: e.target.value})}
-                   className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white outline-none focus:ring-2 focus:ring-[#4F46E5]/20"
+                   className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card outline-none focus:ring-2 focus:ring-[#4F46E5]/20"
                  >
                    <option>Super Admin</option>
                    <option>Logistics Manager</option>
@@ -768,11 +891,11 @@ export default function SettingsView() {
                  </select>
                </div>
                <div className="space-y-2">
-                 <label className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wide">Account Status</label>
+                 <label className="text-[12px] font-bold text-foreground uppercase tracking-wide">Account Status</label>
                  <select 
                    value={activeEditMember.status} 
                    onChange={e => setActiveEditMember({...activeEditMember, status: e.target.value})}
-                   className="w-full h-11 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-black focus:bg-white outline-none focus:ring-2 focus:ring-[#4F46E5]/20"
+                   className="w-full h-11 px-4 rounded-xl border border-border bg-muted/50 text-[14px] font-black focus:bg-card outline-none focus:ring-2 focus:ring-[#4F46E5]/20"
                  >
                    <option value="Active">Active</option>
                    <option value="Pending">Pending (Awaiting Email confirmation)</option>
@@ -787,9 +910,32 @@ export default function SettingsView() {
                )}
 
                <div className="flex gap-3 pt-4 border-t border-border">
-                  <button onClick={() => setActiveEditMember(null)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[13px] font-bold hover:bg-muted transition-all">Discard Changes</button>
+                  <button onClick={() => setActiveEditMember(null)} className="flex-1 h-11 rounded-xl border border-border bg-card text-[13px] font-bold hover:bg-muted transition-all">Discard Changes</button>
                   <button onClick={handleEditMemberSubmit} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white text-[13px] font-black shadow-lg shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all">Update Access</button>
                </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* SUCCESS MODAL */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-card rounded-[32px] w-full max-w-[400px] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-300">
+            <div className="p-8 flex flex-col items-center text-center">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 animate-bounce">
+                <CheckCircle2 className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-black text-foreground mb-2">Changes Saved!</h3>
+              <p className="text-sm text-muted-foreground font-medium mb-8">
+                Your system settings and branding have been updated successfully.
+              </p>
+              <button 
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-black shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
