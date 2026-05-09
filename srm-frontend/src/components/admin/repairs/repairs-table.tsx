@@ -2,6 +2,8 @@
 import { Smartphone, Laptop, Tablet, AlertCircle, Calendar, Eye, Edit2, MoreVertical, ChevronDown, Check, Trash2, Clock, User, Wrench } from "lucide-react"
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
+import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 export type RepairStatus = "All" | "Pending" | "In Progress" | "Ready" | "Completed" | "Paid" | "On Hold"
 export type PriorityLevel = "Urgent" | "High" | "Medium" | "Low"
@@ -227,13 +229,17 @@ function RepairCard({
 }
 
 export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTabChange, onStatusChangeRequest, onTechnicianChange, onDeleteRequest, viewMode = "list", currentPage, perPage, totalFiltered, onPageChange, onPerPageChange }: RepairsTableProps) {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const tabs = [
-    { id: "all", label: "All", count: allRepairs.length },
-    { id: "pending", label: "Pending", count: allRepairs.filter(r => r.status === "Pending").length },
-    { id: "in-progress", label: "In Progress", count: allRepairs.filter(r => r.status === "In Progress").length },
-    { id: "ready", label: "Ready", count: allRepairs.filter(r => r.status === "Ready").length },
-    { id: "completed", label: "Completed", count: allRepairs.filter(r => r.status === "Completed").length },
-    { id: "on-hold", label: "On Hold", count: allRepairs.filter(r => r.status === "On Hold").length },
+    { id: "all", label: mounted ? t('invoicesPage.all', "All") : "All", count: allRepairs.length },
+    { id: "pending", label: mounted ? t('dashboard.status.pending', "Pending") : "Pending", count: allRepairs.filter(r => r.status === "Pending").length },
+    { id: "in-progress", label: mounted ? t('dashboard.status.inprogress', "In Progress") : "In Progress", count: allRepairs.filter(r => r.status === "In Progress").length },
+    { id: "ready", label: mounted ? t('dashboard.status.ready', "Ready") : "Ready", count: allRepairs.filter(r => r.status === "Ready").length },
+    { id: "completed", label: mounted ? t('dashboard.status.completed', "Completed") : "Completed", count: allRepairs.filter(r => r.status === "Completed").length },
+    { id: "on-hold", label: mounted ? t('repairs.options.onHold', "On Hold") : "On Hold", count: allRepairs.filter(r => r.status === "On Hold").length },
   ]
 
   return (
@@ -290,15 +296,15 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
               <tr>
                 <th className="px-5 py-3 w-10"><div className="h-4 w-4 rounded-[4px] border border-border bg-transparent" /></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Reference <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Customer <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Device <span className="text-[10px]">↕</span></th>
+                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('repairs.form.customer', 'Customer') : 'Customer'} <span className="text-[10px]">↕</span></th>
+                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('devicesPage.device', 'Device') : 'Device'} <span className="text-[10px]">↕</span></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Issue <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-center">Status <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Priority <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Technician <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-right">Amount <span className="text-[10px]">↕</span></th>
+                <th className="px-3 py-3 font-bold whitespace-nowrap text-center">{mounted ? t('common.status', 'Status') : 'Status'} <span className="text-[10px]">↕</span></th>
+                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('repairs.form.priority', 'Priority') : 'Priority'} <span className="text-[10px]">↕</span></th>
+                <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('schedule.technician', 'Technician') : 'Technician'} <span className="text-[10px]">↕</span></th>
+                <th className="px-3 py-3 font-bold whitespace-nowrap text-right">{mounted ? t('invoicesPage.amount', 'Amount') : 'Amount'} <span className="text-[10px]">↕</span></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Due Date <span className="text-[10px]">↕</span></th>
-                <th className="px-5 py-3 font-bold text-right">Actions</th>
+                <th className="px-5 py-3 font-bold text-right">{mounted ? t('devicesPage.actions', 'Actions') : 'Actions'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-foreground">
@@ -449,16 +455,16 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
       <div className="flex items-center gap-4 border-t border-border px-6 py-3.5 bg-card/50 text-[12px] font-medium text-muted-foreground shrink-0">
         {/* Showing count */}
         <span className="whitespace-nowrap">
-          Showing{" "}
+          {mounted ? t('customers.showing', 'Showing') : 'Showing'}{" "}
           <span className="font-bold text-foreground">
             {totalFiltered === 0 ? 0 : (currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, totalFiltered)}
           </span>{" "}
-          of <span className="font-bold text-foreground">{totalFiltered}</span> repairs
+          {mounted ? t('customers.of', 'of') : 'of'} <span className="font-bold text-foreground">{totalFiltered}</span> {mounted ? t('common.repairs', 'repairs') : 'repairs'}
         </span>
 
         {/* Per page selector */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px]">Per page:</span>
+          <span className="text-[11px]">{mounted ? t('customers.perPage', 'Per page:') : 'Per page:'}</span>
           <select
             value={perPage}
             onChange={(e) => { onPerPageChange(Number(e.target.value)); onPageChange(1); }}

@@ -3,7 +3,8 @@ import { Filter, Download, Plus, Calendar, Search, List, LayoutGrid, FileText, T
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { RepairRow } from "./repairs-table"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 interface RepairsHeaderProps {
   filteredRepairs: RepairRow[]
@@ -30,6 +31,10 @@ export function RepairsHeader({
   viewMode,
   onChangeViewMode
 }: RepairsHeaderProps) {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [isExportingPDF, setIsExportingPDF] = useState(false)
 
   const handleExportPDF = async () => {
@@ -126,7 +131,7 @@ export function RepairsHeader({
       {/* Top Action Bar */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-semibold text-[#4F46E5]">{totalRepairs} Repairs</span>
+          <span className="text-sm font-semibold text-[#4F46E5]">{totalRepairs} {mounted ? t('common.repairs') : 'Repairs'}</span>
           
           {hasActiveFilters ? (
             <button 
@@ -134,7 +139,7 @@ export function RepairsHeader({
               className="flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-bold transition-colors bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300 shadow-sm focus:outline-none"
             >
               <X className="h-4 w-4" />
-              Clear Filter
+              {mounted ? t('common.clear') : 'Clear Filter'}
             </button>
           ) : (
             <button 
@@ -142,7 +147,7 @@ export function RepairsHeader({
               className={`flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors focus:outline-none ${showFilters ? 'bg-muted border-transparent shadow-inner' : 'bg-card border-border hover:bg-muted shadow-sm'}`}
             >
               <Filter className="h-4 w-4" />
-              Filters
+              {mounted ? t('common.filter') : 'Filters'}
             </button>
           )}
         </div>
@@ -168,7 +173,7 @@ export function RepairsHeader({
                 ) : (
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 )}
-                <span className="text-sm font-medium">{isExportingPDF ? "Generating..." : "Export as PDF"}</span>
+                <span className="text-sm font-medium">{isExportingPDF ? (mounted ? t('common.loading') : "Generating...") : "Export as PDF"}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer flex items-center gap-2">
                 <Table className="h-4 w-4 text-muted-foreground" />
@@ -179,12 +184,12 @@ export function RepairsHeader({
           
           <Link href="/admin/schedule" className="flex h-9 items-center gap-2 rounded-lg border border-[#4F46E5] bg-[#EEF2FF] px-4 text-sm font-semibold text-[#4F46E5] hover:bg-[#E0E7FF] transition-colors focus:outline-none shadow-sm">
             <Calendar className="h-4 w-4" />
-            View Schedule
+            {mounted ? t('schedule.viewSchedule') : 'View Schedule'}
           </Link>
 
           <Link href="/admin/repairs/new" className="flex h-9 items-center gap-2 rounded-lg bg-[#4F46E5] px-4 text-sm font-semibold text-white hover:bg-[#4338CA] focus:outline-none shadow-md transition-colors">
             <Plus className="h-4 w-4" />
-            New Repair
+            {mounted ? t('repairs.createNew', 'New Repair') : 'New Repair'}
           </Link>
         </div>
       </div>
@@ -197,7 +202,7 @@ export function RepairsHeader({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by customer, device, IMEI..."
+            placeholder={mounted ? t('common.search') : "Search by customer, device, IMEI..."}
             className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-foreground outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] shadow-sm transition-all"
           />
         </div>

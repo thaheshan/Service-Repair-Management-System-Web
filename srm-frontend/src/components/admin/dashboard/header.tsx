@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Trash2, CheckCircle2, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store"
@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
+import { useTranslation } from "react-i18next"
 
 
 
@@ -35,6 +36,7 @@ import {
   useMarkReadMutation, 
   useClearNotificationsMutation 
 } from "@/services/api/dashboardApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 
 const formatTimeAgo = (date: any) => {
   if (!date) return "Just now";
@@ -52,10 +54,18 @@ const formatTimeAgo = (date: any) => {
 }
 
 export function DashboardHeader() {
+  const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   const router = useRouter()
   const { data: response } = useGetDashboardAnalyticsQuery(7);
+  const { data: settingsResponse } = useGetSettingsQuery({})
   const [markRead] = useMarkReadMutation()
   const [clearNotifications] = useClearNotificationsMutation()
+  
+  const shopName = settingsResponse?.shop?.name || "SRM"
+  const logoUrl = settingsResponse?.logoUrl || settingsResponse?.settings?.appearance?.logoUrl
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -133,7 +143,7 @@ export function DashboardHeader() {
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search repairs, customers..."
+            placeholder={mounted ? t('common.search') : 'Search...'}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value)
@@ -159,10 +169,10 @@ export function DashboardHeader() {
                       className="flex flex-col items-start px-4 py-2.5 hover:bg-muted focus:bg-muted border-b border-border/40 last:border-0 text-left focus:outline-none transition-colors"
                     >
                       <div className="flex items-center gap-2.5 mb-1 w-full">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#4F46E5] bg-[#EEF2FF] px-2 py-0.5 rounded shadow-sm border border-[#4F46E5]/20">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-accent/50 px-2 py-0.5 rounded shadow-sm border border-primary/20">
                           {item.type}
                         </span>
-                        <span className="text-sm font-bold text-[#0F172A] truncate">
+                        <span className="text-sm font-bold text-foreground truncate">
                           {item.name}
                         </span>
                       </div>
@@ -187,12 +197,12 @@ export function DashboardHeader() {
       <div className="flex items-center gap-3">
         {/* Shop ID for Admin/Shop Owner - shows the shopCode staff use to join */}
         {(user?.role === 'ADMIN' || user?.role === 'admin') && user?.shopCode && (
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#EEF2FF] border border-[#4F46E5]/20 rounded-lg mr-2">
-            <span className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wider">Shop ID:</span>
-            <code className="text-xs font-mono font-bold text-[#0F172A] select-all">{user.shopCode}</code>
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-accent/50 border border-primary/20 rounded-lg mr-2">
+            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Shop ID:</span>
+            <code className="text-xs font-mono font-bold text-foreground select-all">{user.shopCode}</code>
             <button 
               onClick={handleCopyShopId} 
-              className="ml-1 text-[#4F46E5] hover:text-[#4338CA] focus:outline-none transition-colors"
+              className="ml-1 text-primary hover:text-[#4338CA] focus:outline-none transition-colors"
               title="Copy Shop ID - share this with staff to join"
             >
               <Copy className="h-3.5 w-3.5" />
@@ -215,7 +225,7 @@ export function DashboardHeader() {
           <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-xl border-border/60">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/20">
-              <span className="font-semibold text-foreground">Notifications</span>
+              <span className="font-semibold text-foreground">{mounted ? t('dashboard.notifications') || 'Notifications' : 'Notifications'}</span>
               <div className="flex items-center gap-3">
                 {unreadCount > 0 && (
                   <button 
@@ -223,7 +233,7 @@ export function DashboardHeader() {
                     className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 focus:outline-none"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Mark all read
+                    {mounted ? t('common.markAllRead') || 'Mark all read' : 'Mark all read'}
                   </button>
                 )}
                 {notifications.length > 0 && (
@@ -232,7 +242,7 @@ export function DashboardHeader() {
                     className="text-xs font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 focus:outline-none"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Clear
+                    {mounted ? t('common.clear') || 'Clear' : 'Clear'}
                   </button>
                 )}
               </div>
@@ -245,8 +255,8 @@ export function DashboardHeader() {
                   <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
                     <Bell className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-medium text-foreground">No notifications</p>
-                  <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
+                  <p className="text-sm font-medium text-foreground">{mounted ? t('common.noNotifications') || 'No notifications' : 'No notifications'}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{mounted ? t('common.allCaughtUp') || "You're all caught up!" : "You're all caught up!"}</p>
                 </div>
               ) : (
                 <div className="flex flex-col">
@@ -287,7 +297,7 @@ export function DashboardHeader() {
                 className="w-full py-2.5 flex items-center justify-center rounded-md text-sm font-semibold text-primary hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
                 onClick={() => setIsModalOpen(true)}
               >
-                View all notifications
+                {mounted ? t('common.viewAllNotifications') || 'View all notifications' : 'View all notifications'}
               </button>
             </div>
           </DropdownMenuContent>
@@ -297,38 +307,40 @@ export function DashboardHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-muted focus:outline-none transition-colors">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80" alt="Admin User" className="object-cover" />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">AU</AvatarFallback>
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarImage src={logoUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80"} alt={user?.name || "User"} className="object-cover" />
+                <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-black">
+                  {user?.name?.substring(0, 2).toUpperCase() || "AD"}
+                </AvatarFallback>
               </Avatar>
               <div className="flex items-center gap-1 hidden sm:flex">
-                <span className="text-sm font-medium text-foreground">{user?.name || "Admin User"}</span>
+                <span className="text-sm font-black text-foreground">{shopName || "Admin User"}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>{mounted ? t('common.myAccount') || 'My Account' : 'My Account'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
               <User className="h-4 w-4 mr-2" />
-              Profile
+              {mounted ? t('common.profile') || 'Profile' : 'Profile'}
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
               <Settings className="h-4 w-4 mr-2" />
-              Settings
+              {mounted ? t('common.settings') : 'Settings'}
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">
               <CreditCard className="h-4 w-4 mr-2" />
-              Billing
+              {mounted ? t('common.billing') || 'Billing' : 'Billing'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-              className="cursor-pointer text-[#EF4444] focus:text-[#EF4444]"
+              className="cursor-pointer text-destructive focus:text-destructive"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Log out
+              {mounted ? t('common.logout') || 'Log out' : 'Log out'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -339,7 +351,7 @@ export function DashboardHeader() {
       <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-6 pb-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">All Notifications</DialogTitle>
+            <DialogTitle className="text-xl font-bold">{mounted ? t('common.allNotifications') || 'All Notifications' : 'All Notifications'}</DialogTitle>
             <div className="flex items-center gap-4">
               {unreadCount > 0 && (
                 <button 

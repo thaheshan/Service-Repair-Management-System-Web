@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
@@ -25,6 +26,10 @@ function daysAgo(n: number): string {
 const colors = ["bg-[#4F46E5]", "bg-[#F59E0B]", "bg-[#10B981]", "bg-[#6366F1]", "bg-[#EF4444]"];
 
 export default function RepairsPage() {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { data: response, isLoading } = useGetRepairsQuery({});
   const { data: staffResponse } = useGetStaffListQuery({});
   const [updateRepairStatus] = useUpdateRepairStatusMutation();
@@ -261,11 +266,11 @@ function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePre
         <main className="flex-1 overflow-y-auto w-full flex flex-col custom-scrollbar">
           <div className="bg-background px-4 lg:px-8 pt-6 pb-4">
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground mb-1.5 font-medium">
-              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
+              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors">{mounted ? t('common.dashboard') : 'Dashboard'}</Link>
               <span>&gt;</span>
-              <span className="text-foreground font-semibold">Repairs</span>
+              <span className="text-foreground font-semibold">{mounted ? t('common.repairs') : 'Repairs'}</span>
             </div>
-            <h1 className="text-[28px] font-bold text-[#0F172A] tracking-tight leading-none">Repairs Management</h1>
+            <h1 className="text-[28px] font-bold text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
           </div>
 
           <div className="flex-1 px-4 lg:px-8 pb-6 pt-0 m-0 flex flex-col">

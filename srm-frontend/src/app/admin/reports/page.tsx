@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { useTranslation } from "react-i18next"
 import Link from 'next/link'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
@@ -187,6 +188,10 @@ const recentReports = [
 ]
 
 export default function ReportsPage() {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [timeRange, setTimeRange] = useState('30d')
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
@@ -202,27 +207,27 @@ export default function ReportsPage() {
   // Override stats with live values when available
   const liveStats = useMemo(() => [
     {
-      label: 'Total Revenue',
+      label: mounted ? t('reportsPage.totalRevenue') : 'Total Revenue',
       value: apiStats ? `Rs. ${(apiStats.totalRevenue ?? 0).toLocaleString()}` : currentData.stats[0].value,
       change: apiStats?.revenueChange ?? currentData.stats[0].change,
       isUp: true, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50'
     },
     {
-      label: 'Total Repairs',
+      label: mounted ? t('reportsPage.totalRepairs') : 'Total Repairs',
       value: apiStats ? String(apiStats.totalRepairs ?? 0) : currentData.stats[1].value,
       change: apiStats?.repairChange ?? currentData.stats[1].change,
       isUp: true, icon: Wrench, color: 'text-indigo-600', bg: 'bg-indigo-50'
     },
     {
-      label: 'Pending Repairs',
+      label: mounted ? t('reportsPage.pendingRepairs') : 'Pending Repairs',
       value: apiStats ? String(apiStats.pendingRepairs ?? 0) : currentData.stats[2].value,
-      change: 'Action required',
+      change: mounted ? t('reportsPage.actionRequired') : 'Action required',
       isUp: false, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50'
     },
     {
-      label: 'Active Technicians',
+      label: mounted ? t('reportsPage.activeTechnicians') : 'Active Technicians',
       value: apiStats ? String(apiStats.activeTechnicians ?? 0) : currentData.stats[3].value,
-      change: 'Currently assigned',
+      change: mounted ? t('reportsPage.currentlyAssigned') : 'Currently assigned',
       isUp: true, icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50'
     },
   ], [apiStats, currentData]);
@@ -357,10 +362,10 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-2">
                   <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">Dashboard</Link>
                   <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-                  <span className="text-[#0F172A]">Reports & Analytics</span>
+                  <span className="text-[#0F172A]">{mounted ? t('reportsPage.title') : 'Reports & Analytics'}</span>
                 </div>
-                <h1 className="text-[32px] font-black text-[#0F172A] tracking-tight leading-none mb-2">Analytics Center</h1>
-                <p className="text-[14px] text-muted-foreground font-medium">Real-time performance metrics and business intelligence.</p>
+                <h1 className="text-[32px] font-black text-[#0F172A] tracking-tight leading-none mb-2">{mounted ? t('reportsPage.analyticsCenter') : 'Analytics Center'}</h1>
+                <p className="text-[14px] text-muted-foreground font-medium">{mounted ? t('reportsPage.subtitle') : 'Real-time performance metrics and business intelligence.'}</p>
               </div>
 
                 <div className="flex items-center gap-3">
@@ -373,7 +378,7 @@ export default function ReportsPage() {
                           timeRange === range ? 'bg-[#4F46E5] text-white shadow-md' : 'text-muted-foreground hover:bg-muted'
                         }`}
                       >
-                        {range}
+                        {mounted ? t(`reportsPage.range${range.charAt(0).toUpperCase() + range.slice(1)}`) : range}
                       </button>
                     ))}
                   </div>
@@ -382,12 +387,12 @@ export default function ReportsPage() {
                       onClick={() => setIsExportOpen(!isExportOpen)}
                       className="h-11 px-5 rounded-xl bg-white border border-border text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-all flex items-center gap-2 shadow-sm focus:outline-none"
                     >
-                      {isGeneratingPDF ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export All <ChevronDown className="h-4 w-4" />
+                      {isGeneratingPDF ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {mounted ? t('reportsPage.exportAll') : 'Export All'} <ChevronDown className="h-4 w-4" />
                     </button>
                     {isExportOpen && (
                       <div className="absolute top-13 right-0 w-48 bg-white rounded-xl shadow-xl border border-border py-1 z-[100] animate-in fade-in slide-in-from-top-2">
-                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors border-b border-border/50"><Download className="h-4 w-4 text-[#4F46E5]" /> Download as PDF</button>
-                        <button onClick={handleExportCSV} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors"><Download className="h-4 w-4 text-[#10B981]" /> Download as CSV</button>
+                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors border-b border-border/50"><Download className="h-4 w-4 text-[#4F46E5]" /> {mounted ? t('reportsPage.downloadPdf') : 'Download as PDF'}</button>
+                        <button onClick={handleExportCSV} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors"><Download className="h-4 w-4 text-[#10B981]" /> {mounted ? t('reportsPage.downloadCsv') : 'Download as CSV'}</button>
                       </div>
                     )}
                   </div>
@@ -419,18 +424,18 @@ export default function ReportsPage() {
               <div className="lg:col-span-2 bg-white rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">Revenue Stream Analysis</h2>
-                    <p className="text-[13px] text-muted-foreground font-medium">Monthly income vs repair volume trajectory</p>
+                    <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{mounted ? t('reportsPage.revenueStream') : 'Revenue Stream Analysis'}</h2>
+                    <p className="text-[13px] text-muted-foreground font-medium">{mounted ? t('reportsPage.revenueStreamDesc') : 'Monthly income vs repair volume trajectory'}</p>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded-full bg-[#4F46E5]" />
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase">Revenue</span>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase">{mounted ? t('reportsPage.legendRevenue') : 'Revenue'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase">Repair Volume</span>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase">{mounted ? t('reportsPage.legendRepairVolume') : 'Repair Volume'}</span>
                       </div>
                     </div>
                     <select 
@@ -438,10 +443,10 @@ export default function ReportsPage() {
                       onChange={(e) => setTimeRange(e.target.value)}
                       className="h-9 px-3 rounded-lg bg-[#F8FAFC] border border-border text-[12px] font-bold text-[#0F172A] outline-none focus:ring-2 focus:ring-[#4F46E5]/20 cursor-pointer"
                     >
-                      <option value="7d">Last 7 Days</option>
-                      <option value="30d">Last 30 Days</option>
-                      <option value="ytd">Year to Date / Monthly</option>
-                      <option value="all">Overall Trend / Yearly</option>
+                      <option value="7d">{mounted ? t('reportsPage.option7d') : 'Last 7 Days'}</option>
+                      <option value="30d">{mounted ? t('reportsPage.option30d') : 'Last 30 Days'}</option>
+                      <option value="ytd">{mounted ? t('reportsPage.optionYtd') : 'Year to Date / Monthly'}</option>
+                      <option value="all">{mounted ? t('reportsPage.optionAll') : 'Overall Trend / Yearly'}</option>
                     </select>
                   </div>
                 </div>
@@ -491,8 +496,8 @@ export default function ReportsPage() {
 
               {/* Status Breakdown */}
               <div className="bg-white rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
-                <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight mb-1">Repair Outcomes</h2>
-                <p className="text-[13px] text-muted-foreground font-medium mb-8">Status distribution for current period</p>
+                <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight mb-1">{mounted ? t('reportsPage.repairOutcomes') : 'Repair Outcomes'}</h2>
+                <p className="text-[13px] text-muted-foreground font-medium mb-8">{mounted ? t('reportsPage.statusDistributionDesc') : 'Status distribution for current period'}</p>
                 
                 <div className="flex-1 flex flex-col items-center justify-center">
                   <div className="h-[250px] w-full relative">
@@ -520,7 +525,7 @@ export default function ReportsPage() {
                       <span className="text-[24px] font-black text-[#0F172A]">
                         {dashResponse?.data?.statusData?.[0]?.value || currentData.statusDistribution[0].value}
                       </span>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Completed</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">{mounted ? t('reportsPage.completed') : 'Completed'}</span>
                     </div>
                   </div>
 
@@ -545,8 +550,8 @@ export default function ReportsPage() {
               <div className="bg-white rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
                  <div className="flex justify-between items-start mb-8">
                     <div>
-                      <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">Market Share</h2>
-                      <p className="text-[13px] text-muted-foreground font-medium">Device brands serviced in this period</p>
+                      <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{mounted ? t('reportsPage.marketShare') : 'Market Share'}</h2>
+                      <p className="text-[13px] text-muted-foreground font-medium">{mounted ? t('reportsPage.brandDistributionDesc') : 'Device brands serviced in this period'}</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner">
                       <Smartphone className="h-5 w-5" />
@@ -577,7 +582,7 @@ export default function ReportsPage() {
                        {(dashResponse?.data?.brandData || currentData.brandDistribution).map((brand: any, idx: number) => (
                          <div key={idx} className="flex flex-col gap-1">
                             <div className="flex justify-between items-center text-[12px] font-bold">
-                               <span className="text-muted-foreground">{brand.name}</span>
+                               <span className="text-muted-foreground">{mounted ? t(`reportsPage.brand${brand.name}`) : brand.name}</span>
                                <span className="text-[#0F172A]">{brand.value}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -593,8 +598,8 @@ export default function ReportsPage() {
               <div className="bg-white rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
                  <div className="flex justify-between items-start mb-8">
                     <div>
-                      <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">Service Popularity</h2>
-                      <p className="text-[13px] text-muted-foreground font-medium">High-volume repair categories</p>
+                       <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{mounted ? t('reportsPage.servicePopularity') : 'Service Popularity'}</h2>
+                       <p className="text-[13px] text-muted-foreground font-medium">{mounted ? t('reportsPage.servicePopularityDesc') : 'High-volume repair categories'}</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-indigo-50 text-[#4F46E5] flex items-center justify-center shadow-inner">
                       <BarChart3 className="h-5 w-5" />
@@ -610,12 +615,12 @@ export default function ReportsPage() {
                            </div>
                            <div>
                              <div className="text-[13.5px] font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors">{service.name}</div>
-                             <div className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{service.count} Repairs</div>
+                             <div className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{mounted ? t('reportsPage.repairsCount', { count: service.count }) : `${service.count} Repairs`}</div>
                            </div>
                         </div>
                         <div className="text-right">
                            <div className="text-[13px] font-black text-[#0F172A]">{service.revenue}</div>
-                           <div className="text-[10px] font-bold text-emerald-600">Top Rated</div>
+                           <div className="text-[10px] font-bold text-emerald-600">{mounted ? t('reportsPage.topRated') : 'Top Rated'}</div>
                         </div>
                       </div>
                     ))}
@@ -629,8 +634,8 @@ export default function ReportsPage() {
               <div className="bg-white rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">Staff Proficiency</h2>
-                    <p className="text-[13px] text-muted-foreground font-medium">Repairs completed vs satisfaction index</p>
+                    <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{mounted ? t('reportsPage.staffProficiency') : 'Staff Proficiency'}</h2>
+                    <p className="text-[13px] text-muted-foreground font-medium">{mounted ? t('reportsPage.staffProficiencyDesc') : 'Repairs completed vs satisfaction index'}</p>
                   </div>
                   <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#F8FAFC] text-muted-foreground hover:text-[#4F46E5] transition-colors"><MoreHorizontal className="h-5 w-5" /></button>
                 </div>
@@ -666,10 +671,10 @@ export default function ReportsPage() {
               <div className="bg-white rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">Document Ledger</h2>
-                    <p className="text-[13px] text-muted-foreground font-medium">Recent generated business reports</p>
+                    <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{mounted ? t('reportsPage.docLedger') : 'Document Ledger'}</h2>
+                    <p className="text-[13px] text-muted-foreground font-medium">{mounted ? t('reportsPage.docLedgerDesc') : 'Recent generated business reports'}</p>
                   </div>
-                  <Link href="#" className="text-[12px] font-bold text-[#4F46E5] hover:underline uppercase tracking-widest">View Archives</Link>
+                  <Link href="#" className="text-[12px] font-bold text-[#4F46E5] hover:underline uppercase tracking-widest">{mounted ? t('reportsPage.viewArchives') : 'View Archives'}</Link>
                 </div>
 
                 <div className="space-y-4">
@@ -692,7 +697,7 @@ export default function ReportsPage() {
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                           report.status === 'Ready' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
                         }`}>
-                          {report.status}
+                          {report.status === 'Ready' ? (mounted ? t('reportsPage.ready') : 'Ready') : report.status}
                         </span>
                         <div className="relative">
                           <button 
@@ -704,10 +709,10 @@ export default function ReportsPage() {
                           {openDropdownId === report.id && (
                              <div className="absolute right-0 top-10 w-48 bg-white border border-border rounded-xl shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-2">
                                 <button onClick={() => handleSpecificDownload(report.title, 'pdf')} className="flex items-center gap-2 px-4 py-2 hover:bg-muted w-full text-left text-[13px] font-bold text-[#0F172A] border-b border-border/50">
-                                  <Download className="h-4 w-4 text-[#4F46E5]" /> Export as PDF
+                                  <Download className="h-4 w-4 text-[#4F46E5]" /> {mounted ? t('reportsPage.exportPdf') : 'Export as PDF'}
                                 </button>
                                 <button onClick={() => handleSpecificDownload(report.title, 'csv')} className="flex items-center gap-2 px-4 py-2 hover:bg-muted w-full text-left text-[13px] font-bold text-[#0F172A]">
-                                  <Download className="h-4 w-4 text-[#10B981]" /> Export as CSV
+                                  <Download className="h-4 w-4 text-[#10B981]" /> {mounted ? t('reportsPage.exportCsv') : 'Export as CSV'}
                                 </button>
                              </div>
                           )}
@@ -791,12 +796,15 @@ export default function ReportsPage() {
                 {/* DEMOGRAPHICS & STAFF INFO */}
                 <div className="grid grid-cols-2 gap-8 mb-12">
                    <div>
-                       <h3 className="text-[14px] font-black text-[#0F172A] uppercase tracking-widest mb-4 border-b-2 border-[#0F172A] pb-2">Market Share (Device Brands)</h3>
+                       <h3 className="text-[14px] font-black text-[#0F172A] uppercase tracking-widest mb-4 border-b-2 border-[#0F172A] pb-2">
+                          {mounted ? t('reportsPage.marketSharePDF') : 'Market Share (Device Brands)'}
+                       </h3>
                        <div className="space-y-2">
                            {currentData.brandDistribution.map((b: any, i: number) => (
                               <div key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
                                  <span className="text-[12px] font-bold text-[#475569] flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: b.color }} /> {b.name}
+                                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: b.color }} /> 
+                                    {mounted ? t(`reportsPage.brand${b.name}`) : b.name}
                                  </span>
                                  <span className="text-[12px] font-black text-[#0F172A]">{b.value}%</span>
                               </div>
@@ -804,14 +812,18 @@ export default function ReportsPage() {
                        </div>
                    </div>
                    <div>
-                       <h3 className="text-[14px] font-black text-[#0F172A] uppercase tracking-widest mb-4 border-b-2 border-[#0F172A] pb-2">Technician Proficiency Index</h3>
+                       <h3 className="text-[14px] font-black text-[#0F172A] uppercase tracking-widest mb-4 border-b-2 border-[#0F172A] pb-2">
+                          {mounted ? t('reportsPage.profIndex') : 'Technician Proficiency Index'}
+                       </h3>
                        <div className="space-y-2">
-                           {currentData.technicianPerformance.map((t: any, i: number) => (
+                           {currentData.technicianPerformance.map((t_item: any, i: number) => (
                               <div key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                 <span className="text-[12px] font-bold text-[#475569]">{t.name}</span>
+                                 <span className="text-[12px] font-bold text-[#475569]">{t_item.name}</span>
                                  <div className="text-right">
-                                    <span className="text-[12px] font-black text-[#0F172A] block leading-none">{t.completed} Completed</span>
-                                    <span className="text-[10px] font-bold text-emerald-600 block leading-none mt-1">★ {t.satisfaction}/5.0</span>
+                                    <span className="text-[12px] font-black text-[#0F172A] block leading-none">
+                                       {t_item.completed} {mounted ? t('reportsPage.completedRepairs') : 'Completed'}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-emerald-600 block leading-none mt-1">★ {t_item.satisfaction}/5.0</span>
                                  </div>
                               </div>
                            ))}

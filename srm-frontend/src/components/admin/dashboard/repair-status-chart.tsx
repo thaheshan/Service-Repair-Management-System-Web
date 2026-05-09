@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
+import { useTranslation } from "react-i18next"
 
 const fallbackData = [
   { name: "Completed", value: 0, color: "#10B981" },
@@ -12,6 +13,7 @@ const fallbackData = [
 ]
 
 export function RepairStatusChart() {
+  const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
   const { data: response } = useGetDashboardAnalyticsQuery({});
   
@@ -32,7 +34,7 @@ export function RepairStatusChart() {
     <div className="flex h-full flex-col rounded-xl border border-border bg-card">
       {/* Header */}
       <div className="px-5 pt-5 pb-2">
-        <h3 className="text-base font-semibold text-foreground">Repair Status Breakdown</h3>
+        <h3 className="text-base font-semibold text-foreground">{mounted ? t('dashboard.statusChart') : 'Repair Status Breakdown'}</h3>
       </div>
 
       {/* Chart */}
@@ -74,7 +76,7 @@ export function RepairStatusChart() {
                       dominantBaseline="central"
                     >
                       <tspan x={textX} dy="-0.4em" fontSize="13px" fontWeight="bold">
-                        {entry.name}
+                        {mounted ? t(`dashboard.status.${entry.name.toLowerCase().replace(/[\s_]+/g, '')}`) : entry.name}
                       </tspan>
                       <tspan x={textX} dy="1.4em" fontSize="12px" fill="#6B6B6B" fontWeight="600">
                         {entry.value}
@@ -93,7 +95,7 @@ export function RepairStatusChart() {
           {/* Center Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-3xl font-bold text-foreground">{totalRepairs}</span>
-            <span className="text-xs font-medium text-muted-foreground mt-0.5">Total Repairs</span>
+            <span className="text-xs font-medium text-muted-foreground mt-0.5">{mounted ? t('dashboard.stats.totalRepairs') : 'Total Repairs'}</span>
           </div>
         </div>
       </div>
@@ -103,14 +105,16 @@ export function RepairStatusChart() {
         {data.map((item) => (
           <div key={item.name} className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: item.color }} />
-            <span className="text-xs font-medium text-muted-foreground">{item.name}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {mounted ? t(`dashboard.status.${item.name.toLowerCase().replace(/[\s_]+/g, '')}`) : item.name}
+            </span>
           </div>
         ))}
       </div>
 
       {/* Footer Link */}
       <div className="mt-auto border-t border-border px-5 py-3 text-center">
-        <Link href="/admin/repairs" className="text-sm font-medium text-primary hover:underline">View all</Link>
+        <Link href="/admin/repairs" className="text-sm font-medium text-primary hover:underline">{mounted ? t('common.viewAll') : 'View all'}</Link>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-export type DeviceStatus = "Available" | "In Review" | "Sold" | "Collected"
+export type DeviceStatus = "Available" | "On Sale" | "Sold" | "Under Service" | "Collected"
 export type WarrantyStatus = "Active" | "Expiring Soon" | "Expired" | "No Warranty"
 export type DeviceType = "Mobile Phone" | "Tablet" | "Laptop" | "Console"
 
@@ -33,10 +33,11 @@ export const WARRANTY_STYLE: Record<WarrantyStatus, string> = {
 }
 
 export const STATUS_STYLE: Record<DeviceStatus, string> = {
-  "Available": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "In Review": "bg-amber-50 text-amber-700 border-amber-200",
-  "Sold":      "bg-indigo-50 text-indigo-700 border-indigo-200",
-  "Collected": "bg-sky-50 text-sky-700 border-sky-200",
+  "Available":     "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "On Sale":       "bg-amber-50 text-amber-700 border-amber-200",
+  "Sold":          "bg-indigo-50 text-indigo-700 border-indigo-200",
+  "Under Service": "bg-orange-50 text-orange-700 border-orange-200",
+  "Collected":     "bg-sky-50 text-sky-700 border-sky-200",
 }
 
 export const INITIAL_DEVICES: Device[] = [

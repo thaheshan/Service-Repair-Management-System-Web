@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
+import { useTranslation } from "react-i18next"
 
 const dataByRange: Record<string, { day: string; revenue: number }[]> = {
   "Last 7 days": Array.from({ length: 7 }, (_, i) => {
@@ -51,6 +52,7 @@ import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 const rangeOptions = ["Last 7 days", "Last 14 days", "Last 30 days"]
 
 export function RevenueTrend() {
+  const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState("Last 7 days")
   
@@ -83,11 +85,11 @@ export function RevenueTrend() {
     <div className="flex h-full flex-col rounded-xl border border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
-        <h3 className="text-base font-semibold text-foreground">Revenue Trend</h3>
+        <h3 className="text-base font-semibold text-foreground">{mounted ? t('dashboard.revenueTrend') : 'Revenue Trend'}</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-1 focus:ring-primary">
-              {selectedRange}
+              {mounted ? t(`common.ranges.${selectedRange.replace(/\s+/g, '')}`) || selectedRange : selectedRange}
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
@@ -98,7 +100,7 @@ export function RevenueTrend() {
                 className="cursor-pointer"
                 onSelect={() => setSelectedRange(range)}
               >
-                {range}
+                {mounted ? t(`common.ranges.${range.replace(/\s+/g, '')}`) || range : range}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -132,7 +134,7 @@ export function RevenueTrend() {
                 dx={-5}
               />
               <Tooltip
-                formatter={(value: any) => [`Rs. ${Number(value).toLocaleString()}`, "Revenue"]}
+                formatter={(value: any) => [`Rs. ${Number(value).toLocaleString()}`, mounted ? t('dashboard.stats.revenue') : "Revenue"]}
                 contentStyle={{
                   borderRadius: "8px",
                   border: "1px solid #E5E7EB",
@@ -154,7 +156,7 @@ export function RevenueTrend() {
 
       {/* Footer Link */}
       <div className="border-t border-border px-5 py-3 text-center flex items-center justify-center">
-        <Link href="/admin/reports" className="text-sm font-medium text-primary hover:underline">View all trend</Link>
+        <Link href="/admin/reports" className="text-sm font-medium text-primary hover:underline">{mounted ? t('common.viewAll') : 'View all trend'}</Link>
       </div>
     </div>
   )

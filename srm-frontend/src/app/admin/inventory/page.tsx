@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { toast } from "sonner"
@@ -80,6 +81,7 @@ import {
 } from "@/services/api/inventoryApiSlice"
 
 export default function InventoryManagementPage() {
+  const { t } = useTranslation();
   const { data: response, isLoading } = useGetInventoryItemsQuery({});
   const { data: usageResponse } = useGetInventoryUsageQuery({});
   const { data: summaryResponse } = useGetInventorySummaryQuery({});
@@ -123,11 +125,18 @@ export default function InventoryManagementPage() {
   }, [response]);
 
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterCategory, setFilterCategory] = useState("All Categories")
-  const [filterStatus, setFilterStatus] = useState("All Status")
+  const [filterCategory, setFilterCategory] = useState(mounted ? t('inventoryPage.categories.all') : "All Categories")
+  const [filterStatus, setFilterStatus] = useState(mounted ? t('inventoryPage.statuses.all') : "All Status")
   const [filterSupplier, setFilterSupplier] = useState("All Suppliers")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  useEffect(() => {
+    if (mounted) {
+      setFilterCategory(t('inventoryPage.categories.all'))
+      setFilterStatus(t('inventoryPage.statuses.all'))
+    }
+  }, [mounted, t])
 
   // Chart Time Range State
   const [chartTimeRange, setChartTimeRange] = useState("Last 6 months")
@@ -284,13 +293,13 @@ export default function InventoryManagementPage() {
         item.code.toLowerCase().includes(searchLower) ||
         item.brand.toLowerCase().includes(searchLower)
       
-      const matchesCategory = filterCategory === "All Categories" || item.category === filterCategory
-      const matchesStatus = filterStatus === "All Status" || item.status === filterStatus
+      const matchesCategory = filterCategory === (mounted ? t('inventoryPage.categories.all') : "All Categories") || item.category === filterCategory
+      const matchesStatus = filterStatus === (mounted ? t('inventoryPage.statuses.all') : "All Status") || item.status === filterStatus
       const matchesSupplier = filterSupplier === "All Suppliers" || item.supplier === filterSupplier
       
       return matchesSearch && matchesStatus && matchesSupplier && matchesCategory
     })
-  }, [inventoryState, searchTerm, filterStatus, filterSupplier, filterCategory])
+  }, [inventoryState, searchTerm, filterStatus, filterSupplier, filterCategory, mounted, t])
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage
@@ -333,8 +342,8 @@ export default function InventoryManagementPage() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-2xl font-bold text-[#0F172A]">Inventory Management</h1>
-                <p className="text-sm text-muted-foreground font-medium">Manage your spare parts and supplies</p>
+                <h1 className="text-2xl font-bold text-[#0F172A]">{mounted ? t('inventoryPage.title') : 'Inventory Management'}</h1>
+                <p className="text-sm text-muted-foreground font-medium">{mounted ? t('inventoryPage.subtitle') : 'Manage your spare parts and supplies'}</p>
               </div>
                 <div className="flex items-center gap-3">
                   <button 
@@ -343,39 +352,36 @@ export default function InventoryManagementPage() {
                   >
                     <Package className="h-4 w-4" /> Adjust Stock
                   </button>
-                  <div className="relative">
                     <button 
                       onClick={() => setIsExportOpen(!isExportOpen)}
                       className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-sm font-semibold text-[#0F172A] hover:bg-muted transition-colors shadow-sm focus:outline-none"
                     >
-                      {isGeneratingPDF ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export <ChevronDown className="h-4 w-4" />
+                      {isGeneratingPDF ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {mounted ? t('inventoryPage.export') : 'Export'} <ChevronDown className="h-4 w-4" />
                     </button>
                     {isExportOpen && (
                       <div className="absolute top-12 right-0 w-44 bg-white rounded-xl shadow-xl border border-border py-1 z-[100] animate-in fade-in slide-in-from-top-2">
-                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors border-b border-border/50"><Download className="h-4 w-4 text-[#4F46E5]" /> Export as PDF</button>
-                        <button onClick={handleExportCSV} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors"><Download className="h-4 w-4 text-[#10B981]" /> Export as CSV</button>
+                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors border-b border-border/50"><Download className="h-4 w-4 text-[#4F46E5]" /> {mounted ? t('reportsPage.downloadPdf') : 'Export as PDF'}</button>
+                        <button onClick={handleExportCSV} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-[#0F172A] hover:bg-muted transition-colors"><Download className="h-4 w-4 text-[#10B981]" /> {mounted ? t('reportsPage.downloadCsv') : 'Export as CSV'}</button>
                       </div>
                     )}
-                  </div>
                   <button 
                     onClick={() => setIsAddItemOpen(true)}
                     className="flex items-center gap-2 h-10 px-4 rounded-lg bg-[#4F46E5] text-sm font-semibold text-white hover:bg-[#4338CA] transition-all shadow-md active:scale-95 focus:outline-none"
                   >
-                    <Plus className="h-4 w-4" /> Add Item
+                    <Plus className="h-4 w-4" /> {mounted ? t('inventoryPage.addItem') : 'Add Item'}
                   </button>
                 </div>
             </div>
 
-            {/* Quick Overview Section */}
             <div className="mb-8">
-              <h2 className="text-lg font-bold text-[#0F172A] mb-4">Quick Overview</h2>
+              <h2 className="text-lg font-bold text-[#0F172A] mb-4">{mounted ? t('inventoryPage.quickOverview') : 'Quick Overview'}</h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center">
                     <Package className="h-6 w-6 text-[#4F46E5]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Stock Value</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{mounted ? t('inventoryPage.totalStockValue') : 'Total Stock Value'}</span>
                     <span className="text-xl font-bold text-[#0F172A]">Rs. {(invSummary?.totalValue || 0).toLocaleString()}</span>
                   </div>
                 </div>
@@ -384,8 +390,8 @@ export default function InventoryManagementPage() {
                     <ArrowUpRight className="h-6 w-6 text-[#10B981]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Inventory</span>
-                    <span className="text-xl font-bold text-[#0F172A]">{invSummary?.totalItems || 0} SKUs</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{mounted ? t('inventoryPage.activeInventory') : 'Active Inventory'}</span>
+                    <span className="text-xl font-bold text-[#0F172A]">{invSummary?.totalItems || 0} {mounted ? t('inventoryPage.skus') : 'SKUs'}</span>
                   </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
@@ -393,8 +399,8 @@ export default function InventoryManagementPage() {
                     <Clock className="h-6 w-6 text-[#D97706]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Low Stock Items</span>
-                    <span className="text-xl font-bold text-[#D97706]">{invSummary?.lowStockCount || 0} items</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{mounted ? t('inventoryPage.lowStockItems') : 'Low Stock Items'}</span>
+                    <span className="text-xl font-bold text-[#D97706]">{invSummary?.lowStockCount || 0} {mounted ? t('inventoryPage.items') : 'items'}</span>
                   </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4">
@@ -402,8 +408,8 @@ export default function InventoryManagementPage() {
                     <AlertTriangle className="h-6 w-6 text-[#EF4444]" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Out of Stock</span>
-                    <span className="text-xl font-bold text-[#EF4444]">{invSummary?.outOfStockCount || 0} items</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{mounted ? t('inventoryPage.outOfStock') : 'Out of Stock'}</span>
+                    <span className="text-xl font-bold text-[#EF4444]">{invSummary?.outOfStockCount || 0} {mounted ? t('inventoryPage.items') : 'items'}</span>
                   </div>
                 </div>
               </div>
@@ -412,8 +418,8 @@ export default function InventoryManagementPage() {
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm">
-                <h3 className="text-md font-bold text-[#0F172A] mb-1">Top 10 Fast-Moving Items</h3>
-                <p className="text-xs text-muted-foreground mb-6">Most used parts this month</p>
+                <h3 className="text-md font-bold text-[#0F172A] mb-1">{mounted ? t('inventoryPage.fastMovingItems') : 'Top 10 Fast-Moving Items'}</h3>
+                <p className="text-xs text-muted-foreground mb-6">{mounted ? t('inventoryPage.mostUsedMonth') : 'Most used parts this month'}</p>
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={fastMovingItemsData} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
@@ -438,7 +444,7 @@ export default function InventoryManagementPage() {
               <div className="bg-white p-6 rounded-2xl border border-border/60 shadow-sm relative overflow-hidden group">
                 <div className="flex items-center justify-between mb-6">
                    <div>
-                      <h3 className="text-md font-black text-[#0F172A] mb-1">Stock Value Trend</h3>
+                      <h3 className="text-md font-black text-[#0F172A] mb-1">{mounted ? t('inventoryPage.stockTrend') : 'Stock Value Trend'}</h3>
                       <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest">{chartTimeRange}</p>
                    </div>
                    <select 
@@ -502,8 +508,10 @@ export default function InventoryManagementPage() {
               <div className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h3 className="text-lg font-black text-[#0F172A]">All Inventory Items</h3>
-                    <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-1">{filteredData.length} total items listed</p>
+                    <h3 className="text-lg font-black text-[#0F172A]">{mounted ? t('inventoryPage.allInventoryItems') : 'All Inventory Items'}</h3>
+                    <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-1">
+                      {mounted ? t('inventoryPage.totalItemsListed', { count: filteredData.length }) : `${filteredData.length} total items listed`}
+                    </p>
                   </div>
                 </div>
 
@@ -525,22 +533,22 @@ export default function InventoryManagementPage() {
                       value={filterCategory}
                       onChange={(e) => {setFilterCategory(e.target.value); setCurrentPage(1)}}
                     >
-                      <option>All Categories</option>
-                      <option>Screens</option>
-                      <option>Batteries</option>
-                      <option>Cameras</option>
-                      <option>Charging Ports</option>
-                      <option>Tools</option>
+                      <option>{mounted ? t('inventoryPage.categories.all') : "All Categories"}</option>
+                      <option>{mounted ? t('inventoryPage.categories.screens') : "Screens"}</option>
+                      <option>{mounted ? t('inventoryPage.categories.batteries') : "Batteries"}</option>
+                      <option>{mounted ? t('inventoryPage.categories.cameras') : "Cameras"}</option>
+                      <option>{mounted ? t('inventoryPage.categories.chargingPorts') : "Charging Ports"}</option>
+                      <option>{mounted ? t('inventoryPage.categories.tools') : "Tools"}</option>
                     </select>
                     <select 
                       className="h-11 px-4 rounded-xl border border-border bg-white text-[13px] font-bold text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/10 min-w-[130px] cursor-pointer shadow-sm hover:bg-slate-50 transition-colors"
                       value={filterStatus}
                       onChange={(e) => {setFilterStatus(e.target.value); setCurrentPage(1)}}
                     >
-                      <option>All Status</option>
-                      <option>In Stock</option>
-                      <option>Low Stock</option>
-                      <option>Out of Stock</option>
+                      <option>{mounted ? t('inventoryPage.statuses.all') : "All Status"}</option>
+                      <option>{mounted ? t('inventoryPage.statuses.inStock') : "In Stock"}</option>
+                      <option>{mounted ? t('inventoryPage.statuses.lowStock') : "Low Stock"}</option>
+                      <option>{mounted ? t('inventoryPage.statuses.outOfStock') : "Out of Stock"}</option>
                     </select>
                   </div>
                 </div>
@@ -558,12 +566,12 @@ export default function InventoryManagementPage() {
                             checked={selectedItems.length === paginatedData.length && paginatedData.length > 0}
                           />
                         </th>
-                        <th className="px-5 py-4">Item Details</th>
-                        <th className="px-5 py-4">Stock Availability</th>
-                        <th className="px-5 py-4">Unit Price</th>
-                        <th className="px-5 py-4">Source & Location</th>
-                        <th className="px-5 py-4">Status</th>
-                        <th className="px-5 py-4 text-center">Actions</th>
+                        <th className="px-5 py-4">{mounted ? t('inventoryPage.table.itemDetails') : 'Item Details'}</th>
+                        <th className="px-5 py-4">{mounted ? t('inventoryPage.table.stockAvailability') : 'Stock Availability'}</th>
+                        <th className="px-5 py-4">{mounted ? t('inventoryPage.table.unitPrice') : 'Unit Price'}</th>
+                        <th className="px-5 py-4">{mounted ? t('inventoryPage.table.sourceLocation') : 'Source & Location'}</th>
+                        <th className="px-5 py-4">{mounted ? t('inventoryPage.table.status') : 'Status'}</th>
+                        <th className="px-5 py-4 text-center">{mounted ? t('inventoryPage.table.actions') : 'Actions'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -672,13 +680,13 @@ export default function InventoryManagementPage() {
                 {/* Pagination */}
                 <div className="flex items-center justify-between py-6 mt-4 border-t border-border/60">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] text-muted-foreground">Show</span>
+                    <span className="text-[13px] text-muted-foreground">{mounted ? t('inventoryPage.pagination.show') : 'Show'}</span>
                     <select className="h-8 px-2 rounded border border-border bg-white text-[13px] font-bold focus:outline-none">
                       <option>10</option>
                       <option>25</option>
                       <option>50</option>
                     </select>
-                    <span className="text-[13px] text-muted-foreground">per page</span>
+                    <span className="text-[13px] text-muted-foreground">{mounted ? t('inventoryPage.pagination.perPage') : 'per page'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button 
@@ -703,14 +711,18 @@ export default function InventoryManagementPage() {
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
-                  <span className="text-[13px] text-muted-foreground font-medium">Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length}</span>
+                  <span className="text-[13px] text-muted-foreground font-medium">
+                    {mounted ? t('inventoryPage.pagination.showing', { 
+                      start: (currentPage - 1) * itemsPerPage + 1, 
+                      end: Math.min(currentPage * itemsPerPage, filteredData.length), 
+                      total: filteredData.length 
+                    }) : `Showing ${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filteredData.length)} of ${filteredData.length}`}
+                  </span>
                 </div>
               </div>
             </div>
-
+            <div className="h-12" />
           </div>
-          <div className="h-12" /> {/* Layout Spacer */}
-          {/* Footer removed */}
         </main>
 
         {/* 🔵 OVERLAY MODALS */}
@@ -831,22 +843,22 @@ export default function InventoryManagementPage() {
                 <div className="bg-[#F8FAFC] p-8 border-b border-border flex justify-between items-center relative overflow-hidden">
                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#4F46E5]/5 rounded-full -mr-16 -mt-16" />
                    <div className="relative z-10">
-                      <h2 className="text-[24px] font-black text-[#0F172A] tracking-tight leading-none mb-2">Register Inventory Item</h2>
-                      <p className="text-[13px] text-muted-foreground font-bold uppercase tracking-widest">Create a new SKU record in the system</p>
+                      <h2 className="text-[24px] font-black text-[#0F172A] tracking-tight leading-none mb-2">{mounted ? t('inventoryPage.registerItem') : 'Register Inventory Item'}</h2>
+                      <p className="text-[13px] text-muted-foreground font-bold uppercase tracking-widest">{mounted ? t('inventoryPage.createSkuRecord') : 'Create a new SKU record in the system'}</p>
                    </div>
                    <button onClick={() => setIsAddItemOpen(false)} className="h-10 w-10 rounded-full bg-white border border-border flex items-center justify-center hover:bg-slate-50 transition-all focus:outline-none"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="p-10 grid grid-cols-2 gap-x-8 gap-y-6">
                    <div className="col-span-2 md:col-span-1">
-                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Item Name</label>
+                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.itemName') : 'Item Name'}</label>
                       <input value={addItemForm.name} onChange={e=>setAddItemForm(p=>({...p,name:e.target.value}))} type="text" placeholder="e.g. iPhone 13 Pro Screen" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
                    </div>
                    <div className="col-span-2 md:col-span-1">
-                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">SKU / Item Code</label>
+                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.skuCode') : 'SKU / Item Code'}</label>
                       <input value={addItemForm.sku} onChange={e=>setAddItemForm(p=>({...p,sku:e.target.value}))} type="text" placeholder="SCR-001" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" />
                    </div>
                    <div>
-                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Brand</label>
+                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.brand') : 'Brand'}</label>
                       <select value={addItemForm.brand} onChange={e=>setAddItemForm(p=>({...p,brand:e.target.value}))} className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all bg-[#F8FAFC]">
                          <option>Apple</option>
                          <option>Samsung</option>
@@ -864,17 +876,17 @@ export default function InventoryManagementPage() {
                       </select>
                    </div>
                    <div>
-                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Selling Price (LKR)</label>
+                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.sellingPrice') : 'Selling Price (LKR)'}</label>
                       <input value={addItemForm.price || ""} onChange={e=>setAddItemForm(p=>({...p,price:Number(e.target.value)}))} type="number" placeholder="12500" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
                    </div>
                    <div>
-                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Current Stock</label>
+                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.currentStock') : 'Current Stock'}</label>
                       <input value={addItemForm.stockQuantity || ""} onChange={e=>setAddItemForm(p=>({...p,stockQuantity:Number(e.target.value)}))} type="number" placeholder="45" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
                    </div>
                    <div className="col-span-2 pt-6">
                       <div className="flex gap-4">
-                         <button onClick={() => setIsAddItemOpen(false)} className="flex-1 h-14 rounded-2xl border border-border bg-white text-[14px] font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-tight">Discard</button>
-                         <button onClick={handleAddItem} className="flex-[2] h-14 rounded-2xl bg-[#4F46E5] text-white text-[14px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">Create Product Record</button>
+                         <button onClick={() => setIsAddItemOpen(false)} className="flex-1 h-14 rounded-2xl border border-border bg-white text-[14px] font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-tight">{mounted ? t('inventoryPage.discard') : 'Discard'}</button>
+                         <button onClick={handleAddItem} className="flex-[2] h-14 rounded-2xl bg-[#4F46E5] text-white text-[14px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">{mounted ? t('inventoryPage.createProductRecord') : 'Create Product Record'}</button>
                       </div>
                    </div>
                 </div>
@@ -888,14 +900,14 @@ export default function InventoryManagementPage() {
              <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border-t-8 border-[#4F46E5]">
                 <div className="bg-[#F8FAFC] p-8 border-b border-border flex justify-between items-center">
                    <div>
-                      <h2 className="text-[24px] font-black text-[#0F172A] mb-1 leading-none tracking-tight">Edit SKU Record</h2>
+                      <h2 className="text-[24px] font-black text-[#0F172A] mb-1 leading-none tracking-tight">{mounted ? t('inventoryPage.editSkuRecord') : 'Edit SKU Record'}</h2>
                       <p className="text-[12px] text-[#4F46E5] font-black uppercase tracking-widest">Editing: {editItemTarget.code}</p>
                    </div>
                    <button onClick={() => setEditItemTarget(null)} className="h-10 w-10 rounded-full bg-white border border-border flex items-center justify-center transition-all focus:outline-none"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="p-10 grid grid-cols-2 gap-x-8 gap-y-6">
                    <div className="col-span-2">
-                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Item Display Name</label>
+                      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.itemDisplayName') : 'Item Display Name'}</label>
                       <input value={editItemTarget.name} onChange={e=>setEditItemTarget(p=>p?{...p,name:e.target.value}:p)} type="text" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
                    </div>
                    <div>

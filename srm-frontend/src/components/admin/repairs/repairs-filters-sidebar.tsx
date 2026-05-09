@@ -1,6 +1,7 @@
 "use client"
 import { Search, Check, X, ChevronDown } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 export type DateRangePreset = "today" | "this-week" | "this-month" | "last-30" | "custom" | null
 
@@ -29,6 +30,10 @@ const DATE_RANGE_OPTIONS: { id: DateRangePreset; label: string }[] = [
 ]
 
 export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilterProps) {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
   const [selectedDeviceTypes, setSelectedDeviceTypes] = useState<string[]>([])
@@ -94,7 +99,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-bold text-foreground">Filters</h2>
+          <h2 className="text-base font-bold text-foreground">{mounted ? t('common.filter', 'Filters') : 'Filters'}</h2>
           {activeCount > 0 && (
             <span className="h-5 min-w-5 px-1.5 bg-[#4F46E5] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {activeCount}
@@ -111,7 +116,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
 
       {/* Status */}
       <div>
-        <h3 className="text-[13px] font-bold text-foreground mb-3">Status</h3>
+        <h3 className="text-[13px] font-bold text-foreground mb-3">{mounted ? t('common.status', 'Status') : 'Status'}</h3>
         <div className="flex flex-col gap-2.5">
           {["All", "Pending", "In Progress", "Ready", "Completed", "On Hold"].map((s) => {
             const isChecked = s === "All" ? selectedStatuses.length === 0 : selectedStatuses.includes(s)
@@ -129,7 +134,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
 
       {/* Priority */}
       <div>
-        <h3 className="text-[13px] font-bold text-foreground mb-3">Priority</h3>
+        <h3 className="text-[13px] font-bold text-foreground mb-3">{mounted ? t('repairs.form.priority', 'Priority') : 'Priority'}</h3>
         <div className="flex flex-col gap-2.5">
           {[
             { label: "Urgent", color: "text-[#EF4444]", dot: "bg-[#EF4444]" },
@@ -156,13 +161,13 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
       {/* Date Range — now FUNCTIONAL */}
       <div>
         <h3 className="text-[13px] font-bold text-foreground mb-3 flex items-center justify-between">
-          Date Range
+          {mounted ? t('invoicesPage.date', 'Date Range') : 'Date Range'}
           {selectedDateRange && (
             <button
               onClick={() => { setSelectedDateRange(null); setCustomDateFrom(""); setCustomDateTo("") }}
               className="text-[10px] text-[#4F46E5] hover:underline font-medium"
             >
-              Clear
+              {mounted ? t('common.clear', 'Clear') : 'Clear'}
             </button>
           )}
         </h3>
@@ -213,7 +218,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
 
       {/* Assigned To */}
       <div>
-        <h3 className="text-[13px] font-bold text-foreground mb-2">Assigned To</h3>
+        <h3 className="text-[13px] font-bold text-foreground mb-2">{mounted ? t('schedule.assignTech', 'Assigned To') : 'Assigned To'}</h3>
         <div className="relative mb-3">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -247,7 +252,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
 
       {/* Device Type */}
       <div>
-        <h3 className="text-[13px] font-bold text-foreground mb-3">Device Type</h3>
+        <h3 className="text-[13px] font-bold text-foreground mb-3">{mounted ? t('repairs.form.deviceType', 'Device Type') : 'Device Type'}</h3>
         <div className="flex flex-col gap-2.5">
           {[
             { label: "Mobile Phone", value: "phone" },
@@ -274,13 +279,13 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
           onClick={handleApply}
           className="h-9 w-full bg-[#4F46E5] text-white rounded-lg text-[13px] font-semibold hover:bg-[#4338CA] transition-colors focus:outline-none shadow-sm"
         >
-          Apply Filters {activeCount > 0 ? `(${activeCount})` : ""}
+          {mounted ? t('schedule.applyFilters', 'Apply Filters') : 'Apply Filters'} {activeCount > 0 ? `(${activeCount})` : ""}
         </button>
         <button
           onClick={handleReset}
           className="h-9 w-full text-[13px] font-semibold text-[#EF4444] hover:bg-red-50 rounded-lg transition-colors focus:outline-none"
         >
-          Reset All
+          {mounted ? t('schedule.resetAll', 'Reset All') : 'Reset All'}
         </button>
       </div>
 

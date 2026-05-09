@@ -2,6 +2,8 @@
 
 
 import "@/app/globals.css" 
+import { useTranslation } from "react-i18next"
+import { useState, useEffect } from "react"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { StatCards } from "@/components/admin/dashboard/stat-cards"
@@ -14,6 +16,10 @@ import { TopTechnicians } from "@/components/admin/dashboard/top-technicians"
 
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -31,9 +37,9 @@ export default function DashboardPage() {
             {/* Page Title & Actions Header (Stacked) */}
             <div className="flex flex-col gap-6 mb-2">
               <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">{mounted ? t('common.dashboard') : 'Dashboard'}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Welcome back! Here's what's happening today.
+                  {mounted ? t('dashboard.welcome') : 'Welcome back!'} {mounted ? t('dashboard.welcomeSubtitle') : "Here's what's happening today."}
                 </p>
               </div>
               <div className="w-full">

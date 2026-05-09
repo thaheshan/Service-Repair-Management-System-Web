@@ -2,6 +2,8 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import Link from "next/link"
 import { ScheduleFilterPopover, ScheduleFilters } from "@/components/admin/schedule/schedule-filter-popover"
 import { ScheduleAddModal } from "@/components/admin/schedule/schedule-add-modal"
+import { useTranslation } from "react-i18next"
+import { useState, useEffect } from "react"
 
 interface ScheduleHeaderProps {
   onApplyFilters?: (filters: ScheduleFilters) => void
@@ -13,6 +15,12 @@ interface ScheduleHeaderProps {
 }
 
 export function ScheduleHeader({ onApplyFilters, currentWeekStart, onNextWeek, onPrevWeek, onSetWeekStart, onAddAppointment }: ScheduleHeaderProps) {
+  const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   const startDateText = currentWeekStart 
     ? currentWeekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -22,7 +30,7 @@ export function ScheduleHeader({ onApplyFilters, currentWeekStart, onNextWeek, o
   const endDateText = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
   const yearText = endDate.getFullYear()
 
-  const weekText = `Week of ${startDateText} - ${endDateText}, ${yearText}`
+  const weekText = mounted ? `${t('schedule.weekOf')} ${startDateText} - ${endDateText}, ${yearText}` : `Week of ${startDateText} - ${endDateText}, ${yearText}`
 
   const handleTodayClick = () => {
     if (onSetWeekStart) {
@@ -39,17 +47,17 @@ export function ScheduleHeader({ onApplyFilters, currentWeekStart, onNextWeek, o
     <div className="flex flex-col gap-4 border-b border-border bg-card px-6 py-4">
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Link href="/admin/dashboard" className="cursor-pointer hover:text-foreground">Dashboard</Link>
+        <Link href="/admin/dashboard" className="cursor-pointer hover:text-foreground">{mounted ? t('common.dashboard') : 'Dashboard'}</Link>
         <span>&gt;</span>
-        <Link href="/admin/repairs" className="cursor-pointer hover:text-foreground">Repairs</Link>
+        <Link href="/admin/repairs" className="cursor-pointer hover:text-foreground">{mounted ? t('common.repairs') : 'Repairs'}</Link>
         <span>&gt;</span>
-        <span className="font-semibold text-foreground">View Schedule</span>
+        <span className="font-semibold text-foreground">{mounted ? t('schedule.viewSchedule') : 'View Schedule'}</span>
       </div>
 
       {/* Main Bar */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">View Schedule</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{mounted ? t('schedule.viewSchedule') : 'View Schedule'}</h1>
 
         <div className="flex flex-col md:flex-row md:items-center gap-4 xl:gap-6">
           {/* Calendar Nav */}
@@ -76,7 +84,7 @@ export function ScheduleHeader({ onApplyFilters, currentWeekStart, onNextWeek, o
               onClick={handleTodayClick}
               className="text-sm font-semibold text-[#4F46E5] hover:underline focus:outline-none"
             >
-              Today
+              {mounted ? t('schedule.today') : 'Today'}
             </button>
           </div>
 
