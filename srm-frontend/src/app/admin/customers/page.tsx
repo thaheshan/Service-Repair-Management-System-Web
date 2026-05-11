@@ -31,6 +31,8 @@ const INITIAL_ROLES: Role[] = [
 ]
 
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
+
 
 export default function CustomerManagementPage() {
   const { t } = useTranslation();
@@ -57,15 +59,16 @@ export default function CustomerManagementPage() {
         lastVisitDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
 
-      let type: CustomerType = "Regular";
-      if (spentRaw > 10000 || repairsCount >= 3) type = "VIP";
-      else if (lastVisitDays < 30) type = "New";
+      let type: CustomerType = c.tier as CustomerType || "Regular";
+      // Allow 'New' status for Regular customers joined recently
+      if (type === "Regular" && lastVisitDays < 30 && repairsCount === 0) type = "New";
+
 
       return {
         id: c.id,
         name: c.name || "Unknown Customer",
-        email: c.email || "",
-        phone: c.phone || "",
+        email: c.email || "N/A",
+        phone: c.phone || "N/A",
         location: c.address || "N/A",
         repairs: repairsCount,
         spentRaw,
@@ -95,16 +98,16 @@ export default function CustomerManagementPage() {
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
-  const [showRolesModal, setShowRolesModal] = useState(false)
-  const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES)
-  const [editingRole, setEditingRole] = useState<Role|null>(null)
-  const [newRoleModal, setNewRoleModal] = useState(false)
-  const [newRole, setNewRole] = useState({name:"",color:"#4F46E5",desc:""})
+  const { data: settingsData } = useGetSettingsQuery({})
+  const liveRoles = useMemo(() => settingsData?.settings?.customerTiers || INITIAL_ROLES, [settingsData])
+  
   const [commModal, setCommModal] = useState<{type:"Phone"|"Mail"|"SMS";customer:Customer}|null>(null)
+
   const [isExporting, setIsExporting] = useState(false)
 
   // Add customer form
-  const [form, setForm] = useState({name:"",email:"",phone:"",address:"",type:"Regular" as CustomerType})
+  const [form, setForm] = useState({name:"",email:"",phone:"",address:"",tier:"Regular" as "Regular" | "VIP" | "Corporate"})
+
 
   const toggleType = (t: CustomerType) => setFilterTypes(p => p.includes(t) ? p.filter(x=>x!==t) : [...p,t])
 
@@ -153,10 +156,13 @@ export default function CustomerManagementPage() {
         email: form.email,
         phone: form.phone,
         address: form.address || "Colombo, Sri Lanka",
+        tier: form.tier
       }).unwrap()
+
       
       setShowAddModal(false)
-      setForm({name:"",email:"",phone:"",address:"",type:"Regular"})
+      setForm({name:"",email:"",phone:"",address:"",tier:"Regular"})
+
     } catch (err) {
       console.error("Failed to add customer:", err);
     }
@@ -218,13 +224,17 @@ export default function CustomerManagementPage() {
                 <span className="px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] text-[13px] font-bold">{filtered.length} {mounted ? t('customers.total') : 'Customers'}</span>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={()=>setShowRolesModal(true)} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted shadow-sm transition-colors focus:outline-none">
-                  <UserPlus className="h-4 w-4 text-muted-foreground" /> {mounted ? t('customers.manageRoles') : 'Manage Roles'}
-                </button>
+                <Link 
+                  href="/admin/customers/tiers" 
+                  className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[13px] font-bold text-[#0F172A] hover:bg-muted shadow-sm transition-colors focus:outline-none"
+                >
+                  <Shield className="h-4 w-4 text-[#4F46E5]" /> {mounted ? t('customers.manageRoles') : 'Manage Roles'}
+                </Link>
                 <button onClick={()=>setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm transition-colors focus:outline-none">
                   <Plus className="h-4 w-4" /> {mounted ? t('customers.add') : 'Add Customer'}
                 </button>
               </div>
+
             </div>
 
             {/* Toolbar */}
@@ -344,12 +354,18 @@ export default function CustomerManagementPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                 {paginated.map(c=>(
                   <div key={c.id} className="bg-white rounded-2xl border border-border p-6 shadow-sm hover:shadow-md hover:border-[#4F46E5]/30 transition-all group flex flex-col items-center text-center">
-                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-white text-[20px] font-black mb-4 shadow-sm ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[#000] text-[20px] font-black mb-4 shadow-sm ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 mb-1">
                       <h2 className="text-[15px] font-bold text-[#0F172A]">{c.name}</h2>
                       {c.type==="VIP"&&<span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full border border-amber-200">VIP</span>}
+                      {c.type==="Corporate"&&<span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200">Corporate</span>}
                       {c.type==="New"&&<span className="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded-full border border-green-200">New</span>}
+                      {c.tags?.filter((t:string)=>t!==c.type).slice(0, 2).map((t:string) => (
+                        <span key={t} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-black rounded-md border border-slate-200 uppercase tracking-tighter">{t}</span>
+                      ))}
+                      {c.tags?.length > 3 && <span className="text-[9px] font-bold text-muted-foreground">+{c.tags.length - 2}</span>}
                     </div>
+
                     <div className="w-full space-y-1.5 mb-4 text-left border-b border-border/50 pb-4">
                       <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><Mail className="h-3.5 w-3.5 shrink-0"/><span className="truncate">{c.email}</span></div>
                       <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><Phone className="h-3.5 w-3.5 shrink-0"/>{c.phone}</div>
@@ -388,12 +404,18 @@ export default function CustomerManagementPage() {
                     {paginated.map(c=>(
                       <tr key={c.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4"><div className="flex items-center gap-3">
-                          <div className={`h-9 w-9 rounded-full flex items-center justify-center text-white text-[12px] font-black shrink-0 ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
+                          <div className={`h-9 w-9 rounded-full flex items-center justify-center text-[#000] text-[12px] font-black shrink-0 ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
                           <div><div className="text-[14px] font-bold text-[#0F172A]">{c.name}</div><div className="text-[12px] text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3"/>{c.location}</div></div>
                         </div></td>
                         <td className="px-6 py-4"><div className="text-[12px] text-muted-foreground font-medium space-y-0.5"><div className="flex items-center gap-1.5"><Mail className="h-3 w-3"/>{c.email}</div><div className="flex items-center gap-1.5"><Phone className="h-3 w-3"/>{c.phone}</div></div></td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${c.type==="VIP"?"bg-amber-50 text-amber-700 border-amber-200":c.type==="New"?"bg-green-50 text-green-700 border-green-200":"bg-gray-50 text-gray-600 border-gray-200"}`}>{c.type}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                            c.type==="VIP" ? "bg-amber-50 text-amber-700 border-amber-200" : 
+                            c.type==="Corporate" ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
+                            c.type==="New" ? "bg-green-50 text-green-700 border-green-200" : 
+                            "bg-gray-50 text-gray-600 border-gray-200"
+                          }`}>{c.type}</span>
+
                         </td>
                         <td className="px-6 py-4 text-center"><span className="font-bold text-[#0F172A]">{c.repairs}</span></td>
                         <td className="px-6 py-4 text-right"><span className="font-bold text-[#10B981]">{formatSpent(c.spentRaw)}</span></td>
@@ -448,66 +470,25 @@ export default function CustomerManagementPage() {
                 <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('customers.phone', 'Phone *') : 'Phone *'}</label><input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
               </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('customers.address', 'Address') : 'Address'}</label><input value={form.address} onChange={e=>setForm(p=>({...p,address:e.target.value}))} placeholder="City, Sri Lanka" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]"/></div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Customer Type</label>
-                <div className="flex gap-3">{(["Regular","VIP","New"] as CustomerType[]).map(t=>(
-                  <label key={t} onClick={e=>{e.preventDefault();setForm(p=>({...p,type:t}))}} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-[13px] font-semibold transition-colors ${form.type===t?"bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]":"border-border text-muted-foreground hover:bg-muted"}`}>{form.type===t&&<Check className="h-3.5 w-3.5"/>}{t}</label>
-                ))}</div>
+              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">Customer Role / Tier</label>
+                <div className="flex flex-wrap gap-2">
+                  {liveRoles.map((role: any) => (
+                    <label 
+                      key={role.id} 
+                      onClick={e => { e.preventDefault(); setForm(p => ({ ...p, tier: role.name })) }} 
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-[12px] font-bold transition-all ${form.tier === role.name ? "bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5] ring-1 ring-[#4F46E5]/10" : "border-border text-muted-foreground hover:bg-muted"}`}
+                    >
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: role.color || '#4F46E5' }} />
+                      {role.name}
+                    </label>
+                  ))}
+                </div>
               </div>
+
               <div className="flex gap-3 pt-2 border-t border-border">
                 <button onClick={()=>setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-colors focus:outline-none">{mounted ? t('customers.cancel', 'Cancel') : 'Cancel'}</button>
                 <button onClick={handleAddCustomer} disabled={!form.name||!form.phone} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none disabled:opacity-50">{mounted ? t('customers.saveCustomer', 'Save Customer') : 'Save Customer'}</button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MANAGE ROLES MODAL */}
-      {showRolesModal&&(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[500px] rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><Shield className="h-5 w-5 text-[#4F46E5]"/>{mounted ? t('customers.manageRoles', 'Manage Customer Roles') : 'Manage Customer Roles'}</h2>
-              <button onClick={()=>{setShowRolesModal(false);setEditingRole(null)}} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4"/></button>
-            </div>
-            <div className="divide-y divide-border">
-              {roles.map(role=>editingRole?.id===role.id?(
-                <div key={role.id} className="p-5 bg-[#F8FAFC] space-y-3">
-                  <input value={editingRole.name} onChange={e=>setEditingRole(p=>p?{...p,name:e.target.value}:p)} className="w-full h-9 rounded-lg border border-[#4F46E5] px-3 text-[13px] font-bold focus:outline-none"/>
-                  <input value={editingRole.desc} onChange={e=>setEditingRole(p=>p?{...p,desc:e.target.value}:p)} className="w-full h-9 rounded-lg border border-border px-3 text-[13px] focus:outline-none"/>
-                  <div className="flex items-center gap-2"><span className="text-[12px] font-bold text-muted-foreground">Color:</span><input type="color" value={editingRole.color} onChange={e=>setEditingRole(p=>p?{...p,color:e.target.value}:p)} className="h-8 w-12 rounded cursor-pointer border border-border"/></div>
-                  <div className="flex gap-2">
-                    <button onClick={()=>{setRoles(p=>p.map(r=>r.id===editingRole.id?editingRole:r));setEditingRole(null)}} className="flex-1 h-9 bg-[#4F46E5] text-white rounded-lg text-[13px] font-bold hover:bg-[#4338CA] focus:outline-none">Save</button>
-                    <button onClick={()=>setEditingRole(null)} className="flex-1 h-9 border border-border rounded-lg text-[13px] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-                  </div>
-                </div>
-              ):(
-                <div key={role.id} className="p-5 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                  <div>
-                    <h3 className="text-[14px] font-bold mb-0.5 flex items-center gap-2" style={{color:role.color}}><span className="h-2 w-2 rounded-full inline-block" style={{background:role.color}}/>{role.name}</h3>
-                    <p className="text-[12px] text-muted-foreground">{role.desc}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={()=>setEditingRole(role)} className="h-8 w-8 rounded border border-border flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Edit2 className="h-3.5 w-3.5"/></button>
-                    <button onClick={()=>setRoles(p=>p.filter(r=>r.id!==role.id))} className="h-8 w-8 rounded border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5"/></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="p-5 border-t border-border bg-[#F8FAFC]">
-              {newRoleModal?(
-                <div className="space-y-3">
-                  <input value={newRole.name} onChange={e=>setNewRole(p=>({...p,name:e.target.value}))} placeholder="Role name" className="w-full h-9 rounded-lg border border-[#4F46E5] px-3 text-[13px] font-bold focus:outline-none"/>
-                  <input value={newRole.desc} onChange={e=>setNewRole(p=>({...p,desc:e.target.value}))} placeholder="Description" className="w-full h-9 rounded-lg border border-border px-3 text-[13px] focus:outline-none"/>
-                  <div className="flex items-center gap-2"><span className="text-[12px] font-bold text-muted-foreground">Color:</span><input type="color" value={newRole.color} onChange={e=>setNewRole(p=>({...p,color:e.target.value}))} className="h-8 w-12 rounded cursor-pointer border border-border"/></div>
-                  <div className="flex gap-2">
-                    <button onClick={()=>{if(newRole.name){setRoles(p=>[...p,{id:Date.now(),...newRole}]);setNewRoleModal(false);setNewRole({name:"",color:"#4F46E5",desc:""})}}} className="flex-1 h-9 bg-[#4F46E5] text-white rounded-lg text-[13px] font-bold hover:bg-[#4338CA] focus:outline-none">Add Role</button>
-                    <button onClick={()=>setNewRoleModal(false)} className="flex-1 h-9 border border-border rounded-lg text-[13px] font-bold hover:bg-muted focus:outline-none">Cancel</button>
-                  </div>
-                </div>
-              ):(
-                <button onClick={()=>setNewRoleModal(true)} className="flex items-center gap-1.5 text-[13px] font-bold text-[#4F46E5] hover:underline focus:outline-none"><Plus className="h-4 w-4"/>Create New Role</button>
-              )}
             </div>
           </div>
         </div>
@@ -541,3 +522,4 @@ export default function CustomerManagementPage() {
     </div>
   )
 }
+

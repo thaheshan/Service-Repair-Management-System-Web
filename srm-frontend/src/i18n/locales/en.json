@@ -3,7 +3,9 @@
     "dashboard": "Dashboard",
     "repairs": "Repairs",
     "customers": "Customers",
+    "customerRoles": "Customer Roles",
     "devices": "Devices",
+
     "invoices": "Invoices",
     "inventory": "Inventory",
     "reports": "Reports",

@@ -180,14 +180,18 @@ function TaskDetailsPage() {
                           <button 
                             key={tech.id}
                             onClick={() => handleReassign(tech.id)}
-                            className="w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium hover:bg-muted flex items-center gap-2 transition-colors"
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted flex items-center gap-3 transition-colors"
                           >
-                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                              {tech.fullName?.charAt(0) || 'T'}
+                            <div className="h-8 w-8 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] text-[11px] font-black shrink-0 border border-[#4F46E5]/10">
+                              {tech.name?.charAt(0) || 'T'}
                             </div>
-                            {tech.fullName}
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[13px] font-bold text-[#0F172A] truncate">{tech.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{tech.role}</span>
+                            </div>
                           </button>
                         ))}
+
                       </div>
                     </div>
                   )}
