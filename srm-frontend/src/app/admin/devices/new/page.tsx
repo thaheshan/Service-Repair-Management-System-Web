@@ -54,7 +54,7 @@ export default function RegisterDevicePage() {
   const [imei, setImei] = useState("")
   const [serial, setSerial] = useState("")
   const [color, setColor] = useState("")
-  const [price, setPrice] = useState<number>(0)
+  const [price, setPrice] = useState<string>("")
   const [storage, setStorage] = useState("")
   const [condition, setCondition] = useState("New")
   const [ownerId, setOwnerId] = useState("")
@@ -127,7 +127,7 @@ export default function RegisterDevicePage() {
         model: model,
         serialNumber: imei || "N/A",
         type: deviceType,
-        price: price,
+        price: price ? Number(price) : 0,
         status: "Available",
         warrantyStatus: hasWarranty ? warrantyProvider : "None",
         warrantyExpiry: hasWarranty ? warrantyExpiry : null
@@ -366,7 +366,7 @@ export default function RegisterDevicePage() {
                         placeholder="0.00"
                         className="w-full h-12 rounded-xl border border-border bg-white pl-12 pr-4 text-[15px] font-black text-primary focus:border-primary transition-all shadow-sm"
                         value={price}
-                        onChange={(e) => setPrice(Number(e.target.value))}
+                        onChange={(e) => setPrice(e.target.value)}
                       />
                     </div>
                   </div>
@@ -513,17 +513,8 @@ export default function RegisterDevicePage() {
                 </div>
               </section>
 
-                <div className="space-y-2">
-                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">{mounted ? t('devicesPage.new.conditionNotes') : 'Internal Condition Notes'}</label>
-                   <textarea 
-                     rows={5}
-                     placeholder={mounted ? t('devicesPage.new.mentionScratches') : "Mention any existing scratches, damages, or specific instructions for technicians..."}
-                     className="w-full p-5 rounded-2xl border border-border bg-white text-[14px] font-medium focus:border-sky-500 outline-none resize-none transition-all"
-                     value={notes}
-                     onChange={(e) => setNotes(e.target.value)}
-                    />
-                </div>
               </section>
+
             </form>
           </div>
         </div>
