@@ -40,7 +40,7 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
             Update Device Status?
           </h2>
           <p className="text-[14px] text-muted-foreground mb-8 font-medium leading-relaxed">
-            Changing the status to <span className="text-[#4F46E5] font-bold">"{pendingStatus}"</span> will update the system records and inventory.
+            Changing the status to <span className="text-[#4F46E5] font-bold">"{pendingStatus.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}"</span> will update the system records and inventory.
           </p>
 
           <label className="flex items-center gap-3 self-start mb-8 cursor-pointer group w-full p-3 rounded-xl border border-dashed border-border hover:border-[#4F46E5]/50 hover:bg-[#F8FAFC] transition-all">

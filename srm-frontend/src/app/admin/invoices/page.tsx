@@ -125,35 +125,68 @@ export default function InvoicesManagementPage() {
       const element = inv ? hiddenPrintRef.current : printRef.current
       if (!element) throw new Error("No element found trace #PDF-CAPTURE-ERR")
 
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
+      // 1. Capture computed styles
+      const elements = Array.from(element.getElementsByTagName("*"));
+      const computedStyles = elements.map(el => {
+        const style = window.getComputedStyle(el);
+        return {
+          color: style.color,
+          backgroundColor: style.backgroundColor,
+          borderColor: style.borderColor,
+          borderWidth: style.borderWidth,
+          borderStyle: style.borderStyle,
+          padding: style.padding,
+          display: style.display,
+          flexDirection: style.flexDirection,
+          alignItems: style.alignItems,
+          justifyContent: style.justifyContent,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          gap: style.gap,
+          width: style.width,
+          height: style.height,
+          boxShadow: style.boxShadow.includes('lab') || style.boxShadow.includes('oklch') ? 'none' : style.boxShadow
+        };
+      });
+
+      const canvas = await html2canvas(element, {
+        scale: 3, 
         useCORS: true, 
         logging: false,
         backgroundColor: "#ffffff",
         onclone: (clonedDoc) => {
-          // Fix: Translate modern color functions (oklch, lab, color-mix) to RGB for html2canvas compatibility
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            const style = window.getComputedStyle(el);
-            
-            // Check for problematic color functions in compute styles
-            const colorProps = ['color', 'backgroundColor', 'borderColor', 'outlineColor', 'textDecorationColor', 'stopColor', 'fill', 'stroke'];
-            colorProps.forEach(prop => {
-              const val = (style as any)[prop];
-              if (val && (val.includes('oklch') || val.includes('lab') || val.includes('color-mix'))) {
-                // Force a fallback to a safe color if modern spaces are detected
-                if (prop === 'backgroundColor') el.style.backgroundColor = '#ffffff';
-                else if (prop === 'color') el.style.color = '#000000';
-                else el.style[prop as any] = 'transparent';
-              }
-            });
+          const clonedElements = Array.from(clonedDoc.getElementsByTagName("*"));
+          clonedElements.forEach((el, i) => {
+             const cel = el as HTMLElement;
+             const s = computedStyles[i];
+             if (!s) return;
+             
+             cel.style.color = s.color.includes('lab') || s.color.includes('oklch') ? '#000000' : s.color;
+             cel.style.backgroundColor = s.backgroundColor.includes('lab') || s.backgroundColor.includes('oklch') ? '#ffffff' : s.backgroundColor;
+             cel.style.borderColor = s.borderColor;
+             cel.style.borderWidth = s.borderWidth;
+             cel.style.borderStyle = s.borderStyle;
+             cel.style.padding = s.padding;
+             cel.style.display = s.display;
+             cel.style.fontSize = s.fontSize;
+             cel.style.fontWeight = s.fontWeight;
+             cel.style.fontFamily = "Arial, sans-serif";
+             cel.style.width = s.width;
+             cel.style.height = s.height;
+             cel.style.boxShadow = s.boxShadow;
+             
+             if (s.display === 'flex') {
+                cel.style.flexDirection = s.flexDirection;
+                cel.style.alignItems = s.alignItems;
+                cel.style.justifyContent = s.justifyContent;
+                cel.style.gap = s.gap;
+             }
+          });
 
-            // Also check box-shadow which often contains color-mix in Tailwind 4
-            const shadow = style.boxShadow;
-            if (shadow && (shadow.includes('oklch') || shadow.includes('lab') || shadow.includes('color-mix'))) {
-              el.style.boxShadow = 'none';
-            }
+          // WIPE styles to avoid parser error
+          const heads = clonedDoc.getElementsByTagName("head");
+          if (heads[0]) {
+             while(heads[0].firstChild) heads[0].removeChild(heads[0].firstChild);
           }
         }
       })
