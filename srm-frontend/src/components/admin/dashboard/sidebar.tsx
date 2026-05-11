@@ -7,6 +7,8 @@ import {
   Wrench,
   Users,
   Smartphone,
+
+
   FileText,
   Package,
   BarChart3,
@@ -40,6 +42,7 @@ const navItems: NavItem[] = [
   { icon: Wrench, label: "repairs", href: "/admin/repairs", aliases: ["/admin/schedule"] },
   { icon: Users, label: "customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
   { icon: Smartphone, label: "devices", href: "/admin/devices", aliases: ["/admin/devices/"] },
+
   { icon: FileText, label: "invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"] },
   { icon: Package, label: "inventory", href: "/admin/inventory", aliases: ["/admin/inventory/"] },
   { icon: BarChart3, label: "reports", href: "/admin/reports" },

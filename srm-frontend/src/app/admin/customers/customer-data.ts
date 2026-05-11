@@ -1,4 +1,5 @@
-export type CustomerType = "VIP" | "Regular" | "New"
+export type CustomerType = "VIP" | "Regular" | "New" | "Corporate"
+
 
 export interface Customer {
   id: number
