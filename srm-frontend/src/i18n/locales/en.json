@@ -283,6 +283,7 @@
     "title": "Invoice Management",
     "add": "Add Invoice",
     "search": "Search by name, client, or invoice #",
+    "filters": "Filters",
     "generateRepair": "Generate Repair Invoice",
     "createInventoryLedger": "Create Inventory / Sale Ledger",
     "subtitle": "Comprehensive invoicing for professional workflows.",
@@ -312,7 +313,13 @@
     "enterAmount": "Enter amount...",
     "discardChanges": "Discard Changes",
     "finalizeRepair": "Finalize Repair Invoice",
-    "generateBulkSale": "Generate Bulk Sale Record"
+    "generateBulkSale": "Generate Bulk Sale Record",
+    "sortOptions": {
+      "latest": "Latest First",
+      "oldest": "Oldest First",
+      "amountDesc": "Amount: High to Low",
+      "amountAsc": "Amount: Low to High"
+    }
   },
   "devicesPage": {
     "title": "Devices Management",
@@ -423,47 +430,6 @@
       "shop": "Shop Warranty",
       "manufacturer": "Manufacturer",
       "extended": "Extended"
-    }
-  },
-  "invoicesPage": {
-    "title": "Invoice Management",
-    "add": "Add Invoice",
-    "search": "Search by name, client, or invoice #",
-    "generateRepair": "Generate Repair Invoice",
-    "createInventoryLedger": "Create Inventory / Sale Ledger",
-    "subtitle": "Comprehensive invoicing for professional workflows.",
-    "repairIntake": "Repair Intake",
-    "bulkSale": "Bulk Sale / Inventory",
-    "customerName": "Customer / Client Name",
-    "searchOrEnter": "Search or Enter Name...",
-    "contactNumber": "Contact Number",
-    "lineItems": "Line Items",
-    "addRow": "Add Row",
-    "itemDescription": "Item / Description",
-    "skuImei": "SKU / IMEI",
-    "qty": "Qty",
-    "unitPrice": "Unit Price",
-    "total": "Total",
-    "itemNamePlaceholder": "Item name...",
-    "skuPlaceholder": "SKU...",
-    "subtotal": "Subtotal",
-    "grandTotal": "Grand Total",
-    "deviceSpecs": "Device Specifications",
-    "category": "Category",
-    "brand": "Brand",
-    "serialImei": "Serial/IMEI",
-    "faultDescription": "Fault Description",
-    "describeIssue": "Describe the issue in detail...",
-    "estimatedCost": "Estimated Cost (LKR)",
-    "enterAmount": "Enter amount...",
-    "discardChanges": "Discard Changes",
-    "finalizeRepair": "Finalize Repair Invoice",
-    "generateBulkSale": "Generate Bulk Sale Record",
-    "sortOptions": {
-      "latest": "Latest First",
-      "oldest": "Oldest First",
-      "amountDesc": "Amount: High to Low",
-      "amountAsc": "Amount: Low to High"
     }
   },
   "repairsPage": {

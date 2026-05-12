@@ -50,12 +50,12 @@ export default function LoginPage() {
           subheading="Manage repairs, track inventory, and delight customers all in one place"
         />
       </div>
-      
+
       {/* Authentication Form Half */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-24 bg-white relative overflow-y-auto w-full">
         {/* Logo at the top for Mobile/Tablet */}
         <div className="lg:hidden mb-12">
-           <AuthLogo />
+          <AuthLogo />
         </div>
 
         <div className="w-full max-w-[420px]">
