@@ -338,8 +338,8 @@ export default function InvoicesManagementPage() {
 
       r = r.filter(inv => inv.amount >= filterAmountRange.min && inv.amount <= filterAmountRange.max)
 
-      if (filterDateFrom) r = r.filter(inv => inv.date >= filterDateFrom)
-      if (filterDateTo) r = r.filter(inv => inv.date <= filterDateTo)
+      if (filterDateFrom) r = r.filter(inv => inv.date.slice(0, 10) >= filterDateFrom)
+      if (filterDateTo) r = r.filter(inv => inv.date.slice(0, 10) <= filterDateTo)
 
       return r.sort((a, b) => {
          if (sortKey === "date-new") return new Date(b.date).getTime() - new Date(a.date).getTime()
