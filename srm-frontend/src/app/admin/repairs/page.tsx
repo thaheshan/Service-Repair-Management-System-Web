@@ -25,6 +25,8 @@ function daysAgo(n: number): string {
 
 const colors = ["bg-[#4F46E5]", "bg-[#F59E0B]", "bg-[#10B981]", "bg-[#6366F1]", "bg-[#EF4444]"];
 
+import { ChevronRight } from "lucide-react"
+
 export default function RepairsPage() {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -265,12 +267,12 @@ function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePre
         <DashboardHeader />
         <main className="flex-1 overflow-y-auto w-full flex flex-col custom-scrollbar">
           <div className="bg-background px-4 lg:px-8 pt-6 pb-4">
-            <div className="flex items-center gap-2 text-[13px] text-muted-foreground mb-1.5 font-medium">
-              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors">{mounted ? t('common.dashboard') : 'Dashboard'}</Link>
-              <span>&gt;</span>
-              <span className="text-foreground font-semibold">{mounted ? t('common.repairs') : 'Repairs'}</span>
+            <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
+               <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title', 'Dashboard') : 'Dashboard'}</Link>
+               <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+               <span className="text-[#0F172A]">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
             </div>
-            <h1 className="text-[28px] font-bold text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
+            <h1 className="text-[28px] font-black text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
           </div>
 
           <div className="flex-1 px-4 lg:px-8 pb-6 pt-0 m-0 flex flex-col">
