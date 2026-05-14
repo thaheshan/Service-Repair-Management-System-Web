@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 
 interface NavItem {
   icon: any
@@ -43,7 +45,7 @@ const navItems: NavItem[] = [
   { icon: Users, label: "customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
   { icon: Smartphone, label: "devices", href: "/admin/devices", aliases: ["/admin/devices/"] },
 
-  { icon: FileText, label: "invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"] },
+  { icon: FileText, label: "invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"], roles: ["ADMIN", "TECHNICIAN"] },
   { icon: Package, label: "inventory", href: "/admin/inventory", aliases: ["/admin/inventory/"] },
   { icon: BarChart3, label: "reports", href: "/admin/reports" },
   { icon: UserCircle, label: "staff", href: "/admin/staff", aliases: ["/admin/staff/"] },
@@ -59,6 +61,7 @@ const branches = (t: any) => [
 export function DashboardSidebar() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
+  const user = useSelector((state: RootState) => state.auth.user)
   
   useEffect(() => {
     setMounted(true)
@@ -137,7 +140,13 @@ export function DashboardSidebar() {
       {/* Navigation */}
       <nav className="mt-2 flex-1 px-3">
         <ul className="flex flex-col gap-0.5">
-          {navItems.map((item) => {
+          {navItems.filter(item => {
+            if (user?.role === 'TECHNICIAN') {
+              const allowed = ["dashboard", "repairs", "customers", "devices", "invoices", "inventory", "settings"]
+              return allowed.includes(item.label)
+            }
+            return true
+          }).map((item) => {
             // Determine if the current path matches the item's href or aliases
             const isActive = 
               pathname === item.href || 

@@ -126,6 +126,27 @@ export function DashboardHeader() {
     }
   }
 
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      // Mark as read
+      if (notification.unread) {
+        await markRead(notification.id).unwrap()
+      }
+      
+      // Close modal if open
+      setIsModalOpen(false)
+      
+      // Navigate based on type
+      if (notification.type === "REPAIR" && notification.repairId) {
+        router.push(`/admin/repairs/${notification.repairId}?from=notifications`)
+      } else if (notification.type === "INVENTORY") {
+        router.push("/admin/inventory?filter=low-stock")
+      }
+    } catch (err) {
+      console.error("Failed to handle notification click:", err)
+    }
+  }
+
   const handleMarkOneRead = async (id: string) => {
     try {
       await markRead(id).unwrap()
@@ -266,7 +287,7 @@ export function DashboardHeader() {
                       className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-border/40 last:border-b-0 rounded-none focus:bg-muted/50 transition-colors ${notification.unread ? 'bg-primary/[0.03]' : ''}`}
                       onSelect={(e) => {
                         e.preventDefault()
-                        handleMarkOneRead(notification.id)
+                        handleNotificationClick(notification)
                       }}
                     >
                       <div className="flex w-full items-start gap-3">
@@ -322,11 +343,11 @@ export function DashboardHeader() {
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>{mounted ? t('common.myAccount') || 'My Account' : 'My Account'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings")}>
               <User className="h-4 w-4 mr-2" />
               {mounted ? t('common.profile') || 'Profile' : 'Profile'}
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin/settings")}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings")}>
               <Settings className="h-4 w-4 mr-2" />
               {mounted ? t('common.settings') : 'Settings'}
             </DropdownMenuItem>
@@ -391,7 +412,7 @@ export function DashboardHeader() {
                   key={notification.id} 
                   className={`flex items-start gap-4 p-6 hover:bg-muted/30 transition-colors cursor-pointer ${notification.unread ? 'bg-primary/[0.04]' : ''}`}
                   onClick={() => {
-                    handleMarkOneRead(notification.id)
+                    handleNotificationClick(notification)
                   }}
                 >
                   <div className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.unread ? 'bg-primary' : 'bg-transparent'}`} />

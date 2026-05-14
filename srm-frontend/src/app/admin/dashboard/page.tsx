@@ -11,13 +11,16 @@ import { ActionButtons } from "@/components/admin/dashboard/action-buttons"
 import { RecentRepairs } from "@/components/admin/dashboard/recent-repairs"
 import { RevenueTrend } from "@/components/admin/dashboard/revenue-trend"
 import { RepairStatusChart } from "@/components/admin/dashboard/repair-status-chart"
-import { RecentActivity } from "@/components/admin/dashboard/recent-activity"
 import { TopTechnicians } from "@/components/admin/dashboard/top-technicians"
+import { RecentActivity } from "@/components/admin/dashboard/recent-activity"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 
 
 export default function DashboardPage() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
+  const user = useSelector((state: RootState) => state.auth.user)
   useEffect(() => { setMounted(true) }, [])
 
   return (
@@ -52,20 +55,24 @@ export default function DashboardPage() {
 
             {/* Row 2: Recent Repairs & Revenue Trend */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 h-full">
+              <div className={user?.role === 'TECHNICIAN' ? "lg:col-span-3 h-full" : "lg:col-span-1 h-full"}>
                 <RecentRepairs />
               </div>
-              <div className="lg:col-span-2 h-full">
-                <RevenueTrend />
-              </div>
+              {user?.role !== 'TECHNICIAN' && (
+                <div className="lg:col-span-2 h-full">
+                  <RevenueTrend />
+                </div>
+              )}
             </div>
 
             {/* Row 3: Top Techs & Status Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 h-full">
-                <TopTechnicians />
-              </div>
-              <div className="lg:col-span-2 h-full">
+              {user?.role !== 'TECHNICIAN' && (
+                <div className="lg:col-span-1 h-full">
+                  <TopTechnicians />
+                </div>
+              )}
+              <div className={user?.role === 'TECHNICIAN' ? "lg:col-span-3 h-full" : "lg:col-span-2 h-full"}>
                 <RepairStatusChart />
               </div>
             </div>

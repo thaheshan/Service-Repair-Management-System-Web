@@ -66,6 +66,14 @@ export const authApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    updateMe: builder.mutation({
+      query: (data) => ({
+        url: '/v1/auth/me',
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -80,4 +88,5 @@ export const {
   useRegisterStaffMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useUpdateMeMutation,
 } = authApiSlice;

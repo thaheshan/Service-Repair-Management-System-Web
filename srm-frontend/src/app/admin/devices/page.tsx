@@ -58,8 +58,6 @@ export default function DevicesPage() {
   const SORT_OPTIONS = [
     { label: mounted ? t('devicesPage.sortOptions.newest') : "Newest First", value: "newest" },
     { label: mounted ? t('devicesPage.sortOptions.oldest') : "Oldest First", value: "oldest" },
-    { label: mounted ? t('devicesPage.sortOptions.priceDesc') : "High Value", value: "price_desc" },
-    { label: mounted ? t('devicesPage.sortOptions.priceAsc') : "Low Value", value: "price_asc" },
     { label: mounted ? t('devicesPage.sortOptions.repairsDesc') : "Most Repairs", value: "repairs_desc" },
   ]
 
@@ -482,9 +480,11 @@ export default function DevicesPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm transition-colors focus:outline-none">
-                  <Plus className="h-4 w-4" /> {mounted ? t('devicesPage.register') : 'Register Device'}
-                </button>
+                {user?.role !== 'TECHNICIAN' && (
+                  <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm transition-colors focus:outline-none">
+                    <Plus className="h-4 w-4" /> {mounted ? t('devicesPage.register') : 'Register Device'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -584,13 +584,15 @@ export default function DevicesPage() {
                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${DEVICE_ICON_COLOR[d.type]}`}><DeviceIcon type={d.type} className="h-6 w-6" /></div>
                         <div>
                           <p className="text-[14px] font-black text-[#0F172A] leading-tight">{d.name}</p>
-                          <p className="text-[11px] text-muted-foreground font-bold">Rs. {d.price.toLocaleString()}</p>
+                          {user?.role !== 'TECHNICIAN' && <p className="text-[11px] text-muted-foreground font-bold">Rs. {d.price.toLocaleString()}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
                         <button onClick={() => setViewDevice(d)} className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Eye className="h-3.5 w-3.5" /></button>
                         <button onClick={() => { setEditDevice({ ...d }); setEditForm({ model: d.name, brand: d.brand, type: d.type as DeviceType, imei: (d as any).rawImei || '', serialNo: (d as any).rawSerialNo || '', price: d.price || "" }) }} className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Edit2 className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => setDeleteDevice(d)} className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                        {user?.role !== 'TECHNICIAN' && (
+                          <button onClick={() => setDeleteDevice(d)} className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2 mb-4 pb-4 border-b border-border/60">
@@ -635,7 +637,7 @@ export default function DevicesPage() {
                           <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${DEVICE_ICON_COLOR[d.type]}`}><DeviceIcon type={d.type} className="h-5 w-5" /></div>
                           <div>
                             <p className="text-[13px] font-black text-[#0F172A] leading-tight">{d.name}</p>
-                            <p className="text-[11px] font-bold text-[#4F46E5]">Rs. {d.price.toLocaleString()}</p>
+                            {user?.role !== 'TECHNICIAN' && <p className="text-[11px] font-bold text-[#4F46E5]">Rs. {d.price.toLocaleString()}</p>}
                           </div>
                         </div></td>
                         <td className="px-5 py-4"><div><p className="text-[13px] font-bold text-[#0F172A]">{d.owner.name}</p><p className="text-[11px] text-muted-foreground">{d.owner.phone}</p></div></td>
@@ -659,7 +661,9 @@ export default function DevicesPage() {
                         <td className="px-5 py-4 text-center"><div className="flex items-center justify-center gap-1">
                           <button onClick={() => setViewDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Eye className="h-3.5 w-3.5" /></button>
                           <button onClick={() => { setEditDevice({ ...d }); setEditForm({ model: d.name, brand: d.brand, type: d.type as DeviceType, imei: (d as any).rawImei || '', serialNo: (d as any).rawSerialNo || '', price: d.price || "" }) }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Edit2 className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => setDeleteDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                          {user?.role !== 'TECHNICIAN' && (
+                            <button onClick={() => setDeleteDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                          )}
                         </div></td>
                       </tr>
                     ))}
@@ -730,19 +734,21 @@ export default function DevicesPage() {
                 </div>
               </div>
               {/* Price Field */}
-              <div>
-                <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Selling Price (Rs.)</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-[13px]">Rs.</span>
-                  <input
-                    type="number"
-                    value={form.price}
-                    onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                    placeholder="0.00"
-                    className="w-full h-11 rounded-xl border border-border pl-12 pr-4 text-[14px] font-black text-[#4F46E5] focus:outline-none focus:border-[#4F46E5]"
-                  />
+              {user?.role !== 'TECHNICIAN' && (
+                <div>
+                  <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Selling Price (Rs.)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-[13px]">Rs.</span>
+                    <input
+                      type="number"
+                      value={form.price}
+                      onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full h-11 rounded-xl border border-border pl-12 pr-4 text-[14px] font-black text-[#4F46E5] focus:outline-none focus:border-[#4F46E5]"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               {/* Customer Search */}
               <div>
                 <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Customer / Owner *</label>

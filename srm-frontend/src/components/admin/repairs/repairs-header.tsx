@@ -5,6 +5,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { RepairRow } from "./repairs-table"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 
 interface RepairsHeaderProps {
   filteredRepairs: RepairRow[]
@@ -33,6 +35,7 @@ export function RepairsHeader({
 }: RepairsHeaderProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const user = useSelector((state: RootState) => state.auth.user)
   useEffect(() => setMounted(true), []);
 
   const [isExportingPDF, setIsExportingPDF] = useState(false)
@@ -114,7 +117,7 @@ export function RepairsHeader({
       `"${r.technician ? r.technician.name : "Unassigned"}"`,
       `"${r.amount}"`
     ])
-    
+
     const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -132,9 +135,9 @@ export function RepairsHeader({
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
           <span className="text-sm font-semibold text-[#4F46E5]">{totalRepairs} {mounted ? t('common.repairs') : 'Repairs'}</span>
-          
+
           {hasActiveFilters ? (
-            <button 
+            <button
               onClick={onClearFilters}
               className="flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-bold transition-colors bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300 shadow-sm focus:outline-none"
             >
@@ -142,7 +145,7 @@ export function RepairsHeader({
               {mounted ? t('common.clear') : 'Clear Filter'}
             </button>
           ) : (
-            <button 
+            <button
               onClick={onToggleFilters}
               className={`flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors focus:outline-none ${showFilters ? 'bg-muted border-transparent shadow-inner' : 'bg-card border-border hover:bg-muted shadow-sm'}`}
             >
@@ -153,35 +156,37 @@ export function RepairsHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted focus:outline-none shadow-sm">
-                <Download className="h-4 w-4" />
-                <span className="flex items-center gap-1">
-                  Export <span className="text-[10px] ml-1">▼</span>
-                </span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[170px] z-50">
-              <DropdownMenuItem
-                onClick={handleExportPDF}
-                disabled={isExportingPDF}
-                className="cursor-pointer flex items-center gap-2"
-              >
-                {isExportingPDF ? (
-                  <Loader2 className="h-4 w-4 text-[#4F46E5] animate-spin" />
-                ) : (
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span className="text-sm font-medium">{isExportingPDF ? (mounted ? t('common.loading') : "Generating...") : "Export as PDF"}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer flex items-center gap-2">
-                <Table className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Export as CSV</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
+          {user?.role !== 'TECHNICIAN' && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted focus:outline-none shadow-sm">
+                  <Download className="h-4 w-4" />
+                  <span className="flex items-center gap-1">
+                    Export <span className="text-[10px] ml-1">▼</span>
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[170px] z-50">
+                <DropdownMenuItem
+                  onClick={handleExportPDF}
+                  disabled={isExportingPDF}
+                  className="cursor-pointer flex items-center gap-2"
+                >
+                  {isExportingPDF ? (
+                    <Loader2 className="h-4 w-4 text-[#4F46E5] animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-medium">{isExportingPDF ? (mounted ? t('common.loading') : "Generating...") : "Export as PDF"}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer flex items-center gap-2">
+                  <Table className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Export as CSV</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <Link href="/admin/schedule" className="flex h-9 items-center gap-2 rounded-lg border border-[#4F46E5] bg-[#EEF2FF] px-4 text-sm font-semibold text-[#4F46E5] hover:bg-[#E0E7FF] transition-colors focus:outline-none shadow-sm">
             <Calendar className="h-4 w-4" />
             {mounted ? t('schedule.viewSchedule') : 'View Schedule'}
@@ -198,7 +203,7 @@ export function RepairsHeader({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="relative w-full max-w-full sm:max-w-[320px]">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input 
+          <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -208,13 +213,13 @@ export function RepairsHeader({
         </div>
 
         <div className="flex items-center rounded-lg border border-border p-1 bg-card shadow-sm">
-          <button 
+          <button
             onClick={() => onChangeViewMode("list")}
             className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-[#4F46E5] text-white" : "text-muted-foreground hover:bg-muted"} focus:outline-none`}
           >
             <List className="h-4 w-4" />
           </button>
-          <button 
+          <button
             onClick={() => onChangeViewMode("grid")}
             className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-[#4F46E5] text-white" : "text-muted-foreground hover:bg-muted"} focus:outline-none`}
           >

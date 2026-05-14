@@ -55,7 +55,7 @@ export function RevenueTrend() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState("Last 7 days")
-  
+
   const daysMap: Record<string, number> = {
     "Last 7 days": 7,
     "Last 14 days": 14,
@@ -73,8 +73,8 @@ export function RevenueTrend() {
     return (
       <div className="flex h-[380px] w-full flex-col rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-8">
-           <div className="h-4 w-32 bg-slate-100 animate-pulse rounded" />
-           <div className="h-8 w-24 bg-slate-100 animate-pulse rounded" />
+          <div className="h-4 w-32 bg-slate-100 animate-pulse rounded" />
+          <div className="h-8 w-24 bg-slate-100 animate-pulse rounded" />
         </div>
         <div className="flex-1 w-full bg-slate-50 animate-pulse rounded-lg" />
       </div>

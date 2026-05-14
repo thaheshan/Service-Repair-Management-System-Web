@@ -16,11 +16,11 @@ export function RepairStatusChart() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
   const { data: response } = useGetDashboardAnalyticsQuery({});
-  
-  const data = response?.data?.statusData?.length > 0 
-    ? response.data.statusData 
+
+  const data = response?.data?.statusData?.length > 0
+    ? response.data.statusData
     : fallbackData;
-    
+
   const totalRepairs = data.reduce((sum: number, item: any) => sum + item.value, 0)
 
   useEffect(() => {
@@ -57,22 +57,22 @@ export function RepairStatusChart() {
                   const radius = outerRadius + 25;
                   const x = cx + radius * Math.cos(-midAngle * RADIAN);
                   const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                  
+
                   // Left-aligned if it's on the left side, Right-aligned if on right
                   const isLeft = Math.cos(-midAngle * RADIAN) < 0;
                   const textAnchor = isLeft ? 'end' : 'start';
                   const entry = data[index];
-                  
+
                   // Push the text slightly further out to replace line space naturally
                   const textX = cx + (outerRadius + 30) * Math.cos(-midAngle * RADIAN);
                   const textY = cy + (outerRadius + 30) * Math.sin(-midAngle * RADIAN);
 
                   return (
-                    <text 
-                      x={textX} 
-                      y={textY} 
-                      fill={entry.color} 
-                      textAnchor={textAnchor} 
+                    <text
+                      x={textX}
+                      y={textY}
+                      fill={entry.color}
+                      textAnchor={textAnchor}
                       dominantBaseline="central"
                     >
                       <tspan x={textX} dy="-0.4em" fontSize="13px" fontWeight="bold">
@@ -91,7 +91,7 @@ export function RepairStatusChart() {
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          
+
           {/* Center Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-3xl font-bold text-foreground">{totalRepairs}</span>

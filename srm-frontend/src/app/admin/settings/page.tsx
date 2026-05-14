@@ -29,16 +29,21 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/services/api/settingsApiSlice"
-import { useGetStaffListQuery, useCreateStaffMutation, useUpdateStaffMutation, useDeleteStaffMutation } from "@/services/api/staffApiSlice"
+import { useGetStaffListQuery, useCreateStaffMutation, useUpdateStaffMutation, useDeleteStaffMutation, useGetStaffContextQuery } from "@/services/api/staffApiSlice"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+import { User } from "lucide-react"
 
-type SettingsTab = "general" | "business" | "notifications" | "security" | "team"
+type SettingsTab = "profile" | "general" | "business" | "notifications" | "security" | "team"
 
 export default function SettingsView() {
   const { data: apiSettings, isLoading: settingsLoading } = useGetSettingsQuery({});
   const [updateSettings] = useUpdateSettingsMutation();
-  const { data: staffResponse } = useGetStaffListQuery({});
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { data: staffResponse } = useGetStaffListQuery({}, { skip: user?.role === 'TECHNICIAN' });
+  const { data: myProfile } = useGetStaffContextQuery({});
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>("general")
+  const [activeTab, setActiveTab] = useState<SettingsTab>(user?.role === 'TECHNICIAN' ? 'profile' : "general")
   const [isSaving, setIsSaving] = useState(false)
 
   // API Mutations
@@ -53,6 +58,11 @@ export default function SettingsView() {
   const { setTheme: setNextTheme } = useTheme()
   const [theme, setTheme] = useState("light")
   const [accentColor, setAccentColor] = useState("#4F46E5")
+  const [personalInfo, setPersonalInfo] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+  })
   const [businessSettings, setBusinessSettings] = useState({
     name: "",
     tin: "",
@@ -133,6 +143,16 @@ export default function SettingsView() {
       }
     }
   }, [apiSettings]);
+
+  useEffect(() => {
+    if (myProfile) {
+      setPersonalInfo({
+        fullName: myProfile.fullName || "",
+        email: myProfile.email || "",
+        phone: myProfile.phone || "",
+      });
+    }
+  }, [myProfile]);
 
   // Notifications State
   const [notifications, setNotifications] = useState({
@@ -223,6 +243,24 @@ export default function SettingsView() {
     }
   }
 
+  const handleSaveProfile = async () => {
+    if (!myProfile?.id) return;
+    setIsSaving(true);
+    try {
+      await updateStaffMutation({
+        id: myProfile.id,
+        fullName: personalInfo.fullName,
+        email: personalInfo.email,
+        phone: personalInfo.phone,
+      }).unwrap();
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      alert(err.data?.message || "Failed to update profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleInviteSubmit = async () => {
     if (!newInvite.name || !newInvite.email) return alert("Please fill in required fields.")
     try {
@@ -279,17 +317,31 @@ export default function SettingsView() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-3xl font-black text-foreground tracking-tight">{mounted ? t('settings.title') : 'System Settings'}</h1>
-                <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.subtitle') : 'Configure your platform preferences and business rules'}</p>
+                <h1 className="text-3xl font-black text-foreground tracking-tight">
+                  {user?.role === 'TECHNICIAN' 
+                    ? (mounted ? t('settings.accountTitle') || 'Account Settings' : 'Account Settings')
+                    : (mounted ? t('settings.title') : 'System Settings')
+                  }
+                </h1>
+                <p className="text-sm text-muted-foreground font-medium">
+                  {user?.role === 'TECHNICIAN'
+                    ? (mounted ? t('settings.accountSubtitle') || 'Manage your personal profile and appearance preferences' : 'Manage your personal profile and appearance preferences')
+                    : (mounted ? t('settings.subtitle') : 'Configure your platform preferences and business rules')
+                  }
+                </p>
               </div>
-              <button 
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`flex items-center gap-2 h-11 px-6 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg transition-all active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-primary/20'}`}
-              >
-                {isSaving ? <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> : <Save className="h-4 w-4" />}
-                {isSaving ? (mounted ? t('settings.savingChanges') : 'Saving Changes...') : (mounted ? t('settings.saveSettings') : 'Save Settings')}
-              </button>
+              
+              {/* Only show global save button if not in profile tab OR if admin */}
+              {(user?.role !== 'TECHNICIAN' || activeTab !== 'profile') && (
+                <button 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`flex items-center gap-2 h-11 px-6 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg transition-all active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-primary/20'}`}
+                >
+                  {isSaving ? <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> : <Save className="h-4 w-4" />}
+                  {isSaving ? (mounted ? t('settings.savingChanges') : 'Saving Changes...') : (mounted ? t('settings.saveSettings') : 'Save Settings')}
+                </button>
+              )}
             </div>
 
             {/* Settings Layout */}
@@ -298,36 +350,48 @@ export default function SettingsView() {
               {/* Tabs Navigation */}
               <aside className="w-full lg:w-64 shrink-0">
                 <nav className="flex flex-col gap-1.5">
+                  {user?.role === 'TECHNICIAN' && (
+                    <button 
+                      onClick={() => setActiveTab("profile")}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'profile' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                    >
+                      <User className="h-4 w-4" /> {mounted ? t('settings.profile') : 'Personal Profile'}
+                    </button>
+                  )}
                   <button 
                     onClick={() => setActiveTab("general")}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'general' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
-                    <Settings className="h-4 w-4" /> {mounted ? t('settings.general') : 'General Configuration'}
+                    <Settings className="h-4 w-4" /> {mounted ? t('settings.general') : 'Appearance & Language'}
                   </button>
-                  <button 
-                    onClick={() => setActiveTab("business")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'business' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                  >
-                    <Store className="h-4 w-4" /> {mounted ? t('settings.business') : 'Business Profile'}
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab("notifications")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'notifications' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                  >
-                    <Bell className="h-4 w-4" /> {mounted ? t('settings.notifications') : 'Notification Rules'}
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab("security")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'security' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                  >
-                    <Lock className="h-4 w-4" /> {mounted ? t('settings.security') : 'Security & Privacy'}
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab("team")}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                  >
-                    <Users className="h-4 w-4" /> {mounted ? t('settings.team') : 'Team Management'}
-                  </button>
+                  {user?.role !== 'TECHNICIAN' && (
+                    <>
+                      <button 
+                        onClick={() => setActiveTab("business")}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'business' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                      >
+                        <Store className="h-4 w-4" /> {mounted ? t('settings.business') : 'Business Profile'}
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab("notifications")}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'notifications' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                      >
+                        <Bell className="h-4 w-4" /> {mounted ? t('settings.notifications') : 'Notification Rules'}
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab("security")}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'security' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                      >
+                        <Lock className="h-4 w-4" /> {mounted ? t('settings.security') : 'Security & Privacy'}
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab("team")}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                      >
+                        <Users className="h-4 w-4" /> {mounted ? t('settings.team') : 'Team Management'}
+                      </button>
+                    </>
+                  )}
                 </nav>
 
                 <div className="mt-8 p-6 rounded-2xl bg-indigo-50 border border-indigo-100 hidden lg:block">
@@ -341,6 +405,92 @@ export default function SettingsView() {
               <div className="flex-1 min-w-0 pb-12">
                 <div className="bg-card rounded-[24px] border border-border shadow-sm overflow-hidden min-h-[600px]">
                   
+                  {/* Profile Settings */}
+                  {activeTab === "profile" && (
+                    <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                      <div className="mb-8 border-b border-border pb-6 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-black text-foreground mb-1">{mounted ? t('settings.profile') : 'Personal Profile'}</h3>
+                          <p className="text-sm text-muted-foreground font-medium">{mounted ? t('settings.profileDesc') : 'Manage your personal identification and contact info'}</p>
+                        </div>
+                        <button onClick={handleSaveProfile} disabled={isSaving} className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-bold flex items-center gap-2 shadow-md hover:shadow-primary/20 transition-all">
+                          {isSaving ? <span className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" /> : <Save className="h-4 w-4" />}
+                          {mounted ? t('settings.updateProfile') : 'Update Profile'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                          <div className="space-y-2">
+                            <label className="block text-[12px] font-bold text-foreground">Full Name</label>
+                            <input 
+                              type="text" 
+                              value={personalInfo.fullName}
+                              onChange={(e) => setPersonalInfo({...personalInfo, fullName: e.target.value})}
+                              className="w-full h-11 px-4 rounded-xl border border-border bg-muted/30 focus:bg-card transition-all outline-none font-bold" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-[12px] font-bold text-foreground">Email Address</label>
+                            <input 
+                              type="email" 
+                              value={personalInfo.email}
+                              onChange={(e) => setPersonalInfo({...personalInfo, email: e.target.value})}
+                              className="w-full h-11 px-4 rounded-xl border border-border bg-muted/30 focus:bg-card transition-all outline-none font-bold" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-[12px] font-bold text-foreground">Phone Number</label>
+                            <input 
+                              type="text" 
+                              value={personalInfo.phone}
+                              onChange={(e) => setPersonalInfo({...personalInfo, phone: e.target.value})}
+                              className="w-full h-11 px-4 rounded-xl border border-border bg-muted/30 focus:bg-card transition-all outline-none font-bold" 
+                            />
+                          </div>
+                          
+                          <div className="pt-4">
+                            <button 
+                              onClick={handleSaveProfile} 
+                              disabled={isSaving}
+                              className={`w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg transition-all active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-primary/20'}`}
+                            >
+                              {isSaving ? <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> : <Save className="h-4 w-4" />}
+                              {mounted ? t('settings.updateProfile') : 'Update Profile'}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="p-6 rounded-2xl bg-muted/30 border border-border space-y-6">
+                           <div>
+                             <h4 className="text-[12px] font-black text-muted-foreground uppercase tracking-widest mb-4">Account Information</h4>
+                             <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[13px] font-medium text-muted-foreground">Access Role</span>
+                                   <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider">{user?.role}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[13px] font-medium text-muted-foreground">Shop Identity</span>
+                                   <span className="text-[13px] font-bold text-foreground">{businessSettings.name || "Main Branch"}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[13px] font-medium text-muted-foreground">Account Status</span>
+                                   <span className="flex items-center gap-1.5 text-[13px] font-bold text-emerald-600">
+                                      <div className="h-2 w-2 rounded-full bg-emerald-600" /> Verified Active
+                                   </span>
+                                </div>
+                             </div>
+                           </div>
+                           
+                           <div className="pt-6 border-t border-border">
+                              <h4 className="text-[12px] font-black text-muted-foreground uppercase tracking-widest mb-4">Security</h4>
+                              <button className="w-full h-10 rounded-lg border border-border bg-card text-[12px] font-bold hover:bg-muted transition-all">Change Password</button>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* General Settings */}
                   {activeTab === "general" && (
                     <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">

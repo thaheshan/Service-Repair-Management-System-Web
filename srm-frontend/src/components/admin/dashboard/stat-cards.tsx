@@ -2,6 +2,8 @@ import { Wrench, Clock, DollarSign, Star } from "lucide-react"
 import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 import { useTranslation } from "react-i18next"
 import { useState, useEffect } from "react"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 
 export function StatCards() {
   const { t } = useTranslation()
@@ -10,6 +12,7 @@ export function StatCards() {
 
   const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
   const analyticsData = response?.data;
+  const user = useSelector((state: RootState) => state.auth.user)
 
   const stats = [
     {
@@ -56,7 +59,14 @@ export function StatCards() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
-      {stats.map((stat) => (
+      {stats
+        .filter(stat => {
+          if (user?.role === 'TECHNICIAN') {
+            return stat.title !== 'revenue'
+          }
+          return true
+        })
+        .map((stat) => (
         <div
           key={stat.title}
           className="flex h-full items-center justify-between rounded-2xl border border-border/60 bg-card p-4 sm:p-6 shadow-sm"

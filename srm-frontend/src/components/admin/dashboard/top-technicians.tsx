@@ -16,11 +16,10 @@ function StarRating({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
           key={star}
-          className={`h-3.5 w-3.5 ${
-            star <= fullStars
+          className={`h-3.5 w-3.5 ${star <= fullStars
               ? "fill-[#F59E0B] text-[#F59E0B]"
               : "fill-[#E5E7EB] text-[#E5E7EB]"
-          }`}
+            }`}
         />
       ))}
       <span className="ml-1 text-sm font-medium text-foreground">{rating}</span>
@@ -34,9 +33,9 @@ export function TopTechnicians() {
   useEffect(() => { setMounted(true) }, [])
 
   const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
-  
-  const technicians = response?.data?.topTechnicians?.length > 0 
-    ? response.data.topTechnicians 
+
+  const technicians = response?.data?.topTechnicians?.length > 0
+    ? response.data.topTechnicians
     : fallbackTechnicians;
 
   return (
@@ -58,9 +57,8 @@ export function TopTechnicians() {
         {technicians.map((tech: any, index: number) => (
           <div
             key={tech.name + index}
-            className={`flex items-center justify-between px-5 py-3 ${
-              index !== technicians.length - 1 ? "border-b border-border" : ""
-            }`}
+            className={`flex items-center justify-between px-5 py-3 ${index !== technicians.length - 1 ? "border-b border-border" : ""
+              }`}
           >
             <div className="flex items-center gap-3 w-1/2">
               <Avatar className="h-8 w-8">

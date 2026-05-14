@@ -18,7 +18,7 @@ export const apiSlice = createApi({
     'User', 'Shop', 'Repair', 'Repairs', 'Registration',
     'Customers', 'Staff', 'Devices', 'Inventory',
     'Invoices', 'Settings', 'Dashboard', 'Schedule',
-    'Suppliers', 'PurchaseOrders',
+    'Suppliers', 'PurchaseOrders', 'StaffRoles',
   ],
   endpoints: (builder) => ({}),
 });
