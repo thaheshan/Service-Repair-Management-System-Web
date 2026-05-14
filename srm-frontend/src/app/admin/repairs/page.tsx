@@ -36,10 +36,10 @@ export default function RepairsPage() {
   const { data: staffResponse } = useGetStaffListQuery({});
   const [updateRepairStatus] = useUpdateRepairStatusMutation();
   const [deleteRepair] = useDeleteRepairMutation();
-  
+
   const apiRepairs = response?.data || [];
   const technicians = staffResponse?.staff || [];
-  
+
   const mappedRepairs = useMemo(() => {
     return apiRepairs.map((r: any, index: number) => {
       let displayStatus: RepairStatus = "Pending";
@@ -64,27 +64,27 @@ export default function RepairsPage() {
       return {
         id: r.id,
         reference: r.reference || `#REP-${r.id.substring(0, 6).toUpperCase()}`,
-        customer: { 
-          name: r.customer?.name || "Unknown", 
-          phone: r.customer?.phone || "No Phone" 
+        customer: {
+          name: r.customer?.name || "Unknown",
+          phone: r.customer?.phone || "No Phone"
         },
-        device: { 
-          type: r.device?.type || "phone", 
-          name: r.device ? `${r.device.brand} ${r.device.model}`.trim() : "Unknown Device", 
-          specs: r.device?.serialNo || r.device?.imei || r.device?.specs || "" 
+        device: {
+          type: r.device?.type || "phone",
+          name: r.device ? `${r.device.brand} ${r.device.model}`.trim() : "Unknown Device",
+          specs: r.device?.serialNo || r.device?.imei || r.device?.specs || ""
         },
         issue: r.issueDescription || r.issue || "No issue provided",
         status: displayStatus,
-        priority: r.priority 
+        priority: r.priority
           ? (r.priority.toLowerCase() === 'urgent' ? 'Urgent' : r.priority.toLowerCase() === 'high' ? 'High' : r.priority.toLowerCase() === 'low' ? 'Low' : 'Medium')
           : "Medium",
         technician: tech,
         amount: `Rs. ${displayStatus === 'Completed' ? (r.finalCost || r.estimatedCost || 0) : (r.estimatedCost || 0)}`,
-        dueDate: { 
-          text: r.estimatedCompletionDate 
-            ? new Date(r.estimatedCompletionDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) 
-            : new Date(new Date(r.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), 
-          isOverdue: r.estimatedCompletionDate ? new Date(r.estimatedCompletionDate) < new Date() : false 
+        dueDate: {
+          text: r.estimatedCompletionDate
+            ? new Date(r.estimatedCompletionDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            : new Date(new Date(r.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          isOverdue: r.estimatedCompletionDate ? new Date(r.estimatedCompletionDate) < new Date() : false
         },
         createdAt: new Date(r.createdAt).toISOString().slice(0, 10)
       }
@@ -109,30 +109,30 @@ export default function RepairsPage() {
     }));
   }, [technicians]);
 
-function getWeekStart(): Date {
-  const d = new Date(); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0); return d
-}
-function getMonthStart(): Date {
-  const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d
-}
+  function getWeekStart(): Date {
+    const d = new Date(); d.setDate(d.getDate() - d.getDay()); d.setHours(0, 0, 0, 0); return d
+  }
+  function getMonthStart(): Date {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d
+  }
 
-function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePreset, from: string, to: string): boolean {
-  if (!dateRange || !createdAt) return true
-  const repairDate = new Date(createdAt); repairDate.setHours(0,0,0,0)
-  const now = new Date(); now.setHours(0,0,0,0)
-  if (dateRange === "today")      return repairDate.getTime() === now.getTime()
-  if (dateRange === "this-week")  return repairDate >= getWeekStart() && repairDate <= now
-  if (dateRange === "this-month") return repairDate >= getMonthStart() && repairDate <= now
-  if (dateRange === "last-30")    { const c = new Date(now); c.setDate(c.getDate()-30); return repairDate >= c && repairDate <= now }
-  if (dateRange === "custom") {
-    const f = from ? new Date(from) : null; if (f) f.setHours(0,0,0,0)
-    const t = to   ? new Date(to)   : null; if (t) t.setHours(23,59,59,999)
-    if (f && repairDate < f) return false
-    if (t && repairDate > t) return false
+  function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePreset, from: string, to: string): boolean {
+    if (!dateRange || !createdAt) return true
+    const repairDate = new Date(createdAt); repairDate.setHours(0, 0, 0, 0)
+    const now = new Date(); now.setHours(0, 0, 0, 0)
+    if (dateRange === "today") return repairDate.getTime() === now.getTime()
+    if (dateRange === "this-week") return repairDate >= getWeekStart() && repairDate <= now
+    if (dateRange === "this-month") return repairDate >= getMonthStart() && repairDate <= now
+    if (dateRange === "last-30") { const c = new Date(now); c.setDate(c.getDate() - 30); return repairDate >= c && repairDate <= now }
+    if (dateRange === "custom") {
+      const f = from ? new Date(from) : null; if (f) f.setHours(0, 0, 0, 0)
+      const t = to ? new Date(to) : null; if (t) t.setHours(23, 59, 59, 999)
+      if (f && repairDate < f) return false
+      if (t && repairDate > t) return false
+      return true
+    }
     return true
   }
-  return true
-}
 
   // UI state
   const [showFilters, setShowFilters] = useState(false)
@@ -172,11 +172,11 @@ function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePre
       };
 
       try {
-        await updateRepairStatus({ 
-          id: pendingStatusUpdate.repairId, 
+        await updateRepairStatus({
+          id: pendingStatusUpdate.repairId,
           status: backendStatusMap[newStatus] || "NOT_STARTED"
         }).unwrap();
-        
+
         // Local state update for immediate feedback
         setRepairs(cur => cur.map(r => r.id === pendingStatusUpdate.repairId ? { ...r, status: newStatus } : r))
         toast.success(`Status updated to ${newStatus}`);
@@ -193,7 +193,7 @@ function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePre
         id: repairId,
         technicianId: tech?.id || null
       }).unwrap();
-      
+
       setRepairs(cur => cur.map(r => r.id === repairId ? { ...r, technician: tech } : r))
     } catch (err) {
       console.error("Failed to update technician:", err);
@@ -232,11 +232,11 @@ function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePre
       const tabMap: Record<string, string> = { pending: "Pending", "in-progress": "In Progress", ready: "Ready", completed: "Completed", "on-hold": "On Hold" }
       result = result.filter(r => r.status === tabMap[activeTab])
     }
-    if (activeFilters.statuses.length)     result = result.filter(r => activeFilters.statuses.includes(r.status))
-    if (activeFilters.priorities.length)   result = result.filter(r => activeFilters.priorities.includes(r.priority))
-    if (activeFilters.deviceTypes.length)  result = result.filter(r => activeFilters.deviceTypes.includes(r.device.type))
-    if (activeFilters.technicians.length)  result = result.filter(r => r.technician && activeFilters.technicians.includes(r.technician.name))
-    if (activeFilters.dateRange)           result = result.filter(r => matchesDateRange(r.createdAt, activeFilters.dateRange, activeFilters.customDateFrom, activeFilters.customDateTo))
+    if (activeFilters.statuses.length) result = result.filter(r => activeFilters.statuses.includes(r.status))
+    if (activeFilters.priorities.length) result = result.filter(r => activeFilters.priorities.includes(r.priority))
+    if (activeFilters.deviceTypes.length) result = result.filter(r => activeFilters.deviceTypes.includes(r.device.type))
+    if (activeFilters.technicians.length) result = result.filter(r => r.technician && activeFilters.technicians.includes(r.technician.name))
+    if (activeFilters.dateRange) result = result.filter(r => matchesDateRange(r.createdAt, activeFilters.dateRange, activeFilters.customDateFrom, activeFilters.customDateTo))
 
     const isActive = activeTab !== "all" || !!searchQuery.trim() ||
       activeFilters.statuses.length > 0 || activeFilters.priorities.length > 0 ||
@@ -268,9 +268,9 @@ function matchesDateRange(createdAt: string | undefined, dateRange: DateRangePre
         <main className="flex-1 overflow-y-auto w-full flex flex-col custom-scrollbar">
           <div className="bg-background px-4 lg:px-8 pt-6 pb-4">
             <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
-               <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title', 'Dashboard') : 'Dashboard'}</Link>
-               <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-               <span className="text-[#0F172A]">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
+              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title', 'Dashboard') : 'Dashboard'}</Link>
+              <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+              <span className="text-[#0F172A]">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
             </div>
             <h1 className="text-[28px] font-black text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
           </div>

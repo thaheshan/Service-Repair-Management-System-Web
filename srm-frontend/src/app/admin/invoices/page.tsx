@@ -343,15 +343,17 @@ export default function InvoicesManagementPage() {
 
       return r.sort((a, b) => {
          if (sortKey === "date-new") return new Date(b.date).getTime() - new Date(a.date).getTime()
-         if (sortKey === "date-old") return new Date(a.date).getTime() - new Date(b.date).getTime()
-         if (sortKey === "amount-high") return b.amount - a.amount
-         if (sortKey === "amount-low") return a.amount - b.amount
+         if (sortKey === "date-old") return new Date(a.date).getTime() - new Date(a.date).getTime()
+         if (user?.role !== 'TECHNICIAN') {
+            if (sortKey === "amount-high") return b.amount - a.amount
+            if (sortKey === "amount-low") return a.amount - b.amount
+         }
          if (sortKey === "name-az") return a.name.localeCompare(b.name)
          if (sortKey === "name-za") return b.name.localeCompare(a.name)
          if (sortKey === "id-az") return a.invoiceId.localeCompare(b.invoiceId)
          return 0
       })
-   }, [invoicesState, searchTerm, activeTab, filterTypes, filterStatuses, filterAmountRange, filterDateFrom, filterDateTo, sortKey])
+   }, [invoicesState, searchTerm, activeTab, filterTypes, filterStatuses, filterAmountRange, filterDateFrom, filterDateTo, sortKey, user?.role])
 
 
    return (
@@ -411,15 +413,18 @@ export default function InvoicesManagementPage() {
                               </button>
                               {isSortOpen && (
                                  <div className="absolute top-12 right-0 w-48 bg-white rounded-xl border border-border shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {SORT_OPTIONS.map(opt => (
-                                       <button
-                                          key={opt.value}
-                                          onClick={() => setSortKey(opt.value)}
-                                          className={`w-full text-left px-4 py-2.5 text-[12px] font-bold transition-colors focus:outline-none ${sortKey === opt.value ? 'bg-[#4F46E5]/10 text-[#4F46E5]' : 'text-[#0F172A] hover:bg-[#F8FAFC]'}`}
-                                       >
-                                          {opt.label}
-                                       </button>
-                                    ))}
+                                    {SORT_OPTIONS.map(opt => {
+                                        if (user?.role === 'TECHNICIAN' && (opt.value === 'amount-high' || opt.value === 'amount-low')) return null;
+                                        return (
+                                           <button
+                                              key={opt.value}
+                                              onClick={() => setSortKey(opt.value)}
+                                              className={`w-full text-left px-4 py-2.5 text-[12px] font-bold transition-colors focus:outline-none ${sortKey === opt.value ? 'bg-[#4F46E5]/10 text-[#4F46E5]' : 'text-[#0F172A] hover:bg-[#F8FAFC]'}`}
+                                           >
+                                              {opt.label}
+                                           </button>
+                                        )
+                                    })}
                                  </div>
                               )}
                            </div>
@@ -489,13 +494,15 @@ export default function InvoicesManagementPage() {
                                     </p>
                                  )}
 
-                                 <div className="pt-4 border-t border-slate-50">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Amount</p>
-                                    <div className="flex items-baseline gap-1">
-                                       <span className="text-[14px] font-bold text-slate-400">Rs.</span>
-                                       <span className="text-[26px] font-black text-[#0F172A] tracking-tighter">{(inv.amount ?? 0).toLocaleString()}</span>
-                                    </div>
-                                 </div>
+                                 {user?.role !== 'TECHNICIAN' && (
+                                   <div className="pt-4 border-t border-slate-50">
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Amount</p>
+                                      <div className="flex items-baseline gap-1">
+                                         <span className="text-[14px] font-bold text-slate-400">Rs.</span>
+                                         <span className="text-[26px] font-black text-[#0F172A] tracking-tighter">{(inv.amount ?? 0).toLocaleString()}</span>
+                                      </div>
+                                   </div>
+                                 )}
                               </div>
 
                               <div className="mt-auto grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 bg-slate-50/50">
@@ -505,9 +512,11 @@ export default function InvoicesManagementPage() {
                                  <button onClick={() => setEditInvoiceTarget(inv)} className="h-12 flex justify-center items-center text-slate-400 hover:bg-white hover:text-[#4F46E5] transition-all focus:outline-none group/btn">
                                     <Edit2 className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
                                  </button>
-                                 <button onClick={() => setDeleteFormTarget(inv)} className="h-12 flex justify-center items-center text-slate-400 hover:bg-white hover:text-red-600 transition-all focus:outline-none group/btn">
-                                    <Trash2 className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
-                                 </button>
+                                 {user?.role !== 'TECHNICIAN' && (
+                                   <button onClick={() => setDeleteFormTarget(inv)} className="h-12 flex justify-center items-center text-slate-400 hover:bg-white hover:text-red-600 transition-all focus:outline-none group/btn">
+                                      <Trash2 className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                                   </button>
+                                 )}
                               </div>
                            </div>
                         ))}
@@ -522,7 +531,7 @@ export default function InvoicesManagementPage() {
                                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest">Type</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest cursor-pointer hover:bg-muted/50 transition-colors">Invoice <ArrowUpDown className="h-3 w-3 inline-block ml-1 opacity-50" /></th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest cursor-pointer hover:bg-muted/50 transition-colors">Details <ArrowUpDown className="h-3 w-3 inline-block ml-1 opacity-50" /></th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest cursor-pointer hover:bg-muted/50 transition-colors">Amount <ArrowUpDown className="h-3 w-3 inline-block ml-1 opacity-50" /></th>
+                                    {user?.role !== 'TECHNICIAN' && <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest cursor-pointer hover:bg-muted/50 transition-colors">Amount <ArrowUpDown className="h-3 w-3 inline-block ml-1 opacity-50" /></th>}
                                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest cursor-pointer hover:bg-muted/50 transition-colors">Date <ArrowUpDown className="h-3 w-3 inline-block ml-1 opacity-50" /></th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground tracking-widest text-right">Actions</th>
                                  </tr>
@@ -553,12 +562,14 @@ export default function InvoicesManagementPage() {
                                              )}
                                           </div>
                                        </td>
+                                       {user?.role !== 'TECHNICIAN' && (
                                        <td className="px-6 py-4">
                                           <div className="flex flex-col">
                                              <span className="text-[14px] font-black text-[#0F172A]">Rs. {(inv.amount ?? 0).toLocaleString()}</span>
                                              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md border w-fit mt-1 uppercase tracking-wider ${STATUS_STYLE[inv.status]}`}>{inv.status}</span>
                                           </div>
                                        </td>
+                                       )}
                                        <td className="px-6 py-4">
                                           <div className="flex flex-col text-[12px]">
                                              <span className="font-bold text-[#0F172A]">{new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
@@ -576,10 +587,14 @@ export default function InvoicesManagementPage() {
                                                       <button onClick={() => { handleDownloadPDF(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-[12px] font-bold text-[#0F172A] hover:bg-slate-50">
                                                          <Download className="h-3.5 w-3.5 text-slate-400" /> Download PDF
                                                       </button>
-                                                      <div className="w-full h-px bg-slate-100 my-1" />
-                                                      <button onClick={() => { setDeleteFormTarget(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center justify-between gap-2 px-4 py-2.5 text-[12px] font-bold text-red-600 hover:bg-red-50">
-                                                         Delete Record <Trash2 className="h-3.5 w-3.5" />
-                                                      </button>
+                                                      {user?.role !== 'TECHNICIAN' && (
+                                                         <>
+                                                            <div className="w-full h-px bg-slate-100 my-1" />
+                                                            <button onClick={() => { setDeleteFormTarget(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center justify-between gap-2 px-4 py-2.5 text-[12px] font-bold text-red-600 hover:bg-red-50">
+                                                               Delete Record <Trash2 className="h-3.5 w-3.5" />
+                                                            </button>
+                                                         </>
+                                                      )}
                                                    </div>
                                                 )}
                                              </div>

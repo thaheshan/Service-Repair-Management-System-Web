@@ -127,6 +127,7 @@ export default function SchedulePage() {
       
       return {
         id: a.id,
+        repairId: a.repairId,
         dayIdx,
         startHr,
         duration: (a.duration || 60) / 60,
@@ -215,7 +216,14 @@ export default function SchedulePage() {
     const techMatch = filters.technicianId === "all" || filters.technicianId === app.technicianId
     const serviceMatch = filters.serviceTypeId === "all" || filters.serviceTypeId === app.serviceTypeId
     
-    return statusMatch && techMatch && serviceMatch
+    let isVisible = statusMatch && techMatch && serviceMatch;
+
+    // For technicians, strictly only show their own appointments
+    if (user?.role === 'TECHNICIAN') {
+      isVisible = isVisible && app.technicianId === user.id;
+    }
+
+    return isVisible;
   })
 
   return (

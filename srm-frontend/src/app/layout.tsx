@@ -22,6 +22,8 @@ import { AuthLoader } from "@/components/auth/auth-loader";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/providers/i18n-provider";
 
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,6 +39,7 @@ export default function RootLayout({
             <I18nProvider>
               <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                 {children}
+                <Toaster richColors position="top-right" />
               </ThemeProvider>
             </I18nProvider>
           </AuthLoader>

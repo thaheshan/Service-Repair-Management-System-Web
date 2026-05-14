@@ -36,6 +36,33 @@ export const staffApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Staff', 'Dashboard'],
     }),
+    getStaffRoles: builder.query({
+      query: () => '/v1/staff/roles',
+      providesTags: ['StaffRoles'],
+    }),
+    addStaffRole: builder.mutation({
+      query: (data) => ({
+        url: '/v1/staff/roles',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['StaffRoles'],
+    }),
+    updateStaffRole: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/v1/staff/roles/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['StaffRoles'],
+    }),
+    deleteStaffRole: builder.mutation({
+      query: (id) => ({
+        url: `/v1/staff/roles/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['StaffRoles'],
+    }),
   }),
 });
 
@@ -45,4 +72,8 @@ export const {
   useCreateStaffMutation,
   useUpdateStaffMutation,
   useDeleteStaffMutation,
+  useGetStaffRolesQuery,
+  useAddStaffRoleMutation,
+  useUpdateStaffRoleMutation,
+  useDeleteStaffRoleMutation,
 } = staffApiSlice;

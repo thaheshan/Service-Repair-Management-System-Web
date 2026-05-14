@@ -8,6 +8,7 @@ const hours = [
 
 export type Appointment = {
   id: string | number
+  repairId?: string
   dayIdx: number
   startHr: number
   duration: number
@@ -186,7 +187,12 @@ export function ScheduleCalendar({ days, appointments, onUpdateAppointment, onUp
                        onDragStart={(e) => handleDragStart(e, app.id)} onDrag={(e) => handleDrag(e, app.id, colIdx)} onDragEnd={() => setDraggingInfo(null)}
                        className={`absolute left-[4px] right-[4px] p-2 rounded-md ${app.color} text-white shadow-md pointer-events-auto hover:brightness-110 cursor-move transition-all border border-white/20 flex flex-col group/card ${draggingInfo?.id === app.id ? 'opacity-40 grayscale-[0.5]' : ''}`}
                        style={{ top: `${topPx + 4}px`, height: `${heightPx - 8}px`, zIndex: isResizing || draggingInfo?.id === app.id ? 50 : 10 }}
-                       onClick={() => router.push(`/admin/repairs/${app.id}?from=schedule`)}
+                       onClick={() => {
+                          console.log("Appointment Data:", app);
+                          if (app.repairId) {
+                            router.push(`/admin/repairs/${app.repairId}?from=schedule`);
+                          }
+                       }}
                      >
                        <div className="flex items-start gap-2 h-full overflow-hidden pointer-events-none mb-1 relative">
                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">

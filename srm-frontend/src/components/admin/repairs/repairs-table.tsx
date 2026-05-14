@@ -4,6 +4,8 @@ import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 
 export type RepairStatus = "All" | "Pending" | "In Progress" | "Ready" | "Completed" | "Paid" | "On Hold"
 export type PriorityLevel = "Urgent" | "High" | "Medium" | "Low"
@@ -57,12 +59,12 @@ const DeviceIconLg = ({ type }: { type: string }) => {
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "Pending":     { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200" },
-  "In Progress": { bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-200" },
-  "Ready":       { bg: "bg-green-50",  text: "text-green-700",  border: "border-green-200" },
-  "Completed":   { bg: "bg-emerald-50",text: "text-emerald-700",border: "border-emerald-200" },
-  "Paid":        { bg: "bg-emerald-100",text: "text-emerald-800",border: "border-emerald-300" },
-  "On Hold":     { bg: "bg-gray-100",  text: "text-gray-600",   border: "border-gray-200" },
+  "Pending": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  "In Progress": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  "Ready": { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
+  "Completed": { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  "Paid": { bg: "bg-emerald-100", text: "text-emerald-800", border: "border-emerald-300" },
+  "On Hold": { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -92,6 +94,7 @@ function RepairCard({
   onStatusChangeRequest: (id: string, status: RepairStatus) => void
   onTechnicianChange: (id: string, tech: any) => void
   onDeleteRequest?: (id: string, ref: string) => void
+  userRole?: string
 }) {
   const statusStyle = STATUS_COLORS[r.status] || { bg: "bg-muted", text: "text-foreground", border: "border-border" }
   const priorityColor = PRIORITY_COLORS[r.priority] || "text-foreground"
@@ -143,13 +146,15 @@ function RepairCard({
                   <span className="text-sm font-semibold">View Details</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDeleteRequest?.(r.id, r.reference)}
-                className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="text-sm font-semibold">Delete Task</span>
-              </DropdownMenuItem>
+              {userRole !== 'TECHNICIAN' && (
+                <DropdownMenuItem
+                  onClick={() => onDeleteRequest?.(r.id, r.reference)}
+                  className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Delete Task</span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -177,7 +182,7 @@ function RepairCard({
             {r.priority === "Urgent" && <AlertCircle className="h-3 w-3" />}
             <span>{r.priority}</span>
           </div>
-          <span className="text-[12px] font-bold text-[#10B981]">{r.amount}</span>
+          {userRole !== 'TECHNICIAN' && <span className="text-[12px] font-bold text-[#10B981]">{r.amount}</span>}
         </div>
       </div>
 
@@ -231,6 +236,8 @@ function RepairCard({
 export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTabChange, onStatusChangeRequest, onTechnicianChange, onDeleteRequest, viewMode = "list", currentPage, perPage, totalFiltered, onPageChange, onPerPageChange }: RepairsTableProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const user = useSelector((state: RootState) => state.auth.user)
+  
   useEffect(() => setMounted(true), []);
 
   const tabs = [
@@ -250,11 +257,10 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-2 pb-3 pt-4 text-[13px] font-semibold transition-colors border-b-[3px] whitespace-nowrap ${
-              activeTab === tab.id
+            className={`flex items-center gap-2 pb-3 pt-4 text-[13px] font-semibold transition-colors border-b-[3px] whitespace-nowrap ${activeTab === tab.id
                 ? 'border-[#4F46E5] text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-            }`}
+              }`}
           >
             {tab.label}
             {tab.id !== "all" && <span className="text-[11px] font-medium opacity-70">({tab.count})</span>}
@@ -284,6 +290,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                   onStatusChangeRequest={onStatusChangeRequest}
                   onTechnicianChange={onTechnicianChange}
                   onDeleteRequest={onDeleteRequest}
+                  userRole={user?.role}
                 />
               ))}
             </div>
@@ -302,7 +309,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-center">{mounted ? t('common.status', 'Status') : 'Status'} <span className="text-[10px]">↕</span></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('repairs.form.priority', 'Priority') : 'Priority'} <span className="text-[10px]">↕</span></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('schedule.technician', 'Technician') : 'Technician'} <span className="text-[10px]">↕</span></th>
-                <th className="px-3 py-3 font-bold whitespace-nowrap text-right">{mounted ? t('invoicesPage.amount', 'Amount') : 'Amount'} <span className="text-[10px]">↕</span></th>
+                {user?.role !== 'TECHNICIAN' && <th className="px-3 py-3 font-bold whitespace-nowrap text-right">{mounted ? t('invoicesPage.amount', 'Amount') : 'Amount'} <span className="text-[10px]">↕</span></th>}
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Due Date <span className="text-[10px]">↕</span></th>
                 <th className="px-5 py-3 font-bold text-right">{mounted ? t('devicesPage.actions', 'Actions') : 'Actions'}</th>
               </tr>
@@ -349,26 +356,26 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                     </td>
                     <td className="px-3 py-3 align-middle">
                       <div className="flex justify-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="flex items-center gap-1 rounded-full border border-border bg-white px-3 py-1 text-[11px] font-bold text-[#4F46E5] hover:bg-muted shadow-sm shadow-black/5 min-w-[100px] justify-between focus:outline-none">
-                            {r.status}
-                            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[140px] z-50">
-                          {STATUS_OPTIONS.map((status) => (
-                            <DropdownMenuItem
-                              key={status}
-                              onClick={() => onStatusChangeRequest(r.id, status)}
-                              className="cursor-pointer flex items-center justify-between"
-                            >
-                              <span className="text-[12px] font-semibold">{status}</span>
-                              {r.status === status && <Check className="h-3.5 w-3.5 text-[#4F46E5]" />}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="flex items-center gap-1 rounded-full border border-border bg-white px-3 py-1 text-[11px] font-bold text-[#4F46E5] hover:bg-muted shadow-sm shadow-black/5 min-w-[100px] justify-between focus:outline-none">
+                              {r.status}
+                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[140px] z-50">
+                            {STATUS_OPTIONS.map((status) => (
+                              <DropdownMenuItem
+                                key={status}
+                                onClick={() => onStatusChangeRequest(r.id, status)}
+                                className="cursor-pointer flex items-center justify-between"
+                              >
+                                <span className="text-[12px] font-semibold">{status}</span>
+                                {r.status === status && <Check className="h-3.5 w-3.5 text-[#4F46E5]" />}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                     <td className="px-3 py-3 align-middle">
@@ -414,9 +421,11 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
-                    <td className="px-3 py-3 align-middle text-right">
-                      <span className="text-[12px] font-bold text-[#10B981]">{r.amount}</span>
-                    </td>
+                    {user?.role !== 'TECHNICIAN' && (
+                      <td className="px-3 py-3 align-middle text-right">
+                        <span className="text-[12px] font-bold text-[#10B981]">{r.amount}</span>
+                      </td>
+                    )}
                     <td className="px-3 py-3 align-middle min-w-[140px]">
                       <div className={`flex items-center gap-1.5 text-[12px] font-semibold ${r.dueDate.isOverdue ? 'text-[#EF4444]' : 'text-foreground'}`}>
                         <Calendar className={`h-3.5 w-3.5 ${r.dueDate.isOverdue ? 'text-[#EF4444]' : 'text-muted-foreground'}`} />
@@ -427,20 +436,22 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                       <div className="flex items-center justify-end gap-2 text-muted-foreground">
                         <Link href={`/admin/repairs/${r.id}?from=repairs`} className="rounded p-1.5 hover:bg-muted hover:text-[#4F46E5] transition-colors focus:outline-none"><Eye className="h-4 w-4" /></Link>
                         <Link href={`/admin/repairs/edit/${r.id}`} className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><Edit2 className="h-4 w-4" /></Link>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><MoreVertical className="h-4 w-4" /></button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-[160px] z-50">
-                            <DropdownMenuItem
-                              onClick={() => onDeleteRequest?.(r.id, r.reference)}
-                              className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="text-sm font-semibold">Delete Task</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {user?.role !== 'TECHNICIAN' && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><MoreVertical className="h-4 w-4" /></button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px] z-50">
+                              <DropdownMenuItem
+                                onClick={() => onDeleteRequest?.(r.id, r.reference)}
+                                className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="text-sm font-semibold">Delete Task</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -511,11 +522,10 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                 <button
                   key={p}
                   onClick={() => onPageChange(p as number)}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md text-[12px] font-semibold transition-colors ${
-                    currentPage === p
+                  className={`flex h-7 w-7 items-center justify-center rounded-md text-[12px] font-semibold transition-colors ${currentPage === p
                       ? "bg-[#4F46E5] text-white shadow-sm"
                       : "border border-border bg-white hover:bg-muted text-foreground"
-                  }`}
+                    }`}
                 >
                   {p}
                 </button>

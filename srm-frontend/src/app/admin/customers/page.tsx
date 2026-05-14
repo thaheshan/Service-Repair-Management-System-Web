@@ -1,6 +1,8 @@
 "use client"
 import { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
@@ -18,8 +20,6 @@ const SORT_OPTIONS: {value: SortKey; label: string}[] = [
   {value:"name-za",      label:"Name (Z–A)"},
   {value:"repairs-desc", label:"Most Repairs"},
   {value:"repairs-asc",  label:"Fewest Repairs"},
-  {value:"spent-desc",   label:"Highest Spent"},
-  {value:"spent-asc",    label:"Lowest Spent"},
   {value:"latest-visit", label:"Most Recent Visit"},
   {value:"oldest-visit", label:"Oldest Visit"},
 ]
@@ -37,6 +37,7 @@ import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 export default function CustomerManagementPage() {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const user = useSelector((state: RootState) => state.auth.user)
   useEffect(() => setMounted(true), []);
 
   const { data: response, isLoading } = useGetCustomersQuery({});
@@ -315,11 +316,13 @@ export default function CustomerManagementPage() {
                     <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-1"><span>0</span><span>50+</span></div>
                   </div>
                   {/* Spent */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3"><p className="text-[12px] font-bold text-[#0F172A]">Total Spent</p><span className="text-[12px] text-[#4F46E5] font-bold">Rs. 0–{filterSpentMax===100?"100k+":filterSpentMax+"k"}</span></div>
-                    <input type="range" min={0} max={100} value={filterSpentMax} onChange={e=>{setFilterSpentMax(+e.target.value);setCurrentPage(1)}} className="w-full h-1.5 bg-[#E2E8F0] rounded-full accent-[#4F46E5] cursor-pointer"/>
-                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-1"><span>Rs. 0</span><span>Rs. 100k+</span></div>
-                  </div>
+                  {user?.role !== 'TECHNICIAN' && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3"><p className="text-[12px] font-bold text-[#0F172A]">Total Spent</p><span className="text-[12px] text-[#4F46E5] font-bold">Rs. 0–{filterSpentMax===100?"100k+":filterSpentMax+"k"}</span></div>
+                      <input type="range" min={0} max={100} value={filterSpentMax} onChange={e=>{setFilterSpentMax(+e.target.value);setCurrentPage(1)}} className="w-full h-1.5 bg-[#E2E8F0] rounded-full accent-[#4F46E5] cursor-pointer"/>
+                      <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-1"><span>Rs. 0</span><span>Rs. 100k+</span></div>
+                    </div>
+                  )}
                   {/* Last Visit */}
                   <div>
                     <p className="text-[12px] font-bold text-[#0F172A] mb-3">Last Visit</p>
@@ -373,8 +376,12 @@ export default function CustomerManagementPage() {
                     </div>
                     <div className="flex items-center justify-between w-full mb-4">
                       <div className="flex flex-col items-center flex-1"><span className="text-[17px] font-black text-[#0F172A]">{c.repairs}</span><span className="text-[10px] text-muted-foreground font-bold tracking-wider">REPAIRS</span></div>
-                      <div className="h-8 w-px bg-border"/>
-                      <div className="flex flex-col items-center flex-1"><span className="text-[17px] font-black text-[#0F172A]">{formatSpent(c.spentRaw)}</span><span className="text-[10px] text-muted-foreground font-bold tracking-wider">SPENT</span></div>
+                      {user?.role !== 'TECHNICIAN' && (
+                        <>
+                          <div className="h-8 w-px bg-border"/>
+                          <div className="flex flex-col items-center flex-1"><span className="text-[17px] font-black text-[#0F172A]">{formatSpent(c.spentRaw)}</span><span className="text-[10px] text-muted-foreground font-bold tracking-wider">SPENT</span></div>
+                        </>
+                      )}
                       <div className="h-8 w-px bg-border"/>
                       <div className="flex flex-col items-center flex-1"><span className="text-[17px] font-black text-[#0F172A]">{visitLabel(c.lastVisitDays)}</span><span className="text-[10px] text-muted-foreground font-bold tracking-wider">LAST VISIT</span></div>
                     </div>
@@ -397,7 +404,7 @@ export default function CustomerManagementPage() {
                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground uppercase tracking-wider text-center">Type</th>
                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground uppercase tracking-wider text-center">Repairs</th>
-                    <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground uppercase tracking-wider text-right">Spent</th>
+                    {user?.role !== 'TECHNICIAN' && <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground uppercase tracking-wider text-right">Spent</th>}
                     <th className="px-6 py-4 text-[12px] font-bold text-muted-foreground uppercase tracking-wider text-right">Actions</th>
                   </tr></thead>
                   <tbody className="divide-y divide-border">
@@ -418,7 +425,7 @@ export default function CustomerManagementPage() {
 
                         </td>
                         <td className="px-6 py-4 text-center"><span className="font-bold text-[#0F172A]">{c.repairs}</span></td>
-                        <td className="px-6 py-4 text-right"><span className="font-bold text-[#10B981]">{formatSpent(c.spentRaw)}</span></td>
+                        {user?.role !== 'TECHNICIAN' && <td className="px-6 py-4 text-right"><span className="font-bold text-[#10B981]">{formatSpent(c.spentRaw)}</span></td>}
                         <td className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1.5">
                           <Link href={`/admin/customers/${c.id}`} className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors"><Mail className="h-3.5 w-3.5"/></Link>
                           {(["Phone","SMS"] as const).map(t=><button key={t} onClick={()=>setCommModal({type:t,customer:c})} className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors">{t==="Phone"?<Phone className="h-3.5 w-3.5"/>:<MessageSquare className="h-3.5 w-3.5"/>}</button>)}

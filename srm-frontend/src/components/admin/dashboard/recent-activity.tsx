@@ -12,6 +12,9 @@ import {
 import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 import { useTranslation } from "react-i18next"
 import { useEffect } from "react"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+import { useRouter } from "next/navigation"
 
 const formatTimeAgo = (date: any) => {
   if (!date) return "Just now";
@@ -43,9 +46,11 @@ const getActivityStyles = (type: string, title: string) => {
 
 export function RecentActivity() {
   const { t } = useTranslation()
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
+  const user = useSelector((state: RootState) => state.auth.user);
   const { data: response, isLoading, isError } = useGetDashboardAnalyticsQuery(7);
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filterType, setFilterType] = useState("All")
@@ -54,35 +59,42 @@ export function RecentActivity() {
   const allActivities = useMemo(() => {
     const rawNotifications = response?.data?.notifications || [];
     if (rawNotifications.length === 0) return [];
-    
-    return rawNotifications.map((n: any) => {
-      const type = n.type || "SYSTEM";
-      const title = n.title || "Shop Event";
-      const styles = getActivityStyles(type, title.toLowerCase());
-      
-      // Parse highlight (heuristic)
-      let highlight = "";
-      const desc = n.description || n.message || "";
-      if (desc.includes("by")) {
-        const parts = desc.split("by");
-        highlight = parts[parts.length - 1].trim();
-      } else if (desc.includes("for")) {
-        const parts = desc.split("for");
-        highlight = parts[parts.length - 1].trim();
-      }
 
-      return {
-        id: n.id,
-        type: type === "REPAIR" ? "Repair" : type === "INVENTORY" ? "Inventory" : "System",
-        ...styles,
-        title: title,
-        highlight: highlight,
-        description: desc,
-        time: formatTimeAgo(n.time || n.createdAt),
-        timestamp: (n.time || n.createdAt) ? new Date(n.time || n.createdAt).getTime() : Date.now()
-      }
-    });
-  }, [response])
+    return rawNotifications
+      .filter((n: any) => {
+        if (user?.role === 'TECHNICIAN' && n.type === 'REPAIR') {
+          return !n.technicianId || n.technicianId === user.id;
+        }
+        return true;
+      })
+      .map((n: any) => {
+        const type = n.type || "SYSTEM";
+        const title = n.title || "Shop Event";
+        const styles = getActivityStyles(type, title.toLowerCase());
+
+        // Parse highlight (heuristic)
+        let highlight = "";
+        const desc = n.description || n.message || "";
+        if (desc.includes("by")) {
+          const parts = desc.split("by");
+          highlight = parts[parts.length - 1].trim();
+        } else if (desc.includes("for")) {
+          const parts = desc.split("for");
+          highlight = parts[parts.length - 1].trim();
+        }
+
+        return {
+          id: n.id,
+          type: type === "REPAIR" ? "Repair" : type === "INVENTORY" ? "Inventory" : "System",
+          ...styles,
+          title: title,
+          highlight: highlight,
+          description: desc,
+          time: formatTimeAgo(n.time || n.createdAt),
+          timestamp: (n.time || n.createdAt) ? new Date(n.time || n.createdAt).getTime() : Date.now()
+        }
+      });
+  }, [response, user])
 
   // For the dashboard widget, always show only the 4 newest
   const widgetActivities = allActivities.slice(0, 4)
@@ -90,7 +102,7 @@ export function RecentActivity() {
   // For the modal, apply filters and sort
   const filteredActivities = useMemo(() => {
     let result = [...allActivities]
-    
+
     // Filter
     if (filterType !== "All") {
       result = result.filter(a => a.type === filterType)
@@ -134,34 +146,33 @@ export function RecentActivity() {
             </div>
           ) : (
             widgetActivities.map((activity, index) => (
-            <div
-              key={activity.id}
-              onClick={() => activity.link && router.push(activity.link)}
-              className={`flex gap-3.5 py-3.5 group ${
-                index !== widgetActivities.length - 1 ? "border-b border-border" : ""
-              } ${activity.link ? "cursor-pointer hover:bg-muted/50 transition-colors px-1 rounded-lg" : ""}`}
-            >
-              {/* Icon */}
-              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity.iconBg} group-hover:scale-110 transition-transform`}>
-                <activity.icon className={`h-4.5 w-4.5 ${activity.iconColor}`} />
+              <div
+                key={activity.id}
+                onClick={() => activity.link && router.push(activity.link)}
+                className={`flex gap-3.5 py-3.5 group ${index !== widgetActivities.length - 1 ? "border-b border-border" : ""
+                  } ${activity.link ? "cursor-pointer hover:bg-muted/50 transition-colors px-1 rounded-lg" : ""}`}
+              >
+                {/* Icon */}
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity.iconBg} group-hover:scale-110 transition-transform`}>
+                  <activity.icon className={`h-4.5 w-4.5 ${activity.iconColor}`} />
+                </div>
+                {/* Content */}
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-sm text-foreground">
+                    {activity.title}{" "}
+                    <span className="font-semibold">{activity.highlight}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{activity.description}</p>
+                  <p className="text-xs text-muted-foreground">{activity.time}</p>
+                </div>
               </div>
-              {/* Content */}
-              <div className="flex flex-col gap-0.5">
-                <p className="text-sm text-foreground">
-                  {activity.title}{" "}
-                  <span className="font-semibold">{activity.highlight}</span>
-                </p>
-                <p className="text-xs text-muted-foreground line-clamp-1">{activity.description}</p>
-                <p className="text-xs text-muted-foreground">{activity.time}</p>
-              </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
         </div>
 
         {/* Footer Link */}
         <div className="mt-auto border-t border-border px-5 py-3 text-center flex items-center justify-center">
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="text-sm font-medium text-primary hover:underline focus:outline-none"
           >
@@ -172,11 +183,11 @@ export function RecentActivity() {
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
-          
+
           <DialogHeader className="p-6 pb-4 border-b border-border bg-[#F8FAFC]">
             <div className="flex items-center justify-between mb-4 pr-8">
               <DialogTitle className="text-xl font-bold text-[#0F172A]">{mounted ? t('dashboard.activityLog') || 'Activity Log' : 'Activity Log'}</DialogTitle>
-              <button 
+              <button
                 onClick={handleDownloadPdf}
                 className="flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors focus:outline-none shadow-sm"
               >
@@ -191,7 +202,7 @@ export function RecentActivity() {
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-muted-foreground">{mounted ? t('common.filter') || 'Filter' : 'Filter'}:</span>
                 </div>
-                <select 
+                <select
                   className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
@@ -209,7 +220,7 @@ export function RecentActivity() {
                   <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-muted-foreground">{mounted ? t('common.sortBy') || 'Sort By' : 'Sort By'}:</span>
                 </div>
-                <select 
+                <select
                   className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
@@ -220,7 +231,7 @@ export function RecentActivity() {
               </div>
             </div>
           </DialogHeader>
-          
+
           <div className="flex-1 overflow-y-auto w-full p-2 bg-[#F8FAFC]/50 min-h-[400px]">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-full py-20">
@@ -233,10 +244,10 @@ export function RecentActivity() {
                 <p className="text-sm font-medium">Unable to load activity log. Please try again later.</p>
               </div>
             ) : filteredActivities.length === 0 ? (
-               <div className="flex flex-col items-center justify-center h-full py-12 text-center text-muted-foreground">
-                 <Filter className="h-10 w-10 mb-4 opacity-20" />
-                 <p className="text-sm font-medium">No activity found for this category.</p>
-               </div>
+              <div className="flex flex-col items-center justify-center h-full py-12 text-center text-muted-foreground">
+                <Filter className="h-10 w-10 mb-4 opacity-20" />
+                <p className="text-sm font-medium">No activity found for this category.</p>
+              </div>
             ) : (
               <div className="flex flex-col">
                 {filteredActivities.map((activity) => (
@@ -247,7 +258,7 @@ export function RecentActivity() {
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${activity.iconBg} shadow-sm border border-border/5`}>
                       <activity.icon className={`h-5 w-5 ${activity.iconColor}`} />
                     </div>
-                    
+
                     <div className="flex flex-col gap-1 w-full relative pt-0.5">
                       <div className="flex items-start justify-between gap-4">
                         <p className="text-[14px] text-foreground">
@@ -259,7 +270,7 @@ export function RecentActivity() {
                         </span>
                       </div>
                       <p className="text-[13px] text-muted-foreground max-w-[90%]">{activity.description}</p>
-                      
+
                       <span className="absolute left-0 -bottom-2 translate-y-full text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
                         {activity.type}
                       </span>
