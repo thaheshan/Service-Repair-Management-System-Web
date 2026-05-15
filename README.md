@@ -5,11 +5,11 @@ A complete onboarding flow for the Service Repair Management application, featur
 ## Features
 
 ### Splash Screen
-- ✨ Smooth animations and transitions
-- 📱 Fully responsive design
-- 🎨 Beautiful gradient background with animated patterns
-- ⚡ Progress bar with shimmer effect (0-100%)
-- 🔄 Automatic redirect to Role Selection upon completion
+-  Smooth animations and transitions
+-  Fully responsive design
+-  Beautiful gradient background with animated patterns
+-  Progress bar with shimmer effect (0-100%)
+-  Automatic redirect to Role Selection upon completion
 
 ### Role Selection
 - 🎯 Interactive role cards (Admin, Technician, Customer, Manager)
