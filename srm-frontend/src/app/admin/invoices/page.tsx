@@ -1065,19 +1065,25 @@ export default function InvoicesManagementPage() {
                      <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                              <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
-                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                              <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
+                                 {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
+                              </div>
+                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
+                                 {user?.shopName || "All Fix Private Limited"}
+                              </h2>
                            </div>
                            <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                              <p className="flex items-center gap-1.5"><Smartphone className="h-3 w-3" /> Digital Repair Hub</p>
-                              <p>contact@srm-solutions.com</p>
-                              <p>+94 11 234 5678</p>
+                              <p className="flex items-center gap-1.5"><Smartphone className="h-3 w-3" /> {user?.shopWebsite || "Digital Repair Hub"}</p>
+                              <p>{user?.shopEmail || "contact@allfix.lk"}</p>
+                              <p>{user?.shopPhone || "+94 11 234 5678"}</p>
                            </div>
                         </div>
                         <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
                            <p>Premium Service Center</p>
-                           <p>Colombo 07, Sri Lanka</p>
-                           <p className="text-[#4F46E5] mt-1">VAT REG: 009876543-X</p>
+                           <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                           <p className="text-[#4F46E5] mt-1">
+                              {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
+                           </p>
                         </div>
                      </div>
 
@@ -1178,13 +1184,9 @@ export default function InvoicesManagementPage() {
                         {/* FINANCIAL TOTALS */}
                         <div className="flex justify-end pt-12 mt-12 border-t-4 border-slate-50">
                            <div className="w-[340px] space-y-4">
-                              <div className="flex justify-between items-center text-[13px] font-bold text-slate-500">
-                                 <span>Net Subtotal</span>
-                                 <span className="text-[#0F172A]">Rs. {((viewDocumentTarget.amount ?? 0) * 0.85).toLocaleString()}</span>
-                              </div>
                               <div className="flex justify-between items-center text-[13px] font-bold text-slate-500 pb-5 border-b border-slate-100">
-                                 <span>Service VAT (15.0%)</span>
-                                 <span className="text-[#0F172A]">Rs. {((viewDocumentTarget.amount ?? 0) * 0.15).toLocaleString()}</span>
+                                 <span>Subtotal</span>
+                                 <span className="text-[#0F172A]">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between items-center pt-2">
                                  <span className="text-[16px] font-black text-[#0F172A] uppercase tracking-tighter">Grand Total Billed</span>
@@ -1201,7 +1203,7 @@ export default function InvoicesManagementPage() {
                      <div className="mt-20 pt-16 border-t border-slate-100 border-dashed">
                         <p className="text-[12px] font-black text-[#0F172A] mb-8 flex items-center gap-2">
                            <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" />
-                           Thank you for choosing SRM Solutions for your professional technical needs.
+                           Thank you for choosing {user?.shopName || "All Fix Private Limited"} for your professional technical needs.
                         </p>
 
                         <div className="grid grid-cols-2 gap-12">
@@ -1218,6 +1220,10 @@ export default function InvoicesManagementPage() {
                               </div>
                               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Authorized Signature</p>
                            </div>
+                        </div>
+
+                        <div className="mt-8 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400 font-bold tracking-widest uppercase">
+                           AllFix © 2026
                         </div>
                      </div>
                   </div>
@@ -1239,19 +1245,27 @@ export default function InvoicesManagementPage() {
                      <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                              <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
-                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                              <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
+                                 {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
+                              </div>
+                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
+                                 {user?.shopName || "All Fix Private Limited"}
+                              </h2>
                            </div>
                            <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                              <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">Digital Repair Hub</p>
-                              <p>contact@srm-solutions.com</p>
-                              <p>+94 11 234 5678</p>
+                              <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">
+                                 {user?.shopWebsite || "Digital Repair Hub"}
+                              </p>
+                              <p>{user?.shopEmail || "contact@allfix.lk"}</p>
+                              <p>{user?.shopPhone || "+94 11 234 5678"}</p>
                            </div>
                         </div>
                         <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
                            <p>Premium Service Center</p>
-                           <p>Colombo 07, Sri Lanka</p>
-                           <p className="text-[#4F46E5] mt-1">VAT REG: 009876543-X</p>
+                           <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                           <p className="text-[#4F46E5] mt-1">
+                              {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
+                           </p>
                         </div>
                      </div>
 
@@ -1352,13 +1366,9 @@ export default function InvoicesManagementPage() {
                         {/* FINANCIAL TOTALS */}
                         <div className="flex justify-end pt-12 mt-12 border-t-4 border-slate-50">
                            <div className="w-[340px] space-y-4">
-                              <div className="flex justify-between items-center text-[13px] font-bold text-slate-500">
-                                 <span>Net Subtotal</span>
-                                 <span className="text-[#0F172A]">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.85).toLocaleString()}</span>
-                              </div>
                               <div className="flex justify-between items-center text-[13px] font-bold text-slate-500 pb-5 border-b border-slate-100">
-                                 <span>Service VAT (15.0%)</span>
-                                 <span className="text-[#0F172A]">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.15).toLocaleString()}</span>
+                                 <span>Subtotal</span>
+                                 <span className="text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between items-center pt-2">
                                  <span className="text-[16px] font-black text-[#0F172A] uppercase tracking-tighter">Grand Total Billed</span>
@@ -1375,7 +1385,7 @@ export default function InvoicesManagementPage() {
                      <div className="mt-20 pt-16 border-t border-slate-100 border-dashed">
                         <p className="text-[12px] font-black text-[#0F172A] mb-8 flex items-center gap-2">
                            <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" />
-                           Thank you for choosing SRM Solutions for your professional technical needs.
+                           Thank you for choosing {user?.shopName || "All Fix Private Limited"} for your professional technical needs.
                         </p>
 
                         <div className="grid grid-cols-2 gap-12">
@@ -1392,6 +1402,10 @@ export default function InvoicesManagementPage() {
                               </div>
                               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Authorized Signature</p>
                            </div>
+                        </div>
+
+                        <div className="mt-8 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400 font-bold tracking-widest uppercase">
+                           AllFix © 2026
                         </div>
                      </div>
                   </div>

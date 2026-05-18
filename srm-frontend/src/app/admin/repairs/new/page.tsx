@@ -791,8 +791,9 @@ export default function CreateRepairPage() {
                    </div>
                    {/* Live inventory dropdown - shown while typing in part input */}
                    {partInput.trim().length > 0 && (() => {
-                     const filtered = (inventoryData?.data ?? []).filter((item: any) =>
-                       item.name?.toLowerCase().includes(partInput.toLowerCase())
+                     const apiItems = inventoryData?.items || [];
+                      const filtered = apiItems.filter((item: any) =>
+                       (item.partName || item.name || "").toLowerCase().includes(partInput.toLowerCase())
                      );
                      return filtered.length > 0 ? (
                        <div className="border border-border rounded-xl shadow-md overflow-hidden mb-3">
@@ -801,22 +802,25 @@ export default function CreateRepairPage() {
                            <div
                              key={item.id}
                              onClick={() => {
-                               if (!partsRequired.includes(item.name)) {
-                                 setPartsRequired(prev => [...prev, item.name]);
+                               const partName = item.partName || item.name || "Unnamed Part";
+                                const price = item.sellingPrice || item.price || 0;
+                                if (!partsRequired.includes(partName)) {
+                                 setPartsRequired(prev => [...prev, partName]);
+                                  setPartsCost(prev => (parseFloat(prev || "0") + parseFloat(price.toString())).toString());
                                }
                                setPartInput("");
                              }}
                              className="px-3 py-2.5 hover:bg-indigo-50 cursor-pointer border-t border-border flex justify-between items-center gap-4 transition-colors"
                            >
                              <div>
-                               <p className="text-sm font-bold text-foreground">{item.name}</p>
-                               {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
+                               <p className="text-sm font-bold text-foreground">{item.partName || item.name || "Unnamed Part"}</p>
+                               {(item.partNumber || item.sku) && <p className="text-xs text-muted-foreground">SKU: {item.partNumber || item.sku}</p>}
                              </div>
                              <div className="text-right shrink-0">
-                               <p className={`text-xs font-semibold ${(item.quantity ?? 0) > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                 {(item.quantity ?? 0) > 0 ? (mounted ? t('repairs.pricing.inStock', { count: item.quantity }) : `${item.quantity} in stock`) : (mounted ? t('repairs.pricing.outOfStock') : 'Out of stock')}
+                               <p className={`text-xs font-semibold ${(item.quantityInStock ?? item.stockQuantity ?? 0) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                 {(item.quantityInStock ?? item.stockQuantity ?? 0) > 0 ? (mounted ? t('repairs.pricing.inStock', { count: item.quantityInStock ?? item.stockQuantity }) : `${item.quantityInStock ?? item.stockQuantity ?? 0} in stock`) : (mounted ? t('repairs.pricing.outOfStock') : 'Out of stock')}
                                </p>
-                               {item.sellingPrice && <p className="text-xs text-muted-foreground">Rs. {item.sellingPrice}</p>}
+                               {(item.sellingPrice || item.price) && <p className="text-xs text-muted-foreground font-semibold">Rs. {(item.sellingPrice || item.price || 0).toLocaleString()}</p>}
                              </div>
                            </div>
                          ))}
