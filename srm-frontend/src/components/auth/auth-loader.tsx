@@ -11,7 +11,6 @@ export function AuthLoader({ children }: { children: React.ReactNode }) {
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
 
-  // Only fetch if we have a token but no user object
   const { data: meData, error, isSuccess, isError } = useGetMeQuery(undefined, {
     skip: !token || !!user,
   });
@@ -30,8 +29,10 @@ export function AuthLoader({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isError) {
-      console.error("Session Recovery: Failed to load user profile", error);
-      // Logout if token is invalid
+      console.error(
+        "Session Recovery: Failed to load user profile",
+        error || "Unknown error"
+      );
       dispatch(logout());
     }
   }, [isError, error, dispatch]);
