@@ -52,7 +52,7 @@ export default function RepairsPage() {
 
       let tech = null;
       if (r.technician) {
-        const name = r.technician.fullName || r.technician.email.split('@')[0];
+        const name = r.technician.fullName || r.technician.email?.split('@')[0] || r.technician.phone || "Technician";
         tech = {
           id: r.technician.id,
           name,
@@ -99,14 +99,17 @@ export default function RepairsPage() {
     }
   }, [mappedRepairs])
 
-  // Map real staff to the format expected by the UI
   const techOptions = useMemo(() => {
-    return technicians.map((t: any, index: number) => ({
-      id: t.id,
-      name: t.fullName || t.email.split('@')[0],
-      initials: (t.fullName || t.email).substring(0, 2).toUpperCase(),
-      bg: colors[index % colors.length]
-    }));
+    return technicians.map((t: any, index: number) => {
+      const name = t.fullName || t.name || t.email?.split('@')[0] || t.phone || "Technician";
+      const initials = (t.fullName || t.name || t.email || t.phone || "Tech").substring(0, 2).toUpperCase();
+      return {
+        id: t.id,
+        name,
+        initials,
+        bg: colors[index % colors.length]
+      };
+    });
   }, [technicians]);
 
   function getWeekStart(): Date {

@@ -86,29 +86,61 @@ export default function DevicesPage() {
 
   const devices = useMemo(() => {
     const apiDevices = (response as any)?.data || response?.devices || [];
-    return apiDevices.map((d: any) => ({
-      id: d.id,
-      name: d.model || "Unknown Device",
-      brand: d.brand || "—",
-      type: d.type || "Mobile Phone",
-      imei: d.imei || d.serialNo || "—",
-      color: "bg-[#4F46E5]",
-      owner: {
-        name: d.customer?.name || "Unassigned",
-        phone: d.customer?.phone || "—"
-      },
-      warranty: { status: "None" as WarrantyStatus, expiryDate: "—" },
-      totalRepairs: d.repairs ? d.repairs.length : 0,
-      lastService: { date: "", type: "" },
-      registered: d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—",
-      status: d.status || "AVAILABLE",
-      price: d.price || 0,
-      // raw API fields for edit/view
-      rawImei: d.imei || "",
-      rawSerialNo: d.serialNo || "",
-      rawCustomerId: d.customerId || "",
-      rawCustomer: d.customer || null,
-    }));
+    return apiDevices.map((d: any) => {
+      // Calculate realistic dynamic warranty status based on registration date and device status
+      const created = d.createdAt ? new Date(d.createdAt) : new Date();
+      const now = new Date();
+      const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let warrantyStatus: WarrantyStatus = "No Warranty";
+      let expiryDate = "—";
+
+      if (d.status === "COLLECTED" || d.status === "SOLD") {
+        if (diffDays <= 30) {
+          warrantyStatus = "Active";
+          expiryDate = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        } else {
+          warrantyStatus = "Expired";
+        }
+      } else if (d.status === "IN_SERVICE" || d.status === "ACTIVE") {
+        warrantyStatus = "Active";
+        expiryDate = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      } else {
+        if (diffDays < 60) {
+          warrantyStatus = "Active";
+          expiryDate = new Date(created.getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        } else if (diffDays < 90) {
+          warrantyStatus = "Expiring Soon";
+          expiryDate = new Date(created.getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        } else {
+          warrantyStatus = "Expired";
+        }
+      }
+
+      return {
+        id: d.id,
+        name: d.model || "Unknown Device",
+        brand: d.brand || "—",
+        type: d.type || "Mobile Phone",
+        imei: d.imei || d.serialNo || "—",
+        color: "bg-[#4F46E5]",
+        owner: {
+          name: d.customer?.name || "Unassigned",
+          phone: d.customer?.phone || "—"
+        },
+        warranty: { status: warrantyStatus, expiryDate },
+        totalRepairs: d.repairs ? d.repairs.length : 0,
+        lastService: { date: "", type: "" },
+        registered: d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—",
+        status: d.status || "AVAILABLE",
+        price: d.price || 0,
+        // raw API fields for edit/view
+        rawImei: d.imei || "",
+        rawSerialNo: d.serialNo || "",
+        rawCustomerId: d.customerId || "",
+        rawCustomer: d.customer || null,
+      };
+    });
   }, [response]);
 
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
@@ -890,19 +922,27 @@ export default function DevicesPage() {
                     <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                             <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
-                             <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                             <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
+                               {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
+                             </div>
+                             <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
+                               {user?.shopName || "All Fix Private Limited"}
+                             </h2>
                            </div>
                            <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                              <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">Digital Repair Hub</p>
-                              <p>contact@srm-solutions.com</p>
-                              <p>+94 11 234 5678</p>
+                              <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">
+                                {user?.shopWebsite || "Digital Repair Hub"}
+                              </p>
+                              <p>{user?.shopEmail || "contact@allfix.lk"}</p>
+                              <p>{user?.shopPhone || "+94 11 234 5678"}</p>
                            </div>
                         </div>
                         <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
                               <p>Premium Service Center</p>
-                              <p>Colombo 07, Sri Lanka</p>
-                              <p className="text-[#4F46E5] mt-1">VAT REG: 009876543-X</p>
+                              <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                              <p className="text-[#4F46E5] mt-1">
+                                {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
+                              </p>
                         </div>
                     </div>
 
@@ -1012,14 +1052,14 @@ export default function DevicesPage() {
                     <div className="mt-20 pt-16 border-t border-slate-100 border-dashed">
                        <p className="text-[12px] font-black text-[#0F172A] mb-8 flex items-center gap-2">
                          <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" /> 
-                         Thank you for choosing SRM Solutions for your professional technical needs.
+                         Thank you for choosing {user?.shopName || "All Fix Private Limited"} for your professional technical needs.
                        </p>
                        
                        <div className="grid grid-cols-2 gap-12">
                          <div>
                             <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-black underline decoration-slate-200 underline-offset-4">General Terms</p>
                             <p className="text-[11px] text-slate-500 font-bold leading-relaxed italic">
-                              This document is a certified inventory record generated by the SRM Solutions database. 
+                              This document is a certified inventory record generated by the {user?.shopName || "All Fix Private Limited"} database. 
                               It reflects the technical specifications and valuation of the asset at the time of report generation.
                             </p>
                          </div>
@@ -1029,6 +1069,10 @@ export default function DevicesPage() {
                             </div>
                             <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Authorized Signature</p>
                          </div>
+                       </div>
+
+                       <div className="mt-8 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400 font-bold tracking-widest uppercase">
+                          AllFix © 2026
                        </div>
                     </div>
                 </div>
@@ -1069,19 +1113,27 @@ export default function DevicesPage() {
               <div className="flex justify-between items-start mb-20">
                   <div>
                      <div className="flex items-center gap-2.5 mb-2">
-                       <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
-                       <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                       <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
+                         {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
+                       </div>
+                       <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
+                         {user?.shopName || "All Fix Private Limited"}
+                       </h2>
                      </div>
                      <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                        <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">Digital Repair Hub</p>
-                        <p>contact@srm-solutions.com</p>
-                        <p>+94 11 234 5678</p>
+                        <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">
+                          {user?.shopWebsite || "Digital Repair Hub"}
+                        </p>
+                        <p>{user?.shopEmail || "contact@allfix.lk"}</p>
+                        <p>{user?.shopPhone || "+94 11 234 5678"}</p>
                      </div>
                   </div>
                   <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
                         <p>Premium Service Center</p>
-                        <p>Colombo 07, Sri Lanka</p>
-                        <p className="text-[#4F46E5] mt-1">VAT REG: 009876543-X</p>
+                        <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                        <p className="text-[#4F46E5] mt-1">
+                          {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
+                        </p>
                   </div>
               </div>
 
@@ -1191,14 +1243,14 @@ export default function DevicesPage() {
               <div className="mt-20 pt-16 border-t border-slate-100 border-dashed">
                  <p className="text-[12px] font-black text-[#0F172A] mb-8 flex items-center gap-2">
                    <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" /> 
-                   Thank you for choosing SRM Solutions for your professional technical needs.
+                   Thank you for choosing {user?.shopName || "All Fix Private Limited"} for your professional technical needs.
                  </p>
                  
                  <div className="grid grid-cols-2 gap-12">
                    <div>
                       <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-black underline decoration-slate-200 underline-offset-4">General Terms</p>
                       <p className="text-[11px] text-slate-500 font-bold leading-relaxed italic">
-                        This document is a certified inventory record generated by the SRM Solutions database. 
+                        This document is a certified inventory record generated by the {user?.shopName || "All Fix Private Limited"} database. 
                         It reflects the technical specifications and valuation of the asset at the time of report generation.
                       </p>
                    </div>
@@ -1220,8 +1272,12 @@ export default function DevicesPage() {
           <div className="flex justify-between items-start mb-16">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-12 w-12 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-2xl">S</div>
-                <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">SRM Solutions</h2>
+                <div className="h-12 w-12 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-2xl">
+                  {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
+                </div>
+                <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">
+                  {user?.shopName || "All Fix Private Limited"}
+                </h2>
               </div>
               <div className="text-[12px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
                 <p className="flex items-center gap-2 text-[#4F46E5]"><Smartphone className="h-4 w-4" /> Global Device Inventory</p>
@@ -1231,7 +1287,7 @@ export default function DevicesPage() {
             </div>
             <div className="text-right text-[12px] text-slate-400 font-black uppercase tracking-widest leading-relaxed pt-2">
               <p>Premium Service Center</p>
-              <p>Colombo 07, Sri Lanka</p>
+              <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
               <p className="text-[#4F46E5] mt-1 italic underline underline-offset-4 decoration-slate-200">Generated: {mounted ? new Date().toLocaleString() : ""}</p>
             </div>
           </div>
@@ -1287,7 +1343,7 @@ export default function DevicesPage() {
             <div className="flex justify-between items-center">
               <p className="text-[12px] font-black text-[#0F172A] flex items-center gap-2">
                 <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" />
-                SRM Solutions Inventory Management System • {new Date().getFullYear()}
+                {user?.shopName || "All Fix Private Limited"} Inventory Management System • {new Date().getFullYear()}
               </p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 Classification: Highly Confidential

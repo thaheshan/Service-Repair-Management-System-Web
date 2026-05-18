@@ -330,7 +330,7 @@ export function StepAccount({ onNext }: StepAccountProps) {
                       checked={formData.agreeTerms}
                       onCheckedChange={(checked) => handleChange("agreeTerms", checked === true)}
                       id="terms-step1"
-                      className={errors.agreeTerms ? "border-[#EF4444] data-[state=checked]:bg-[#EF4444]" : ""}
+                      className={`rounded-[4px] ${errors.agreeTerms ? "border-[#EF4444] data-[state=checked]:bg-[#EF4444]" : ""}`}
                     />
                   </div>
                   <label htmlFor="terms-step1" className={`text-sm leading-relaxed ${errors.agreeTerms ? "text-[#EF4444]" : "text-[#374151]"}`}>

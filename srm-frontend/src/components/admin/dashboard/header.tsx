@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect } from "react"
 import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Trash2, CheckCircle2, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/store"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/ui-admin-dashboard/avatar"
 import {
   Dialog,
@@ -70,7 +71,7 @@ export function DashboardHeader() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const { user } = useAuthStore()
+  const user = useSelector((state: RootState) => state.auth.user)
 
 
 
@@ -218,7 +219,7 @@ export function DashboardHeader() {
       <div className="flex items-center gap-3">
         {/* Shop ID for Admin/Shop Owner - shows the shopCode staff use to join */}
         {(user?.role === 'ADMIN' || user?.role === 'admin') && user?.shopCode && (
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-accent/50 border border-primary/20 rounded-lg mr-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/50 border border-primary/20 rounded-lg mr-2">
             <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Shop ID:</span>
             <code className="text-xs font-mono font-bold text-foreground select-all">{user.shopCode}</code>
             <button 

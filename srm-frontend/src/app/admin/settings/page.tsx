@@ -235,8 +235,15 @@ export default function SettingsView() {
       
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error('Failed to save settings', err);
-      const errorMsg = err.data?.message || err.data?.error || "Failed to save settings. Please try again.";
+      console.error('Failed to save settings details:', err);
+      if (err && typeof err === 'object') {
+        console.error('Error keys:', Object.keys(err), 'data:', err.data);
+      }
+      let errorMsg = err.data?.message || err.data?.error || "Failed to save settings. Please try again.";
+      if (err.data?.errors && Array.isArray(err.data.errors)) {
+        const details = err.data.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join('\n');
+        errorMsg = `Validation Error:\n${details}`;
+      }
       alert(errorMsg);
     } finally {
       setIsSaving(false)
