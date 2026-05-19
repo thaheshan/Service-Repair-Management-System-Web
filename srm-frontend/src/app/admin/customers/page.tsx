@@ -121,17 +121,17 @@ export default function CustomerManagementPage() {
     let r = customers
     if (search.trim()) {
       const q = search.toLowerCase()
-      r = r.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q))
+      r = r.filter((c: any) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q))
     }
-    if (filterTypes.length) r = r.filter(c => filterTypes.includes(c.type))
-    r = r.filter(c => c.repairs <= (filterRepairsMax === 50 ? 999999 : filterRepairsMax) && c.spentRaw <= (filterSpentMax === 100 ? 99999999 : filterSpentMax * 1000))
-    if (filterLastVisit === "today") r = r.filter(c => c.lastVisitDays === 0)
-    if (filterLastVisit === "this-week") r = r.filter(c => c.lastVisitDays <= 7)
-    if (filterLastVisit === "this-month") r = r.filter(c => c.lastVisitDays <= 30)
-    if (filterLastVisit === "last-6-months") r = r.filter(c => c.lastVisitDays <= 180)
-    if (filterLastVisit === "inactive") r = r.filter(c => c.lastVisitDays > 180)
-    if (filterRegFrom) r = r.filter(c => c.registeredAt >= filterRegFrom)
-    if (filterRegTo) r = r.filter(c => c.registeredAt <= filterRegTo)
+    if (filterTypes.length) r = r.filter((c: any) => filterTypes.includes(c.type))
+    r = r.filter((c: any) => c.repairs <= (filterRepairsMax === 50 ? 999999 : filterRepairsMax) && c.spentRaw <= (filterSpentMax === 100 ? 99999999 : filterSpentMax * 1000))
+    if (filterLastVisit === "today") r = r.filter((c: any) => c.lastVisitDays === 0)
+    if (filterLastVisit === "this-week") r = r.filter((c: any) => c.lastVisitDays <= 7)
+    if (filterLastVisit === "this-month") r = r.filter((c: any) => c.lastVisitDays <= 30)
+    if (filterLastVisit === "last-6-months") r = r.filter((c: any) => c.lastVisitDays <= 180)
+    if (filterLastVisit === "inactive") r = r.filter((c: any) => c.lastVisitDays > 180)
+    if (filterRegFrom) r = r.filter((c: any) => c.registeredAt >= filterRegFrom)
+    if (filterRegTo) r = r.filter((c: any) => c.registeredAt <= filterRegTo)
     r = [...r].sort((a, b) => {
       if (sortKey === "name-az") return a.name.localeCompare(b.name)
       if (sortKey === "name-za") return b.name.localeCompare(a.name)
