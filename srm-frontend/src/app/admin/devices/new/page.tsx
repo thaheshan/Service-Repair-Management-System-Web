@@ -513,8 +513,6 @@ export default function RegisterDevicePage() {
                 </div>
               </section>
 
-              </section>
-
             </form>
           </div>
         </div>

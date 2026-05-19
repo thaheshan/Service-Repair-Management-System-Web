@@ -8,10 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-16">
           <div className="col-span-2 md:col-span-2">
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">SRM<span className="text-blue-500">.</span></span>
+              <img src="/all-fix-logo.png" alt="All Fix Logo" className="h-12 w-auto object-contain" />
             </div>
             <p className="text-slate-400 text-sm mb-6 max-w-sm leading-relaxed">
               Complete Service Repair Management System built for the modern repair business. 
@@ -61,7 +58,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} SRM System. All rights reserved.
+            © {new Date().getFullYear()} All Fix. All rights reserved.
           </p>
           
           <div className="flex gap-4">

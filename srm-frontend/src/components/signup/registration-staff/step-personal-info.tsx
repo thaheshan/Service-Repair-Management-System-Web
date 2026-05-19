@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
 import { PasswordStrength } from "@/components/common/inputs/password-strength"
-import { AuthLogo } from "@/components/common/auth-logo"
+
 
 interface StepPersonalInfoProps {
   onNext: (data: PersonalInfoData) => void
@@ -128,20 +128,11 @@ export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
         </div>
       </div>
 
-      {/* Right side form */}
       <div className="flex flex-1 flex-col bg-white overflow-y-auto">
-        <div className="flex flex-1 items-start justify-center px-6 py-10 lg:px-16">
+        <div className="flex flex-1 items-start justify-center px-6 pt-16 pb-10 lg:px-16 lg:pt-24 lg:pb-16">
           <div className="w-full max-w-[520px]">
-            {/* Logo at the top for Mobile/Tablet */}
-            <div className="lg:hidden mb-10 flex justify-center">
-               <AuthLogo />
-            </div>
-
             {/* Header */}
             <div className="mb-8 text-center lg:text-left">
-              <div className="hidden lg:block mb-8 text-center">
-                <AuthLogo />
-              </div>
               <h1 className="text-2xl font-bold text-[#111827]">Technician Registration</h1>
               <p className="mt-2 text-sm text-[#6B7280]">Create your professional account to get started</p>
             </div>

@@ -100,12 +100,14 @@ export function DashboardSidebar() {
       )}>
         {/* Logo */}
         <div className="flex h-[64px] items-center justify-between border-b border-border px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Wrench className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold text-foreground">SRM</span>
-          </div>
+          <Link href="/admin/dashboard" className="relative flex items-center h-10 w-36">
+            <img 
+              src="/all-fix-logo-black.png" 
+              alt="All Fix Logo" 
+              className="absolute top-1/2 -translate-y-1/2 h-12 w-auto object-contain"
+              style={{ transform: 'scale(2.2)', transformOrigin: 'left center', left: '-22px' }}
+            />
+          </Link>
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden p-1 text-muted-foreground hover:bg-muted rounded-md focus:outline-none">
              <X className="h-5 w-5" />
           </button>

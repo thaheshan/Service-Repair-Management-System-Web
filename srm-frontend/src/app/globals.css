@@ -139,3 +139,42 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   Force-Light wrapper: used by (auth) routes so that dark
+   mode on <html> never bleeds into login / signup pages.
+───────────────────────────────────────────────────────── */
+.force-light,
+.force-light * {
+  color-scheme: light;
+}
+
+.force-light {
+  --background: #F9FAFB;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #0F172A;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #4F46E5;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #64748B;
+  --sidebar-primary: #4F46E5;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F1F5F9;
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #4F46E5;
+}

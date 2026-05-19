@@ -48,12 +48,16 @@ export default function LoginSidebar({
       <div className="pointer-events-none absolute bottom-40 right-10 h-40 w-40 rounded-full bg-white/5" />
 
       {/* Top Header Logo Component */}
-      <Link href="/" className="relative z-10 flex items-center gap-3 w-fit group">
-        <div className="flex items-center justify-center p-2 bg-white rounded-lg shadow-sm group-hover:scale-105 transition-transform">
-          <Wrench className="w-5 h-5 text-[#3b3887]" />
-        </div>
-        <span className="text-xl font-bold text-white tracking-tight">ServicePro</span>
-      </Link>
+      <div className="relative z-10 h-10 w-44">
+        <Link href="/" className="absolute top-0 left-[-55px] lg:left-[-75px] flex items-center h-10 w-44">
+          <img 
+            src="/all-fix-logo.png" 
+            alt="All Fix Logo" 
+            className="h-16 w-auto object-contain" 
+            style={{ transform: 'scale(2.7)', transformOrigin: 'left center' }}
+          />
+        </Link>
+      </div>
 
       {/* Main Content Area (Vertically Centered Stack) */}
       <div className="relative z-10 flex flex-col items-center justify-center flex-1 w-full max-w-[460px] mx-auto mt-6">
@@ -94,34 +98,7 @@ export default function LoginSidebar({
           ))}
         </div>
 
-        {/* Glassmorphic Testimonial (Wider than Image) */}
-        <div className="w-full mt-6 p-5 rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/10 shadow-lg relative group overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="flex gap-4 items-start relative z-10">
-            {testimonial.imageUrl && (
-              <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 ring-2 ring-white/20">
-                <Image
-                  src={testimonial.imageUrl}
-                  alt={testimonial.author}
-                  width={44}
-                  height={44}
-                  className="object-cover w-full h-full"
-                  unoptimized // Ensuring external URL avatars load seamlessly
-                />
-              </div>
-            )}
-            <div className="space-y-2.5">
-              <p className="text-[13px] leading-relaxed font-medium text-indigo-50/90 italic">
-                {testimonial.quote}
-              </p>
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#8B8DF2] tracking-wide">
-                <span className="text-white/40">—</span>
-                <span>{testimonial.author},</span>
-                <span className="text-white/60">{testimonial.company}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Bottom Footer Section (Stacked right below the testimonial) */}
         <div className="w-full mt-8 text-center flex flex-col items-center">

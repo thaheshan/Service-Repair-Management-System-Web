@@ -39,7 +39,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-white lg:overflow-hidden">
+    <div className="flex min-h-screen lg:h-screen w-full bg-white lg:overflow-hidden">
       {/* Dynamic Visual Sidebar - Hidden on Mobile/Tablet */}
       <div className="hidden lg:flex lg:w-1/2 relative h-full shrink-0">
         <LoginSidebar
@@ -52,7 +52,7 @@ export default function LoginPage() {
       </div>
 
       {/* Authentication Form Half */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-24 bg-white relative overflow-y-auto w-full">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-12 xl:p-16 bg-white relative overflow-y-auto w-full h-full">
         {/* Logo at the top for Mobile/Tablet */}
         <div className="lg:hidden mb-12">
           <AuthLogo />

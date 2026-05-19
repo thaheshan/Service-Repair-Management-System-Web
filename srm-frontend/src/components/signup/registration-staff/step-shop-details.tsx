@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Store, ArrowLeft, CheckCircle2, Loader2, UserCog, Wrench } from "lucide-react"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep2 } from "./side-panel-step2"
-import { AuthLogo } from "@/components/common/auth-logo"
+
 
 interface StepShopDetailsProps {
   onNext: (data: ShopDetailsData) => void
@@ -83,12 +83,8 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
           </button>
         </div>
 
-        <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-6 lg:px-16">
+        <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 pt-16 pb-6 lg:px-16 lg:pt-24 lg:pb-12">
           <div className="w-full max-w-[520px]">
-            <div className="lg:hidden mb-10 flex justify-center">
-              <AuthLogo />
-            </div>
-
             <div className="mb-8">
               <RegistrationStepper
                 currentStep={2}
@@ -97,9 +93,6 @@ export function StepShopDetails({ onNext, onBack }: StepShopDetailsProps) {
             </div>
 
             <div className="mb-6 text-center lg:text-left">
-              <div className="hidden lg:block mb-8 text-center">
-                <AuthLogo />
-              </div>
               <h2 className="text-2xl font-bold text-[#111827]">Join Your Shop</h2>
               <p className="mt-1 text-sm text-[#6B7280]">
                 Enter the Shop ID provided by your shop owner to link your account
