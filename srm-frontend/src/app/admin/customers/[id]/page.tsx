@@ -354,7 +354,7 @@ export default function CustomerDetailedPage() {
         ],
         theme: 'striped',
         headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-        columnStyles: { 0: { fontStyle: 'bold', width: 50 } }
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
       })
 
       doc.save(`device_specs_${device.model || 'unit'}.pdf`)
