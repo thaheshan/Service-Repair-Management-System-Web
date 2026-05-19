@@ -16,12 +16,12 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200 border border-border">
+      <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl animate-in zoom-in-95 duration-200 border border-border">
         
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 border border-border text-muted-foreground hover:bg-muted hover:text-[#0F172A] transition-all focus:outline-none shadow-sm"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-muted/30 border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-all focus:outline-none shadow-sm"
         >
           <X className="h-4 w-4" />
         </button>
@@ -36,24 +36,24 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
             </svg>
           </div>
           
-          <h2 className="text-[22px] font-black text-[#0F172A] mb-3 leading-tight">
+          <h2 className="text-[22px] font-black text-foreground mb-3 leading-tight">
             Update Device Status?
           </h2>
           <p className="text-[14px] text-muted-foreground mb-8 font-medium leading-relaxed">
             Changing the status to <span className="text-[#4F46E5] font-bold">"{pendingStatus.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}"</span> will update the system records and inventory.
           </p>
 
-          <label className="flex items-center gap-3 self-start mb-8 cursor-pointer group w-full p-3 rounded-xl border border-dashed border-border hover:border-[#4F46E5]/50 hover:bg-[#F8FAFC] transition-all">
+          <label className="flex items-center gap-3 self-start mb-8 cursor-pointer group w-full p-3 rounded-xl border border-dashed border-border hover:border-[#4F46E5]/50 hover:bg-muted/50 transition-all">
             <input 
               type="checkbox" 
               className="hidden" 
               checked={autoUpdate} 
               onChange={(e) => setAutoUpdate(e.target.checked)} 
             />
-            <div className={`flex h-5 w-5 items-center justify-center rounded-md border transition-all ${autoUpdate ? 'bg-[#4F46E5] border-[#4F46E5] shadow-[0_0_10px_rgba(79,70,229,0.3)]' : 'border-slate-300 bg-white group-hover:border-[#4F46E5]'}`}>
+            <div className={`flex h-5 w-5 items-center justify-center rounded-md border transition-all ${autoUpdate ? 'bg-[#4F46E5] border-[#4F46E5] shadow-[0_0_10px_rgba(79,70,229,0.3)]' : 'border-slate-300 bg-background group-hover:border-[#4F46E5]'}`}>
               {autoUpdate && <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
             </div>
-            <span className="text-[13px] font-bold text-[#0F172A] select-none">
+            <span className="text-[13px] font-bold text-foreground select-none">
               Automatically Notify Customer
             </span>
           </label>
@@ -62,7 +62,7 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
           <div className="flex w-full gap-4 pt-2">
             <button 
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted transition-all focus:outline-none shadow-sm"
+              className="flex-1 h-12 rounded-xl border border-border bg-card text-foreground font-bold hover:bg-muted transition-all focus:outline-none shadow-sm"
             >
               Cancel
             </button>

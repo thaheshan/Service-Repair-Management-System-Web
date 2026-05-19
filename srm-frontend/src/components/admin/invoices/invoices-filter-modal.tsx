@@ -69,20 +69,20 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[4px] animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-[500px] max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
+      <div className="bg-card w-full max-w-[500px] max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-border">
         
         {/* Header */}
-        <div className="flex justify-between items-center p-8 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex justify-between items-center p-8 border-b border-border bg-muted/30">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-[#4F46E5] text-white shadow-lg shadow-indigo-100">
+            <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-[#4F46E5] text-white shadow-lg">
               <SlidersHorizontal className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-[22px] font-black text-[#0F172A] tracking-tight">{mounted ? t('invoicesPage.filters') : 'Filters'}</h2>
+              <h2 className="text-[22px] font-black text-foreground tracking-tight">{mounted ? t('invoicesPage.filters') : 'Filters'}</h2>
               <p className="text-[13px] text-muted-foreground font-bold">Refine your invoice search</p>
             </div>
           </div>
-          <button onClick={onClose} className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all focus:outline-none">
+          <button onClick={onClose} className="h-10 w-10 rounded-full border border-border flex items-center justify-center text-slate-400 hover:bg-muted transition-all focus:outline-none">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -92,7 +92,7 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
           
           {/* Status */}
           <div>
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
               <Check className="h-3.5 w-3.5" /> Payment Status
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -102,7 +102,7 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
                   <button
                     key={status}
                     onClick={() => toggleArrayItem(status, tempFilters.statuses, 'statuses')}
-                    className={`h-10 px-5 rounded-xl text-[13px] font-bold transition-all border ${isSelected ? 'bg-[#4F46E5] border-[#4F46E5] text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-[#4F46E5] hover:text-[#4F46E5]'}`}
+                    className={`h-10 px-5 rounded-xl text-[13px] font-bold transition-all border ${isSelected ? 'bg-[#4F46E5] border-[#4F46E5] text-white shadow-md' : 'bg-card border-border text-foreground hover:border-[#4F46E5] hover:text-[#4F46E5]'}`}
                   >
                     {status}
                   </button>
@@ -113,26 +113,26 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
 
           {/* Amount Range */}
           <div>
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
               <DollarSign className="h-3.5 w-3.5" /> Amount Range (LKR)
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-slate-400">Min</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted-foreground">Min</span>
                 <input
                   type="number"
                   value={tempFilters.amountRange.min}
                   onChange={(e) => setTempFilters(p => ({ ...p, amountRange: { ...p.amountRange, min: +e.target.value } }))}
-                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold focus:border-[#4F46E5] outline-none"
+                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-border bg-background text-foreground text-[13px] font-bold focus:border-[#4F46E5] outline-none"
                 />
               </div>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-slate-400">Max</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted-foreground">Max</span>
                 <input
                   type="number"
                   value={tempFilters.amountRange.max}
                   onChange={(e) => setTempFilters(p => ({ ...p, amountRange: { ...p.amountRange, max: +e.target.value } }))}
-                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold focus:border-[#4F46E5] outline-none"
+                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-border bg-background text-foreground text-[13px] font-bold focus:border-[#4F46E5] outline-none"
                 />
               </div>
             </div>
@@ -140,26 +140,26 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
 
           {/* Date Range */}
           <div>
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" /> Date Range
             </h3>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">From</label>
+                <label className="block text-[10px] font-bold text-muted-foreground mb-1.5 uppercase">From</label>
                 <input
                   type="date"
                   value={tempFilters.dateFrom}
                   onChange={(e) => setTempFilters(p => ({ ...p, dateFrom: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold focus:border-[#4F46E5] outline-none"
+                  className="w-full h-11 px-4 rounded-xl border border-border bg-background text-foreground text-[13px] font-bold focus:border-[#4F46E5] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">To</label>
+                <label className="block text-[10px] font-bold text-muted-foreground mb-1.5 uppercase">To</label>
                 <input
                   type="date"
                   value={tempFilters.dateTo}
                   onChange={(e) => setTempFilters(p => ({ ...p, dateTo: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-[13px] font-bold focus:border-[#4F46E5] outline-none"
+                  className="w-full h-11 px-4 rounded-xl border border-border bg-background text-foreground text-[13px] font-bold focus:border-[#4F46E5] outline-none"
                 />
               </div>
             </div>
@@ -181,7 +181,7 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
                       dateTo: now.toISOString().split('T')[0]
                     }))
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-500 hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
+                  className="px-3 py-1.5 rounded-lg border border-border bg-card text-[11px] font-bold text-muted-foreground hover:border-[#4F46E5] hover:text-[#4F46E5] transition-all"
                 >
                   {preset.label}
                 </button>
@@ -192,7 +192,7 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
           {/* Assigned To & Device Mapping */}
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
                 <User className="h-3.5 w-3.5" /> Staff
               </h3>
               <div className="space-y-2">
@@ -204,16 +204,16 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleArrayItem(name, tempFilters.staff, 'staff')}
-                        className="h-4 w-4 rounded border-slate-300 text-[#4F46E5] focus:ring-[#4F46E5]/20"
+                        className="h-4 w-4 rounded border-border bg-background text-[#4F46E5] focus:ring-[#4F46E5]/20"
                       />
-                      <span className="text-[13px] font-medium text-slate-600 group-hover:text-[#0F172A]">{name}</span>
+                      <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground">{name}</span>
                     </label>
                   )
                 })}
               </div>
             </div>
             <div>
-              <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Smartphone className="h-3.5 w-3.5" /> Device Types
               </h3>
               <div className="space-y-2">
@@ -225,9 +225,9 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleArrayItem(dev, tempFilters.devices, 'devices')}
-                        className="h-4 w-4 rounded border-slate-300 text-[#4F46E5] focus:ring-[#4F46E5]/20"
+                        className="h-4 w-4 rounded border-border bg-background text-[#4F46E5] focus:ring-[#4F46E5]/20"
                       />
-                      <span className="text-[13px] font-medium text-slate-600 group-hover:text-[#0F172A]">{dev}</span>
+                      <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground">{dev}</span>
                     </label>
                   )
                 })}
@@ -238,10 +238,10 @@ export function InvoicesFilterModal({ isOpen, onClose, onApply, onReset, current
         </div>
 
         {/* Footer */}
-        <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
+        <div className="p-8 bg-muted/30 border-t border-border flex gap-4">
           <button
             onClick={handleReset}
-            className="px-6 h-14 rounded-2xl border border-slate-200 bg-white text-slate-500 text-[15px] font-black hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none"
+            className="px-6 h-14 rounded-2xl border border-border bg-card text-muted-foreground text-[15px] font-black hover:bg-muted transition-all focus:outline-none"
           >
             Reset All
           </button>

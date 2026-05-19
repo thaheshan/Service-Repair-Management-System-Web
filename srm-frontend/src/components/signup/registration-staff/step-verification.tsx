@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep3 } from "./side-panel-step3"
 import { FileUpload } from "./file-upload"
-import { AuthLogo } from "@/components/common/auth-logo"
+
 
 interface StepVerificationProps {
   onSubmit: (data: VerificationData) => void
@@ -50,13 +50,8 @@ export function StepVerification({ onSubmit, onBack }: StepVerificationProps) {
 
       {/* Right side form */}
       <div className="flex flex-1 flex-col bg-white overflow-y-auto">
-        <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-10 lg:px-16">
+        <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 pt-16 pb-10 lg:px-16 lg:pt-24 lg:pb-16">
           <div className="w-full max-w-[520px]">
-            {/* Logo at the top for Mobile/Tablet */}
-            <div className="lg:hidden mb-10 flex justify-center">
-               <AuthLogo />
-            </div>
-
             {/* Stepper */}
             <div className="mb-8">
               <RegistrationStepper
@@ -67,9 +62,6 @@ export function StepVerification({ onSubmit, onBack }: StepVerificationProps) {
 
             {/* Header */}
             <div className="mb-6 text-center lg:text-left">
-              <div className="hidden lg:block mb-8 text-center">
-                <AuthLogo />
-              </div>
               <h2 className="text-2xl font-bold text-[#111827]">{"Verification & Documents"}</h2>
               <p className="mt-1 text-sm text-[#6B7280]">Upload required documents for account verification</p>
             </div>

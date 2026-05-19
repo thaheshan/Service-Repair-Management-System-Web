@@ -29,7 +29,8 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ onRoleSelect }) => {
     <div className="role-selection">
       <div className="role-selection__container">
         <div className="role-selection__header">
-          <h1 className="role-selection__title">Welcome to SRM</h1>
+          <img src="/all-fix-logo.png" alt="All Fix Logo" className="mx-auto mb-4" style={{ maxHeight: '130px', width: 'auto' }} />
+          <h1 className="role-selection__title">Welcome to All Fix</h1>
           <p className="role-selection__subtitle">Select your role to continue</p>
         </div>
 

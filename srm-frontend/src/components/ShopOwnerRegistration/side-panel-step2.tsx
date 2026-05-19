@@ -11,12 +11,16 @@ export function SidePanelStep2() {
       <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-white/5" />
 
       {/* Logo */}
-      <Link href="/" className="relative z-10 flex items-center gap-3 w-fit group">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 group-hover:scale-105 transition-transform">
-          <CreditCard className="h-6 w-6 text-white" />
-        </div>
-        <span className="text-xl font-bold">RepairShop</span>
-      </Link>
+      <div className="relative z-10 flex justify-center items-center h-16 w-full overflow-visible">
+        <Link href="/">
+          <img 
+            src="/all-fix-logo.png" 
+            alt="All Fix Logo" 
+            className="h-16 w-auto object-contain" 
+            style={{ transform: 'scale(2.7)', transformOrigin: 'center center' }}
+          />
+        </Link>
+      </div>
 
       {/* Main content */}
       <div className="relative z-10 mt-12">

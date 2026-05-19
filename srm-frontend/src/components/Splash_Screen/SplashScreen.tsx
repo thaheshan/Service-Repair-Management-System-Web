@@ -46,8 +46,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       
       <div className="splash-screen__content">
         <div className="splash-screen__logo">
-          <h1 className="splash-screen__title">SRM</h1>
-          <p className="splash-screen__subtitle">Service Repair Management</p>
+          <h1 className="splash-screen__title">ALL FIX</h1>
+          <p className="splash-screen__subtitle">Service & Repair Hub</p>
           <p className="splash-screen__tagline">Streamline Your Repair Business</p>
         </div>
 
