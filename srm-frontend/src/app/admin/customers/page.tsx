@@ -171,8 +171,8 @@ export default function CustomerManagementPage() {
 
   const handleExportCSV = () => {
     const rows = [["Name", "Email", "Phone", "Location", "Type", "Repairs", "Spent", "Last Visit Days"],
-    ...filtered.map(c => [c.name, c.email, c.phone, c.location, c.type, c.repairs, formatSpent(c.spentRaw), c.lastVisitDays])]
-    const csv = rows.map(r => r.join(",")).join("\n")
+    ...filtered.map((c: any) => [c.name, c.email, c.phone, c.location, c.type, c.repairs, formatSpent(c.spentRaw), c.lastVisitDays])]
+    const csv = rows.map((r: any) => r.join(",")).join("\n")
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
     a.download = "customers.csv"; a.click()
   }
@@ -192,7 +192,7 @@ export default function CustomerManagementPage() {
       autoTable(doc, {
         startY: 20,
         head: [["Name", "Email", "Phone", "Location", "Type", "Repairs", "Spent"]],
-        body: filtered.map(c => [c.name, c.email, c.phone, c.location, c.type, c.repairs, formatSpent(c.spentRaw)]),
+        body: filtered.map((c: any) => [c.name, c.email, c.phone, c.location, c.type, c.repairs, formatSpent(c.spentRaw)]),
         headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: "bold", fontSize: 8 },
         bodyStyles: { fontSize: 8, cellPadding: 3 },
         alternateRowStyles: { fillColor: [245, 247, 255] },
