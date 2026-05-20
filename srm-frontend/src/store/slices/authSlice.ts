@@ -9,6 +9,14 @@ export interface User {
   shopId: string | null;
   shopCode?: string | null;
   shopName?: string | null;
+  shopEmail?: string | null;
+  shopPhone?: string | null;
+  shopAddress?: string | null;
+  shopCity?: string | null;
+  shopCountry?: string | null;
+  shopPostalCode?: string | null;
+  shopTaxNumber?: string | null;
+  shopWebsite?: string | null;
 }
 
 interface AuthState {

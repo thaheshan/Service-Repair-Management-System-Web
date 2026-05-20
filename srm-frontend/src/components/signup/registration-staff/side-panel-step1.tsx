@@ -12,14 +12,16 @@ export function SidePanelStep1() {
       <div className="pointer-events-none absolute bottom-40 right-10 h-40 w-40 rounded-full bg-white/5" />
 
       {/* Logo */}
-      <Link href="/" className="relative z-10 flex items-center gap-3 w-fit group">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 group-hover:scale-105 transition-transform">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        <span className="text-xl font-bold">RepairHub</span>
-      </Link>
+      <div className="relative z-10 flex justify-center items-center h-16 w-full overflow-visible">
+        <Link href="/">
+          <img 
+            src="/all-fix-logo.png" 
+            alt="All Fix Logo" 
+            className="h-16 w-auto object-contain" 
+            style={{ transform: 'scale(2.7)', transformOrigin: 'center center' }}
+          />
+        </Link>
+      </div>
 
       {/* Main content */}
       <div className="relative z-10 mt-12">

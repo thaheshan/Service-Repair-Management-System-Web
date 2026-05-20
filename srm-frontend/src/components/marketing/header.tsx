@@ -6,13 +6,15 @@ import Link from 'next/link';
 export default function Header() {
   return (
     <header className="fixed top-0 w-full z-50 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-            <Wrench className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-gray-900">SRM<span className="text-blue-600">.</span></span>
-        </div>
+      <div className="w-full px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="relative flex items-center h-10 w-48">
+          <img 
+            src="/all-fix-logo-black.png" 
+            alt="All Fix Logo" 
+            className="absolute top-1/2 -translate-y-1/2 h-16 w-auto object-contain"
+            style={{ transform: 'scale(2.3)', transformOrigin: 'left center', left: '-28px' }}
+          />
+        </Link>
         
         <nav className="hidden md:flex items-center gap-8">
           <Link href="#" className="text-gray-900 font-medium text-sm hover:text-blue-600 transition-colors">

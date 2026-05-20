@@ -21,6 +21,7 @@ export default function PayHereCheckout({ requestId }: PayHereCheckoutProps) {
       });
 
       if (response.data.success) {
+        console.log('PAYHERE API RESPONSE:', response.data);
         const params = response.data.data;
         
         // PayHere Payment Request
@@ -50,6 +51,7 @@ export default function PayHereCheckout({ requestId }: PayHereCheckoutProps) {
         form.action = 'https://sandbox.payhere.lk/pay/checkout'; // Change to production URL later
 
         for (const key in payment) {
+          if (key === 'sandbox') continue;
           if (Object.prototype.hasOwnProperty.call(payment, key)) {
             const input = document.createElement('input');
             input.type = 'hidden';

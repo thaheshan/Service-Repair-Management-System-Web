@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { RegistrationProvider } from './registration-context';
 import { StepAccount, AccountData } from './step-1-account-new';
@@ -16,6 +16,13 @@ export default function RegistrationPage() {
   const [shopDetailsData, setShopDetailsData] = useState<ShopDetailsData | null>(null);
   const [requestRegistration, { isLoading }] = useRequestRegistrationMutation();
   const router = useRouter();
+
+  useEffect(() => {
+    const pendingId = localStorage.getItem('srm_pending_registration_id');
+    if (pendingId) {
+      router.push(`/request?id=${pendingId}`);
+    }
+  }, [router]);
 
   const handleStep1Complete = (data: AccountData) => {
     setAccountData(data);
@@ -41,7 +48,13 @@ export default function RegistrationPage() {
           owner_email: accountData.email,
         }),
       });
-      const { data: ids } = await idResponse.json();
+
+      const resJson = await idResponse.json();
+      if (!idResponse.ok) {
+        throw new Error(resJson.message || 'Failed to generate shop identifiers');
+      }
+
+      const ids = resJson.data;
 
       // 2. Submit full registration request
       const submissionData = {
@@ -65,10 +78,11 @@ export default function RegistrationPage() {
 
       const result = await requestRegistration(submissionData).unwrap();
       
+      localStorage.setItem('srm_pending_registration_id', result.requestId);
       toast.success('Registration request submitted successfully!');
       router.push(`/request?id=${result.requestId}`); 
     } catch (error: any) {
-      toast.error(error.data?.message || 'Failed to submit registration');
+      toast.error(error.message || error.data?.message || 'Failed to submit registration');
       console.error('Registration error:', error);
     }
   };

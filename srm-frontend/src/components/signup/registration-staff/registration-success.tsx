@@ -125,18 +125,19 @@ export function RegistrationSuccess({ userData }: RegistrationSuccessProps) {
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col gap-3">
           {/* ✅ Go to Login Button */}
-          <Link href="../../LoginForm">
+          <Link href="/login">
             <button className="flex h-12 w-full items-center justify-center rounded-lg bg-[#4F46E5] text-sm font-semibold text-white transition-colors hover:bg-[#4338CA]">
               Go to Login
             </button>
           </Link>
 
           {/* ✅ Resend Verification Email Button */}
-          <Link href="/resend-verification">
-            <button className="flex h-12 w-full items-center justify-center rounded-lg border-2 border-[#4F46E5] bg-white text-sm font-semibold text-[#4F46E5] transition-colors hover:bg-[#EEF2FF]">
-              Resend Verification Email
-            </button>
-          </Link>
+          <button 
+            onClick={handleResendEmail}
+            className="flex h-12 w-full items-center justify-center rounded-lg border-2 border-[#4F46E5] bg-white text-sm font-semibold text-[#4F46E5] transition-colors hover:bg-[#EEF2FF]"
+          >
+            Resend Verification Email
+          </button>
         </div>
       </div>
     </div>

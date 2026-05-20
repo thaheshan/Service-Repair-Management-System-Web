@@ -30,6 +30,7 @@ export default function TechnicianRegistrationPage() {
       // Send exactly what the backend expects
       await registerStaff({
         full_name: personalInfo.fullName,
+        email: personalInfo.email.trim(),
         phone: fullPhone,
         password: personalInfo.password,
         shop_id: data.shopId,
