@@ -31,6 +31,22 @@ export default function SuperAdminDashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // Load saved session on initial mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem('srm_admin_session');
+    if (savedSession) {
+      try {
+        const data = JSON.parse(savedSession);
+        if (data.isLoggedIn && data.currentUser) {
+          setIsLoggedIn(true);
+          setCurrentUser(data.currentUser);
+        }
+      } catch (e) {
+        console.error('Error parsing session data');
+      }
+    }
+  }, []);
   
   const [requests, setRequests] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
@@ -54,6 +70,7 @@ export default function SuperAdminDashboard() {
     if (account) {
       setIsLoggedIn(true);
       setCurrentUser(account);
+      localStorage.setItem('srm_admin_session', JSON.stringify({ isLoggedIn: true, currentUser: account }));
       toast.success(`Welcome back, ${account.name}`);
     } else {
       toast.error('Invalid credentials');
@@ -176,7 +193,11 @@ export default function SuperAdminDashboard() {
         </nav>
         <div className="p-4 border-t border-slate-100">
           <button 
-            onClick={() => setIsLoggedIn(false)}
+            onClick={() => {
+              setIsLoggedIn(false);
+              setCurrentUser(null);
+              localStorage.removeItem('srm_admin_session');
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 text-rose-600 hover:bg-rose-50 rounded-xl font-medium transition-all"
           >
             <LogOut className="w-5 h-5" />
