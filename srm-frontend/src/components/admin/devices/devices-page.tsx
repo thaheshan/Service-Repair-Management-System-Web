@@ -413,7 +413,8 @@ export default function DevicesManagementPage() {
     try {
       await updateDevice({
         id: pendingStatusUpdate.id,
-        status: newStatus
+        status: newStatus,
+        autoUpdateCustomer: autoNotify
       }).unwrap();
       setPendingStatusUpdate(null)
       setIsStatusModalOpen(false)
