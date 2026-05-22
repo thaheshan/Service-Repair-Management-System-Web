@@ -177,7 +177,8 @@ export default function RepairsPage() {
       try {
         await updateRepairStatus({
           id: pendingStatusUpdate.repairId,
-          status: backendStatusMap[newStatus] || "NOT_STARTED"
+          status: backendStatusMap[newStatus] || "NOT_STARTED",
+          autoUpdateCustomer: _ // true or false from the modal checkbox
         }).unwrap();
 
         // Local state update for immediate feedback
