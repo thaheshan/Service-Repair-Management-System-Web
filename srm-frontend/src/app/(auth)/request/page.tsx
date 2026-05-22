@@ -50,6 +50,10 @@ function RequestStatusContent() {
       <RequestRejected
         onGoHome={() => router.push('/')}
         onContactSupport={() => window.open('mailto:support@allfix.space', '_blank')}
+        onTryAgain={() => {
+          localStorage.removeItem('srm_pending_registration_id');
+          router.push('/signup');
+        }}
       />
     )
   }

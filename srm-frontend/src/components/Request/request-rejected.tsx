@@ -5,9 +5,10 @@ import { XCircle, ArrowLeft, Mail } from 'lucide-react'
 interface RequestRejectedProps {
   onGoHome: () => void
   onContactSupport?: () => void
+  onTryAgain: () => void
 }
 
-export function RequestRejected({ onGoHome, onContactSupport }: RequestRejectedProps) {
+export function RequestRejected({ onGoHome, onContactSupport, onTryAgain }: RequestRejectedProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-white to-red-50 p-6">
       <div className="w-full max-w-lg">
@@ -68,7 +69,7 @@ export function RequestRejected({ onGoHome, onContactSupport }: RequestRejectedP
                 </button>
               )}
               <button
-                onClick={onGoHome}
+                onClick={onTryAgain}
                 className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-medium transition-all text-sm"
               >
                 Try Again
