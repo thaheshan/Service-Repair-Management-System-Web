@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { RequestPending } from '@/components/Request/request-pending'
 import { RequestSuccessful } from '@/components/Request/request-successful'
+import { RequestRejected } from '@/components/Request/request-rejected'
 import { useGetRegistrationStatusQuery } from '@/services/api/authApiSlice'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -41,6 +42,19 @@ function RequestStatusContent() {
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
+    )
+  }
+
+  if (request?.status === 'REJECTED') {
+    return (
+      <RequestRejected
+        onGoHome={() => router.push('/')}
+        onContactSupport={() => window.open('mailto:support@allfix.space', '_blank')}
+        onTryAgain={() => {
+          localStorage.removeItem('srm_pending_registration_id');
+          router.push('/signup');
+        }}
+      />
     )
   }
 

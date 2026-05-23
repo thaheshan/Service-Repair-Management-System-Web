@@ -31,6 +31,22 @@ export default function SuperAdminDashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // Load saved session on initial mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem('srm_admin_session');
+    if (savedSession) {
+      try {
+        const data = JSON.parse(savedSession);
+        if (data.isLoggedIn && data.currentUser) {
+          setIsLoggedIn(true);
+          setCurrentUser(data.currentUser);
+        }
+      } catch (e) {
+        console.error('Error parsing session data');
+      }
+    }
+  }, []);
   
   const [requests, setRequests] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
@@ -54,6 +70,7 @@ export default function SuperAdminDashboard() {
     if (account) {
       setIsLoggedIn(true);
       setCurrentUser(account);
+      localStorage.setItem('srm_admin_session', JSON.stringify({ isLoggedIn: true, currentUser: account }));
       toast.success(`Welcome back, ${account.name}`);
     } else {
       toast.error('Invalid credentials');
@@ -89,12 +106,25 @@ export default function SuperAdminDashboard() {
   const handleApprove = async (requestId: string, token: string) => {
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/onboarding/approve/${token}`);
-      if (response.data.success) {
+      if (response.data.success || response.data.message) {
         toast.success('Registration approved successfully!');
         fetchData();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Approval failed');
+    }
+  };
+
+  const handleReject = async (requestId: string, token: string) => {
+    if (!confirm('Are you sure you want to reject this registration request? This cannot be undone.')) return;
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/onboarding/reject/${token}`);
+      if (response.data.success || response.data.message) {
+        toast.success('Registration rejected.');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Rejection failed');
     }
   };
 
@@ -176,7 +206,11 @@ export default function SuperAdminDashboard() {
         </nav>
         <div className="p-4 border-t border-slate-100">
           <button 
-            onClick={() => setIsLoggedIn(false)}
+            onClick={() => {
+              setIsLoggedIn(false);
+              setCurrentUser(null);
+              localStorage.removeItem('srm_admin_session');
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 text-rose-600 hover:bg-rose-50 rounded-xl font-medium transition-all"
           >
             <LogOut className="w-5 h-5" />
@@ -335,9 +369,15 @@ export default function SuperAdminDashboard() {
                                   Finalize Account
                                 </button>
                               )}
-                              <button className="p-2 text-slate-400 hover:text-rose-500 transition-all">
-                                <XCircle className="w-5 h-5" />
-                              </button>
+                              {req.status === 'PENDING' && (
+                                <button 
+                                  onClick={() => handleReject(req.id, req.approvalToken)}
+                                  className="p-2 text-slate-400 hover:text-rose-500 transition-all"
+                                  title="Reject Request"
+                                >
+                                  <XCircle className="w-5 h-5" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
