@@ -8,7 +8,8 @@ import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { useCreateRepairMutation, useUploadRepairPhotoMutation } from "@/services/api/repairsApiSlice"
-import { DEVICE_MODELS_BY_BRAND } from "@/app/admin/devices/device-data"
+import { DEVICE_MODELS_BY_BRAND, BRANDS } from "@/app/admin/devices/device-data"
+import { Autocomplete } from "@/components/ui/autocomplete"
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
 import { useGetDevicesQuery, useCreateDeviceMutation } from "@/services/api/devicesApiSlice"
 import { useGetStaffListQuery, useGetStaffContextQuery } from "@/services/api/staffApiSlice"
@@ -302,8 +303,8 @@ export default function CreateRepairPage() {
       if (!selectedDeviceId) {
         newDev = await createDevice({
           type: deviceType === "Other" ? customDeviceCategory : deviceType,
-          brand: brand === "Other" ? customBrand : brand,
-          model: model === "Other" ? customModel : model,
+          brand: brand,
+          model: model,
           customerId: finalCustomerId,
           shopId: user.shopId,
           tenantId: user.tenantId,
@@ -672,58 +673,26 @@ export default function CreateRepairPage() {
                     </div>
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5 flex items-center gap-1">{mounted ? t('repairs.form.brand') : 'Brand'} <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <select value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                          <option value="Apple">Apple</option>
-                          <option value="Samsung">Samsung</option>
-                          <option value="Google">Google</option>
-                          <option value="Asus">Asus</option>
-                          <option value="Acer">Acer</option>
-                          <option value="Dell">Dell</option>
-                          <option value="HP">HP</option>
-                          <option value="Lenovo">Lenovo</option>
-                          <option value="Microsoft">Microsoft</option>
-                          <option value="Sony">Sony</option>
-                          <option value="LG">LG</option>
-                          <option value="Huawei">Huawei</option>
-                          <option value="Xiaomi">Xiaomi</option>
-                          <option value="OnePlus">OnePlus</option>
-                          <option value="Motorola">Motorola</option>
-                          <option value="Nokia">Nokia</option>
-                          <option value="Nintendo">Nintendo</option>
-                          <option value="PlayStation">PlayStation</option>
-                          <option value="Xbox">Xbox</option>
-                          <option value="Bose">Bose</option>
-                          <option value="JBL">JBL</option>
-                          <option value="GoPro">GoPro</option>
-                          <option value="DJI">DJI</option>
-                          <option value="Other">Other</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-                      {brand === "Other" && (
-                        <input type="text" value={customBrand} onChange={(e) => setCustomBrand(e.target.value)} placeholder={mounted ? t("repairs.placeholders.customBrand") : "Enter custom brand"} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
-                      )}
+                      <Autocomplete 
+                        options={BRANDS.map(b => ({ value: b, label: b }))}
+                        value={brand}
+                        onChange={v => {
+                          setBrand(v);
+                          setModel("");
+                        }}
+                        placeholder="Search or type brand..."
+                        className="h-10 rounded-lg border-border"
+                      />
                     </div>
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">{mounted ? t('repairs.form.model') : 'Model'} <span className="text-red-500">*</span></label>
-                      {DEVICE_MODELS_BY_BRAND[brand] && brand !== "Other" ? (
-                        <div className="relative">
-                          <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                            <option value="" disabled>Select Model...</option>
-                            {DEVICE_MODELS_BY_BRAND[brand].map(m => (
-                              <option key={m} value={m}>{m}</option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        </div>
-                      ) : (
-                        <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder={mounted ? t("repairs.placeholders.customModel") : "Enter device model"} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" />
-                      )}
-                      
-                      {model === "Other" && DEVICE_MODELS_BY_BRAND[brand] && brand !== "Other" && (
-                        <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder={mounted ? t("repairs.placeholders.customModel") : "Enter custom model"} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
-                      )}
+                      <Autocomplete
+                        options={(DEVICE_MODELS_BY_BRAND[brand] || []).map(m => ({ value: m, label: m }))}
+                        value={model}
+                        onChange={v => setModel(v)}
+                        placeholder="Search or type model..."
+                        className="h-10 rounded-lg border-border"
+                      />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 col-span-1 sm:col-span-2">
                        <div className="flex-1">
