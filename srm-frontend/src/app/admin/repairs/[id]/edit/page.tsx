@@ -6,7 +6,8 @@ import { useRouter, useParams } from "next/navigation"
 import { Calendar, Search, ChevronDown, Check, Camera, Image as ImageIcon, Plus, X, Download } from "lucide-react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
-import { useGetRepairByIdQuery, useUpdateRepairStatusMutation } from "@/services/api/repairsApiSlice"
+import PhotoUploadModal from "@/components/shared/modals/PhotoUploadModal"
+import { useGetRepairByIdQuery, useUpdateRepairStatusMutation, useDeleteRepairPhotoMutation } from "@/services/api/repairsApiSlice"
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
 import { toast } from "sonner"
 
@@ -55,12 +56,13 @@ export default function EditRepairPage() {
   // Assignment States
   const [technician, setTechnician] = useState("")
   const [status, setStatus] = useState("Pending")
-  const [priority, setPriority] = useState("Urgent")
-
+  const [photoToDelete, setPhotoToDelete] = useState<any>(null)
+  
   // API Hooks
-  const { data: repairResponse, isLoading } = useGetRepairByIdQuery(id)
+  const { data: repairResponse, isLoading, refetch } = useGetRepairByIdQuery(id)
   const { data: staffResponse } = useGetStaffListQuery({})
   const [updateRepair, { isLoading: isUpdating }] = useUpdateRepairStatusMutation()
+  const [deleteRepairPhoto] = useDeleteRepairPhotoMutation()
 
   const repair = repairResponse?.data
   const technicians = staffResponse?.staff || []
@@ -105,12 +107,13 @@ export default function EditRepairPage() {
     }
   }, [repair])
 
-  // UI States
   const [currentStep, setCurrentStep] = useState(1)
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null)
   
   // New Customer Modal States
   const [newCustomerName, setNewCustomerName] = useState("")
@@ -459,6 +462,44 @@ export default function EditRepairPage() {
                     <input type="text" value={imei} readOnly className="w-full h-10 rounded-lg border border-border bg-muted px-3 text-sm focus:outline-none" />
                   </div>
                </div>
+               
+               {/* Device Photos Section */}
+               <div className="mt-8 border-t border-border pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-foreground">Device Photos</h3>
+                    <button
+                      onClick={(e) => { e.preventDefault(); setIsUploadModalOpen(true); }}
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[12px] font-bold hover:bg-[#E0E7FF] transition-colors"
+                    >
+                      <Camera className="h-3.5 w-3.5" /> Add Photo
+                    </button>
+                  </div>
+                  
+                  {repair?.photos && repair.photos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {repair.photos.map((photo: any, i: number) => (
+                        <div key={photo.id || i} className="relative aspect-square rounded-xl overflow-hidden border border-border group bg-muted">
+                          <img
+                            src={photo.url}
+                            alt={`Device photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={(e) => { e.preventDefault(); setPhotoToDelete(photo); }}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-md transition-colors z-10 shadow-sm"
+                            title="Delete Photo"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center text-[13px] text-muted-foreground border-2 border-dashed border-border rounded-xl">
+                      No photos uploaded yet.
+                    </div>
+                  )}
+               </div>
             </section>
 
             <section ref={section3Ref} className="bg-white rounded-xl shadow-sm border border-border p-6 scroll-mt-6">
@@ -547,6 +588,53 @@ export default function EditRepairPage() {
             </div>
           </div>
         )}
+
+        {photoToDelete && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-foreground">Delete Photo</h2>
+                <button onClick={() => setPhotoToDelete(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">Are you sure you want to permanently delete this photo? This action cannot be undone.</p>
+              <div className="flex gap-3 justify-end">
+                <button 
+                  onClick={() => setPhotoToDelete(null)}
+                  className="px-4 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={async () => {
+                    try {
+                      await deleteRepairPhoto({ repairId: id, photoId: photoToDelete.id }).unwrap();
+                      toast.success("Photo deleted successfully");
+                      refetch();
+                    } catch (error: any) {
+                      toast.error(error?.data?.message || "Failed to delete photo");
+                    } finally {
+                      setPhotoToDelete(null);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+                >
+                  Delete Permanently
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <PhotoUploadModal 
+          isOpen={isUploadModalOpen} 
+          onClose={() => setIsUploadModalOpen(false)} 
+          onUploadSuccess={(url) => {
+            refetch();
+          }}
+          repairId={id}
+        />
 
       </div>
     </div>

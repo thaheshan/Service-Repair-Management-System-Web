@@ -7,11 +7,13 @@ import { Calendar, Search, ChevronDown, Check, Camera, Image as ImageIcon, Plus,
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
-import { useCreateRepairMutation } from "@/services/api/repairsApiSlice"
+import { useCreateRepairMutation, useUploadRepairPhotoMutation } from "@/services/api/repairsApiSlice"
+import { DEVICE_MODELS_BY_BRAND } from "@/app/admin/devices/device-data"
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
 import { useGetDevicesQuery, useCreateDeviceMutation } from "@/services/api/devicesApiSlice"
 import { useGetStaffListQuery, useGetStaffContextQuery } from "@/services/api/staffApiSlice"
 import { useGetInventoryItemsQuery } from "@/services/api/inventoryApiSlice"
+import { PhotoUploadModal } from "@/components/shared/modals/PhotoUploadModal"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { setCredentials } from "@/store/slices/authSlice"
@@ -58,6 +60,12 @@ export default function CreateRepairPage() {
   const [estimatedDate, setEstimatedDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]) // Default to 7 days from now
   const [accessories, setAccessories] = useState<string[]>([])
   
+  // New States for Features
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+  const [deviceSearchTerm, setDeviceSearchTerm] = useState("")
+  const [selectedDeviceId, setSelectedDeviceId] = useState("")
+  
   // Custom Parts State
   const [partsRequired, setPartsRequired] = useState<string[]>(["Premium Screen Assembly - iPhone 13 Pro"])
   const [partInput, setPartInput] = useState("")
@@ -83,6 +91,7 @@ export default function CreateRepairPage() {
   const { data: staffData } = useGetStaffListQuery({}, { skip: !user?.shopId })
   const { data: userContext, error: userContextError } = useGetStaffContextQuery({}, { skip: !!user || !token })
   const [createDevice] = useCreateDeviceMutation()
+  const { data: devicesData } = useGetDevicesQuery({}, { skip: !user?.shopId })
   const { data: inventoryData } = useGetInventoryItemsQuery({}, { skip: !user?.shopId })
 
   const dispatch = useDispatch()
@@ -289,29 +298,33 @@ export default function CreateRepairPage() {
       }
 
       // Create Device record
-      const newDev = await createDevice({
-        type: deviceType === "Other" ? customDeviceCategory : deviceType,
-        brand: brand === "Other" ? customBrand : brand,
-        model: model === "Other" ? customModel : model,
-        customerId: finalCustomerId,
-        shopId: user.shopId,
-        tenantId: user.tenantId,
-        ...(serialNo && { serialNo }),
-        ...(imei && { imei })
-      }).unwrap();
+      let newDev = null;
+      if (!selectedDeviceId) {
+        newDev = await createDevice({
+          type: deviceType === "Other" ? customDeviceCategory : deviceType,
+          brand: brand === "Other" ? customBrand : brand,
+          model: model === "Other" ? customModel : model,
+          customerId: finalCustomerId,
+          shopId: user.shopId,
+          tenantId: user.tenantId,
+          ...(serialNo && { serialNo }),
+          ...(imei && { imei })
+        }).unwrap();
+      }
 
       // Create Repair
       const repairData = {
         shopId: user.shopId,
         customerId: finalCustomerId,
-        deviceId: newDev.data.id,
+        deviceId: selectedDeviceId || newDev?.data?.id,
         issue: issueDescription || issueCategory,
         estimatedCost: Math.round(pricingTotal),
         technicianId: technician || null,
         status: status === "Pending" ? "NOT_STARTED" : 
                 status === "In Progress" ? "IN_PROGRESS" : 
                 status === "Ready" ? "READY_TO_TAKE" : "NOT_STARTED",
-        priority: priority.toUpperCase()
+        priority: priority.toUpperCase(),
+        photoUrls: uploadedPhotos
       };
 
       await createRepair(repairData).unwrap();
@@ -571,16 +584,85 @@ export default function CreateRepairPage() {
               {/* 3. Device Information */}
               <section className="bg-white rounded-xl shadow-sm border border-border p-6">
                  <h2 className="text-lg font-bold text-foreground mb-6">{mounted ? t('repairs.form.deviceTitle') : 'Device Information'}</h2>
+                 
+                 <div className="mb-6 relative z-10">
+                    <label className="block text-[13px] font-bold text-foreground mb-1.5">Search Existing Device <span className="text-muted-foreground font-normal">(Optional)</span></label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input 
+                        type="text" 
+                        value={deviceSearchTerm}
+                        onChange={(e) => {
+                          setDeviceSearchTerm(e.target.value);
+                          if (!e.target.value) {
+                            setSelectedDeviceId("");
+                          }
+                        }}
+                        placeholder="Search by brand, model, or IMEI..."
+                        className="w-full h-10 rounded-lg border border-border bg-white pl-10 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" 
+                        disabled={!selectedCustomerId && !customer}
+                      />
+                      {deviceSearchTerm && !selectedDeviceId && devicesData?.data && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                          {devicesData.data
+                            .filter((d: any) => {
+                               const matchTerm = `${d.brand} ${d.model} ${d.imei || ''}`.toLowerCase().includes(deviceSearchTerm.toLowerCase());
+                               // Only show devices belonging to the selected customer, or all if no customer selected yet (though ideally we should link to customer)
+                               const matchCustomer = selectedCustomerId ? d.customerId === selectedCustomerId : true;
+                               return matchTerm && matchCustomer;
+                            })
+                            .map((d: any) => (
+                              <div 
+                                key={d.id}
+                                onClick={() => {
+                                  setSelectedDeviceId(d.id);
+                                  setDeviceSearchTerm(`${d.brand} ${d.model}`);
+                                  setDeviceType(d.type || "Mobile Phone");
+                                  setBrand(d.brand || "Other");
+                                  setModel(d.model || "Other");
+                                  if (d.serialNo) setSerialNo(d.serialNo);
+                                  if (d.imei) setImei(d.imei);
+                                  // Update customer context if not already selected
+                                  if (!selectedCustomerId && d.customer) {
+                                      setCustomer(d.customer.name);
+                                      setSelectedCustomerId(d.customerId);
+                                  }
+                                }}
+                                className="p-3 hover:bg-muted cursor-pointer text-sm border-b border-border last:border-0"
+                              >
+                                <p className="font-bold">{d.brand} {d.model}</p>
+                                <p className="text-xs text-muted-foreground">Type: {d.type} {d.imei ? `• IMEI: ${d.imei}` : ''}</p>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                    {selectedDeviceId && (
+                      <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Device selected. Details below are auto-filled.
+                      </p>
+                    )}
+                 </div>
 
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">{mounted ? t('repairs.form.deviceType') : 'Device Type'} <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <select value={deviceType} onChange={(e) => setDeviceType(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                          <option value="Mobile Phone">{mounted ? t("repairs.categories.mobile") : "Mobile Phone"}</option>
-                          <option value="Tablet">{mounted ? t("repairs.categories.tablet") : "Tablet"}</option>
-                          <option value="Laptop">{mounted ? t("repairs.categories.laptop") : "Laptop"}</option>
-                          <option value="Other">{mounted ? t("repairs.categories.other") : "Other"}</option>
+                          <option value="Mobile Phone">Mobile Phone</option>
+                          <option value="Tablet">Tablet</option>
+                          <option value="Laptop">Laptop</option>
+                          <option value="Desktop Computer">Desktop Computer</option>
+                          <option value="Smartwatch">Smartwatch</option>
+                          <option value="Gaming Console">Gaming Console</option>
+                          <option value="Audio/Headphones">Audio / Headphones</option>
+                          <option value="Camera">Camera</option>
+                          <option value="Drone">Drone</option>
+                          <option value="E-Reader">E-Reader</option>
+                          <option value="Monitor/Display">Monitor / Display</option>
+                          <option value="Printer/Scanner">Printer / Scanner</option>
+                          <option value="Smart Home Device">Smart Home Device</option>
+                          <option value="Other">Other</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
@@ -595,6 +677,26 @@ export default function CreateRepairPage() {
                           <option value="Apple">Apple</option>
                           <option value="Samsung">Samsung</option>
                           <option value="Google">Google</option>
+                          <option value="Asus">Asus</option>
+                          <option value="Acer">Acer</option>
+                          <option value="Dell">Dell</option>
+                          <option value="HP">HP</option>
+                          <option value="Lenovo">Lenovo</option>
+                          <option value="Microsoft">Microsoft</option>
+                          <option value="Sony">Sony</option>
+                          <option value="LG">LG</option>
+                          <option value="Huawei">Huawei</option>
+                          <option value="Xiaomi">Xiaomi</option>
+                          <option value="OnePlus">OnePlus</option>
+                          <option value="Motorola">Motorola</option>
+                          <option value="Nokia">Nokia</option>
+                          <option value="Nintendo">Nintendo</option>
+                          <option value="PlayStation">PlayStation</option>
+                          <option value="Xbox">Xbox</option>
+                          <option value="Bose">Bose</option>
+                          <option value="JBL">JBL</option>
+                          <option value="GoPro">GoPro</option>
+                          <option value="DJI">DJI</option>
                           <option value="Other">Other</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -605,16 +707,21 @@ export default function CreateRepairPage() {
                     </div>
                     <div>
                       <label className="block text-[13px] font-bold text-foreground mb-1.5">{mounted ? t('repairs.form.model') : 'Model'} <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
-                          <option value="iPhone 13 Pro">iPhone 13 Pro</option>
-                          <option value="iPhone 14 Pro">iPhone 14 Pro</option>
-                          <option value="iPhone 15 Pro">iPhone 15 Pro</option>
-                          <option value="Other">Other</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-                      {model === "Other" && (
+                      {DEVICE_MODELS_BY_BRAND[brand] && brand !== "Other" ? (
+                        <div className="relative">
+                          <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none appearance-none font-medium">
+                            <option value="" disabled>Select Model...</option>
+                            {DEVICE_MODELS_BY_BRAND[brand].map(m => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      ) : (
+                        <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder={mounted ? t("repairs.placeholders.customModel") : "Enter device model"} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" />
+                      )}
+                      
+                      {model === "Other" && DEVICE_MODELS_BY_BRAND[brand] && brand !== "Other" && (
                         <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder={mounted ? t("repairs.placeholders.customModel") : "Enter custom model"} className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm mt-2 focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1" />
                       )}
                     </div>
@@ -721,16 +828,38 @@ export default function CreateRepairPage() {
 
                  <div>
                    <label className="block text-[13px] font-bold text-foreground mb-3">{mounted ? t('repairs.form.photos') : 'Device Photos'} ({mounted ? t('common.optional') : 'Optional'})</label>
-                   <label className="w-full h-32 border-2 border-dashed border-border rounded-xl bg-[#F8FAFC] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors block">
-                     <input type="file" multiple accept="image/png, image/jpeg, image/jpg" className="hidden" />
-                     <div className="flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm text-muted-foreground">
+                   
+                   {uploadedPhotos.length > 0 && (
+                     <div className="flex flex-wrap gap-4 mb-4">
+                       {uploadedPhotos.map((url, i) => (
+                         <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border group">
+                           <img src={url} alt={`Device photo ${i+1}`} className="w-full h-full object-cover" />
+                           <button 
+                             onClick={(e) => {
+                               e.preventDefault();
+                               setUploadedPhotos(prev => prev.filter((_, index) => index !== i));
+                             }}
+                             className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                           >
+                             <X className="w-3 h-3" />
+                           </button>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+
+                   <button 
+                     onClick={(e) => { e.preventDefault(); setIsPhotoModalOpen(true); }}
+                     className="w-full h-32 border-2 border-dashed border-border rounded-xl bg-[#F8FAFC] flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors"
+                   >
+                     <div className="flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm text-[#4F46E5]">
                        <Camera className="h-5 w-5" />
                      </div>
                      <div className="text-center">
-                       <span className="text-[13px] font-bold text-[#4F46E5]">{mounted ? t('repairs.actions.uploadPhotos') : 'Click to upload'}</span> <span className="text-[13px] font-medium text-muted-foreground">{mounted ? t('repairs.actions.dragDrop') : 'or drag and drop'}</span>
-                       <p className="text-[11px] text-muted-foreground mt-0.5">{mounted ? t('repairs.actions.photoSpecs') : 'JPG, PNG, JPG up to 10MB (max 5 files)'}</p>
+                       <span className="text-[13px] font-bold text-[#4F46E5]">Add Photos</span>
+                       <p className="text-[11px] text-muted-foreground mt-0.5">Click to open camera or upload files</p>
                      </div>
-                   </label>
+                   </button>
                  </div>
               </section>
 
@@ -1260,6 +1389,11 @@ export default function CreateRepairPage() {
         )}
 
       </div>
+      <PhotoUploadModal 
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        onUploadSuccess={(url) => setUploadedPhotos(prev => [...prev, url])}
+      />
     </div>
   )
 }

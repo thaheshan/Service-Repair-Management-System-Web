@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation"
 import { Calendar, ChevronDown, X, Search, Check, Camera, Plus, Download } from "lucide-react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { PhotoUploadModal } from "@/components/shared/modals/PhotoUploadModal"
 import { useGetRepairByIdQuery, useUpdateRepairStatusMutation } from "@/services/api/repairsApiSlice"
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
 import { toast } from "sonner"
@@ -50,6 +51,7 @@ export default function EditRepairPage() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [currentRef, setCurrentRef] = useState("")
   
   const { user } = useSelector((state: RootState) => state.auth)
@@ -424,6 +426,37 @@ export default function EditRepairPage() {
                     </div>
                   ))}
                 </div>
+                
+                {/* Device Photos Section */}
+                <div className="mt-8 border-t border-border pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-foreground">Device Photos</h3>
+                    <button
+                      onClick={(e) => { e.preventDefault(); setIsUploadModalOpen(true); }}
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[12px] font-bold hover:bg-[#E0E7FF] transition-colors"
+                    >
+                      <Camera className="h-3.5 w-3.5" /> Add Photo
+                    </button>
+                  </div>
+                  
+                  {repair?.photos && repair.photos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {repair.photos.map((photo: any, i: number) => (
+                        <div key={photo.id || i} className="relative aspect-square rounded-xl overflow-hidden border border-border group bg-muted">
+                          <img
+                            src={photo.url}
+                            alt={`Device photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center text-[13px] text-muted-foreground border-2 border-dashed border-border rounded-xl">
+                      No photos uploaded yet.
+                    </div>
+                  )}
+               </div>
               </section>
 
             {/* 3. Issue & Pricing */}
@@ -660,6 +693,15 @@ export default function EditRepairPage() {
              </div>
           </div>
         )}
+
+        <PhotoUploadModal 
+          isOpen={isUploadModalOpen} 
+          onClose={() => setIsUploadModalOpen(false)} 
+          onUploadSuccess={(url) => {
+            repairResponse.refetch?.();
+          }}
+          repairId={id}
+        />
 
       </div>
     </div>
