@@ -64,4 +64,29 @@ export const INITIAL_DEVICES: Device[] = [
   { id:"20", name:"Galaxy Z Fold 4",            brand:"Samsung", type:"Mobile Phone", imei:"352112233445566", owner:{name:"Preethi Kumari",   phone:"+94 76 012 3456"}, warranty:{status:"Active",        expiryDate:"Jul 2025"}, totalRepairs:2, lastService:{date:"Feb 12, 2024", type:"Inner Screen Repair"},   registered:"Jul 2022", status:"Available", color:"bg-[#059669]", price: 385000 },
 ]
 
-export const BRANDS = ["Apple","Samsung","Xiaomi","Google","Sony","Microsoft","Lenovo","Dell","HP","Oppo","OnePlus","Vivo","Nintendo"]
+export const BRANDS = [
+  "Apple", "Samsung", "Google", "Asus", "Acer", "Dell", "HP", "Lenovo", "Microsoft", "Sony", 
+  "LG", "Huawei", "Xiaomi", "OnePlus", "Oppo", "Vivo", "Motorola", "Nokia", "Nintendo", 
+  "PlayStation", "Xbox", "Bose", "JBL", "GoPro", "DJI", "Other"
+];
+
+export const DEVICE_MODELS_BY_BRAND: Record<string, string[]> = {
+  Apple: ["iPhone 15 Pro Max", "iPhone 15 Pro", "iPhone 15 Plus", "iPhone 15", "iPhone 14 Pro Max", "iPhone 14 Pro", "iPhone 14 Plus", "iPhone 14", "iPhone 13 Pro Max", "iPhone 13 Pro", "iPhone 13", "iPhone 12", "iPhone 11", "iPad Pro", "iPad Air", "iPad Mini", "MacBook Pro", "MacBook Air", "iMac", "Apple Watch Ultra", "Apple Watch Series 9", "AirPods Pro", "Other"],
+  Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23+", "Galaxy S23", "Galaxy Z Fold 5", "Galaxy Z Flip 5", "Galaxy A54", "Galaxy Tab S9", "Galaxy Watch 6", "Other"],
+  Google: ["Pixel 8 Pro", "Pixel 8", "Pixel 7 Pro", "Pixel 7", "Pixel Fold", "Pixel Watch", "Other"],
+  Sony: ["PlayStation 5", "PlayStation 4", "Xperia 1 V", "WH-1000XM5", "Other"],
+  Microsoft: ["Xbox Series X", "Xbox Series S", "Xbox One", "Surface Pro 9", "Surface Laptop 5", "Other"],
+  Nintendo: ["Nintendo Switch OLED", "Nintendo Switch", "Nintendo Switch Lite", "Other"],
+  Xiaomi: ["13 Pro", "13", "Redmi Note 12 Pro", "POCO F5", "Other"],
+  Dell: ["XPS 15", "XPS 13", "Alienware m16", "Inspiron 15", "Other"],
+  HP: ["Spectre x360", "Envy x360", "Omen 16", "Pavilion", "Other"],
+  Lenovo: ["ThinkPad X1 Carbon", "Legion Pro 5", "Yoga 9i", "IdeaPad", "Other"],
+  Asus: ["ROG Zephyrus G14", "ZenBook 14", "TUF Gaming", "Other"],
+  Acer: ["Predator Helios", "Nitro 5", "Swift 3", "Other"],
+  OnePlus: ["11", "11R", "Nord 3", "Other"],
+  Huawei: ["P60 Pro", "Mate 50 Pro", "Other"],
+  Motorola: ["Edge 40 Pro", "Razr 40 Ultra", "Other"],
+  Oppo: ["Find X6 Pro", "Reno 10 Pro", "Other"],
+  Vivo: ["X90 Pro", "V27 Pro", "Other"],
+  LG: ["OLED TV", "Gram 17", "Other"],
+};

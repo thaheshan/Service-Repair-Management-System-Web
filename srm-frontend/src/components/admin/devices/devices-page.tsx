@@ -8,7 +8,7 @@ import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight, UserPlus } from "lucide-react"
 
-import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE } from "@/app/admin/devices/device-data"
+import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, DEVICE_MODELS_BY_BRAND } from "@/app/admin/devices/device-data"
 import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
 import { useGetDevicesQuery, useCreateDeviceMutation, useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/services/api/devicesApiSlice"
 import { useGetCustomersQuery } from "@/services/api/customersApiSlice"
@@ -65,8 +65,16 @@ export default function DevicesManagementPage() {
     { label: mounted ? t('devicesPage.types.mobile') : "Mobile Phone", value: "Mobile Phone" },
     { label: mounted ? t('devicesPage.types.tablet') : "Tablet", value: "Tablet" },
     { label: mounted ? t('devicesPage.types.laptop') : "Laptop", value: "Laptop" },
-    { label: mounted ? t('devicesPage.types.console') : "Console", value: "Console" },
+    { label: "Desktop Computer", value: "Desktop Computer" },
     { label: mounted ? t('devicesPage.types.smartwatch') : "Smartwatch", value: "Smartwatch" },
+    { label: mounted ? t('devicesPage.types.console') : "Gaming Console", value: "Gaming Console" },
+    { label: "Audio / Headphones", value: "Audio/Headphones" },
+    { label: "Camera", value: "Camera" },
+    { label: "Drone", value: "Drone" },
+    { label: "E-Reader", value: "E-Reader" },
+    { label: "Monitor / Display", value: "Monitor/Display" },
+    { label: "Printer / Scanner", value: "Printer/Scanner" },
+    { label: "Smart Home Device", value: "Smart Home Device" },
     { label: mounted ? t('devicesPage.types.other') : "Other", value: "Other" },
   ]
   const STATUSES = [
@@ -403,6 +411,7 @@ export default function DevicesManagementPage() {
       setAddSelectedCustomer(null);
       setAddCustomerSearch("");
       setCustomBrand("");
+      setCustomModel("");
     } catch (e: any) {
       toast.error(e.data?.message || "Registration failed");
     }
@@ -424,11 +433,13 @@ export default function DevicesManagementPage() {
     }
   }
 
+  const [customModel, setCustomModel] = useState("")
+
   const handleSaveEdit = async () => {
     if (!editDevice) return;
     try {
       const payload: Record<string, any> = {};
-      if (editForm.model) payload.model = editForm.model;
+      if (editForm.model) payload.model = editForm.model === "Other" ? (customModel || "Other") : editForm.model;
       if (editForm.brand) payload.brand = editForm.brand === "Other" ? (customBrand || "Other") : editForm.brand;
       if (editForm.type) payload.type = editForm.type;
       if (editForm.imei) payload.imei = editForm.imei;
@@ -712,14 +723,33 @@ export default function DevicesManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Device Model / Name *</label>
-                  <input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} placeholder="e.g. iPhone 14 Pro" className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/5 transition-all bg-background text-foreground" />
+                  {DEVICE_MODELS_BY_BRAND[form.brand] && form.brand !== "Other" ? (
+                    <div className="space-y-2">
+                      <select value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/5 transition-all bg-background text-foreground appearance-none outline-none">
+                        <option value="" disabled>Select Model...</option>
+                        {DEVICE_MODELS_BY_BRAND[form.brand].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                      {form.model === "Other" && (
+                        <input value={customModel} onChange={e => setCustomModel(e.target.value)} placeholder="Type custom model..." className="w-full h-11 rounded-xl border border-primary bg-indigo-50/20 px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] text-foreground animate-in slide-in-from-top-1" />
+                      )}
+                    </div>
+                  ) : (
+                    <input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} placeholder="e.g. iPhone 14 Pro" className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/5 transition-all bg-background text-foreground" />
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Brand *</label>
                   <select value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground appearance-none outline-none">
-                    <option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Huawei">Huawei</option>
-                    <option value="Xiaomi">Xiaomi</option><option value="Oppo">Oppo</option><option value="Vivo">Vivo</option>
-                    <option value="Sony">Sony</option><option value="Nokia">Nokia</option><option value="Google">Google</option><option value="Other">Other</option>
+                    <option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Google">Google</option>
+                    <option value="Asus">Asus</option><option value="Acer">Acer</option><option value="Dell">Dell</option>
+                    <option value="HP">HP</option><option value="Lenovo">Lenovo</option><option value="Microsoft">Microsoft</option>
+                    <option value="Sony">Sony</option><option value="LG">LG</option><option value="Huawei">Huawei</option>
+                    <option value="Xiaomi">Xiaomi</option><option value="OnePlus">OnePlus</option><option value="Oppo">Oppo</option><option value="Vivo">Vivo</option><option value="Motorola">Motorola</option>
+                    <option value="Nokia">Nokia</option><option value="Nintendo">Nintendo</option><option value="PlayStation">PlayStation</option>
+                    <option value="Xbox">Xbox</option><option value="Bose">Bose</option><option value="JBL">JBL</option>
+                    <option value="GoPro">GoPro</option><option value="DJI">DJI</option><option value="Other">Other</option>
                   </select>
                 </div>
               </div>
@@ -823,14 +853,33 @@ export default function DevicesManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Device Model / Name</label>
-                  <input value={editForm.model} onChange={e => setEditForm(p => ({ ...p, model: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" />
+                  {DEVICE_MODELS_BY_BRAND[editForm.brand] && editForm.brand !== "Other" ? (
+                    <div className="space-y-2">
+                      <select value={editForm.model} onChange={e => setEditForm(p => ({ ...p, model: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground appearance-none outline-none">
+                        <option value="" disabled>Select Model...</option>
+                        {DEVICE_MODELS_BY_BRAND[editForm.brand].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                      {editForm.model === "Other" && (
+                        <input value={customModel} onChange={e => setCustomModel(e.target.value)} placeholder="Type custom model..." className="w-full h-11 rounded-xl border border-primary bg-indigo-50/20 px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] text-foreground animate-in slide-in-from-top-1" />
+                      )}
+                    </div>
+                  ) : (
+                    <input value={editForm.model} onChange={e => setEditForm(p => ({ ...p, model: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" />
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Brand</label>
                   <select value={editForm.brand} onChange={e => setEditForm(p => ({ ...p, brand: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground appearance-none">
-                    <option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Huawei">Huawei</option>
-                    <option value="Xiaomi">Xiaomi</option><option value="Oppo">Oppo</option><option value="Vivo">Vivo</option>
-                    <option value="Sony">Sony</option><option value="Nokia">Nokia</option><option value="Google">Google</option><option value="Other">Other</option>
+                    <option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Google">Google</option>
+                    <option value="Asus">Asus</option><option value="Acer">Acer</option><option value="Dell">Dell</option>
+                    <option value="HP">HP</option><option value="Lenovo">Lenovo</option><option value="Microsoft">Microsoft</option>
+                    <option value="Sony">Sony</option><option value="LG">LG</option><option value="Huawei">Huawei</option>
+                    <option value="Xiaomi">Xiaomi</option><option value="OnePlus">OnePlus</option><option value="Oppo">Oppo</option><option value="Vivo">Vivo</option><option value="Motorola">Motorola</option>
+                    <option value="Nokia">Nokia</option><option value="Nintendo">Nintendo</option><option value="PlayStation">PlayStation</option>
+                    <option value="Xbox">Xbox</option><option value="Bose">Bose</option><option value="JBL">JBL</option>
+                    <option value="GoPro">GoPro</option><option value="DJI">DJI</option><option value="Other">Other</option>
                   </select>
                 </div>
               </div>

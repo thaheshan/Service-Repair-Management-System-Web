@@ -9,9 +9,11 @@ import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import {
   Calendar, Clock, User, Bell, MapPin, 
   Wrench, ShieldCheck, CheckCircle2, Box, PenTool,
-  Paperclip, Trash2, Plus, Image as ImageIcon, CheckCircle, ChevronRight, X, ChevronDown
+  Paperclip, Trash2, Plus, Image as ImageIcon, CheckCircle, ChevronRight, X, ChevronDown, Camera
 } from "lucide-react"
-import { useGetRepairByIdQuery, useUpdateRepairStatusMutation, useAddRepairNoteMutation } from "@/services/api/repairsApiSlice"
+import { useGetRepairByIdQuery, useUpdateRepairStatusMutation, useAddRepairNoteMutation, useDeleteRepairPhotoMutation } from "@/services/api/repairsApiSlice"
+import { toast } from "sonner"
+import { PhotoUploadModal } from "@/components/shared/modals/PhotoUploadModal"
 import { format } from "date-fns"
 
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
@@ -27,7 +29,7 @@ function TaskDetailsPage() {
   const searchParams = useSearchParams()
   const from = searchParams?.get('from')
 
-  const { data: repairResponse, isLoading, isError } = useGetRepairByIdQuery(id)
+  const { data: repairResponse, isLoading, isError, refetch } = useGetRepairByIdQuery(id)
   const { data: staffResponse } = useGetStaffListQuery({})
   const [updateStatus, { isLoading: isUpdating }] = useUpdateRepairStatusMutation()
   const [addNote, { isLoading: isAddingNote }] = useAddRepairNoteMutation()
@@ -35,6 +37,11 @@ function TaskDetailsPage() {
   const [taskNote, setTaskNote] = useState("")
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [isReassignDropdownOpen, setIsReassignDropdownOpen] = useState(false)
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [photoToDelete, setPhotoToDelete] = useState<any>(null)
+
+  const [deleteRepairPhoto] = useDeleteRepairPhotoMutation()
 
   const repair = repairResponse?.data
   const technicians = staffResponse?.staff || []
@@ -326,6 +333,56 @@ function TaskDetailsPage() {
                     </button>
                   </div>
                 </section>
+
+                {/* Device Photos */}
+                <section className="bg-white rounded-xl shadow-sm border border-border p-7">
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-[15px] font-bold text-[#0F172A] flex items-center gap-2">
+                      <ImageIcon className="h-[18px] w-[18px] text-[#4F46E5]" /> Device Photos
+                      {repair.photos?.length > 0 && (
+                        <span className="ml-2 text-[12px] font-medium text-muted-foreground">{repair.photos.length} photo{repair.photos.length > 1 ? 's' : ''}</span>
+                      )}
+                    </h2>
+                    <button
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[12px] font-bold hover:bg-[#E0E7FF] transition-colors"
+                    >
+                      <Camera className="h-3.5 w-3.5" /> Add Photo
+                    </button>
+                  </div>
+                  
+                  {repair.photos?.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {repair.photos.map((photo: any, i: number) => (
+                        <div
+                          key={photo.id || i}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted group hover:ring-2 hover:ring-[#4F46E5] transition-all cursor-pointer"
+                          onClick={() => setLightboxPhoto(photo.url)}
+                        >
+                          <img
+                            src={photo.url}
+                            alt={`Device photo ${i + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+                            <ImageIcon className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPhotoToDelete(photo); }}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-md transition-colors z-10 shadow-sm"
+                            title="Delete Photo"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center bg-[#F8FAFC] rounded-xl border border-dashed border-border">
+                      <p className="text-[13px] text-muted-foreground font-medium">No photos uploaded yet.</p>
+                    </div>
+                  )}
+                </section>
               </div>
 
               {/* Right Column */}
@@ -402,6 +459,78 @@ function TaskDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Lightbox */}
+      {lightboxPhoto && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+          onClick={() => setLightboxPhoto(null)}
+        >
+          <div className="relative max-w-4xl w-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              className="absolute -top-12 right-0 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X className="h-5 w-5 text-white" />
+            </button>
+            <img 
+              src={lightboxPhoto} 
+              alt="Device photo" 
+              className="w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
+            />
+            <p className="text-white/50 text-[12px] mt-4">Click outside or press ✕ to close</p>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Photo Modal */}
+      {photoToDelete && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-foreground">Delete Photo</h2>
+              <button onClick={() => setPhotoToDelete(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">Are you sure you want to permanently delete this photo? This action cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setPhotoToDelete(null)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-semibold hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  try {
+                    await deleteRepairPhoto({ repairId: id, photoId: photoToDelete.id }).unwrap();
+                    toast.success("Photo deleted successfully");
+                    refetch();
+                  } catch (error: any) {
+                    toast.error(error?.data?.message || "Failed to delete photo");
+                  } finally {
+                    setPhotoToDelete(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+              >
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      <PhotoUploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+        onUploadSuccess={(url) => {
+          refetch(); // Reload the repair to show the new photo
+        }}
+        repairId={id}
+      />
     </div>
   )
 }
