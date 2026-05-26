@@ -99,7 +99,7 @@ export default function CustomerManagementPage() {
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
-  const { data: settingsData } = useGetSettingsQuery({})
+  const { data: settingsData } = useGetSettingsQuery()
   const liveRoles = useMemo(() => settingsData?.settings?.customerTiers || INITIAL_ROLES, [settingsData])
 
   const [commModal, setCommModal] = useState<{ type: "Phone" | "Mail" | "SMS"; customer: Customer } | null>(null)

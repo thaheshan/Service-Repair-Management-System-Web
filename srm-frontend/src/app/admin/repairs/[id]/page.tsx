@@ -28,7 +28,7 @@ function TaskDetailsPage() {
   const from = searchParams?.get('from')
 
   const { data: repairResponse, isLoading, isError } = useGetRepairByIdQuery(id)
-  const { data: staffResponse } = useGetStaffListQuery({})
+  const { data: staffResponse } = useGetStaffListQuery(undefined, { skip: user?.role === 'TECHNICIAN' })
   const [updateStatus, { isLoading: isUpdating }] = useUpdateRepairStatusMutation()
   const [addNote, { isLoading: isAddingNote }] = useAddRepairNoteMutation()
 

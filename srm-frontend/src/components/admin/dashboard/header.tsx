@@ -61,7 +61,7 @@ export function DashboardHeader() {
 
   const router = useRouter()
   const { data: response } = useGetDashboardAnalyticsQuery(7);
-  const { data: settingsResponse } = useGetSettingsQuery({})
+  const { data: settingsResponse } = useGetSettingsQuery()
   const [markRead] = useMarkReadMutation()
   const [clearNotifications] = useClearNotificationsMutation()
   

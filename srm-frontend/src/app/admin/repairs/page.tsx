@@ -15,6 +15,8 @@ import { DeleteTaskModal } from "@/components/admin/repairs/delete-task-modal"
 
 import { useGetRepairsQuery, useUpdateRepairStatusMutation, useDeleteRepairMutation } from "@/services/api/repairsApiSlice"
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
 import { toast } from "sonner"
 
 function daysAgo(n: number): string {
@@ -32,8 +34,9 @@ export default function RepairsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const { user } = useSelector((state: RootState) => state.auth)
   const { data: response, isLoading } = useGetRepairsQuery({});
-  const { data: staffResponse } = useGetStaffListQuery({});
+  const { data: staffResponse } = useGetStaffListQuery(undefined, { skip: !user || user?.role === 'TECHNICIAN' });
   const [updateRepairStatus] = useUpdateRepairStatusMutation();
   const [deleteRepair] = useDeleteRepairMutation();
 

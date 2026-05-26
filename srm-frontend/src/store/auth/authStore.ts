@@ -29,7 +29,7 @@ interface AuthState {
   setToken: (token: string | null) => void;
 }
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const AUTH_TOKEN_KEY = 'auth_token';
 
 export const useAuthStore = create<AuthState>((set, get) => ({

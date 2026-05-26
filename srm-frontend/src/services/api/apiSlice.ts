@@ -7,9 +7,22 @@ export const apiSlice = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth.token;
+      // Try to get token from Redux first
+      let token = (getState() as any).auth.token;
+      console.log('[API] Redux token:', token ? 'Found' : 'Missing');
+
+      // If no token in Redux, check localStorage directly
+      // This handles the race condition where API calls fire before token restoration
+      if (!token && typeof window !== 'undefined') {
+        token = localStorage.getItem('auth_token');
+        console.log('[API] Fallback to localStorage:', token ? 'Found' : 'Missing');
+      }
+
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
+        console.log('[API] ✓ Authorization header added');
+      } else {
+        console.warn('[API] ⚠️ No token found in Redux or localStorage');
       }
       return headers;
     },

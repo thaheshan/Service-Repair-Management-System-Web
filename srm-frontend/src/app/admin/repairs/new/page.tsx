@@ -58,6 +58,10 @@ export default function CreateRepairPage() {
   const [estimatedDate, setEstimatedDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]) // Default to 7 days from now
   const [accessories, setAccessories] = useState<string[]>([])
   
+  // Image Upload State
+  const [uploadedImages, setUploadedImages] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
   // Custom Parts State
   const [partsRequired, setPartsRequired] = useState<string[]>(["Premium Screen Assembly - iPhone 13 Pro"])
   const [partInput, setPartInput] = useState("")
@@ -80,10 +84,10 @@ export default function CreateRepairPage() {
   const [createRepair, { isLoading: isCreatingRepair }] = useCreateRepairMutation()
   const { data: customersData } = useGetCustomersQuery({})
   const [createCustomer] = useCreateCustomerMutation()
-  const { data: staffData } = useGetStaffListQuery({}, { skip: !user?.shopId })
+  const { data: staffData } = useGetStaffListQuery(undefined, { skip: !user || user?.role === 'TECHNICIAN' || !user?.shopId })
   const { data: userContext, error: userContextError } = useGetStaffContextQuery({}, { skip: !!user || !token })
   const [createDevice] = useCreateDeviceMutation()
-  const { data: inventoryData } = useGetInventoryItemsQuery({}, { skip: !user?.shopId })
+  const { data: inventoryData } = useGetInventoryItemsQuery({}, { skip: !user || !user?.shopId })
 
   const dispatch = useDispatch()
 
@@ -249,6 +253,40 @@ export default function CreateRepairPage() {
     setAccessories(prev => prev.includes(acc) ? prev.filter(a => a !== acc) : [...prev, acc])
   }
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const newFiles = Array.from(files).filter(file => {
+      // Check file type
+      if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+        toast.error(`Invalid file type: ${file.name}. Only PNG and JPG allowed.`)
+        return false
+      }
+      // Check file size (10MB = 10485760 bytes)
+      if (file.size > 10485760) {
+        toast.error(`File too large: ${file.name}. Max 10MB per file.`)
+        return false
+      }
+      return true
+    })
+
+    const totalFiles = uploadedImages.length + newFiles.length
+    if (totalFiles > 5) {
+      toast.error(`Too many files. Maximum 5 files allowed. You have ${uploadedImages.length} already.`)
+      return
+    }
+
+    setUploadedImages(prev => [...prev, ...newFiles])
+    toast.success(`${newFiles.length} image(s) uploaded successfully`)
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index))
+  }
+
   const pricingTotal = useMemo(() => {
     const l = parseFloat(laborCost || "0")
     const p = parseFloat(partsCost || "0")
@@ -288,23 +326,37 @@ export default function CreateRepairPage() {
         finalCustomerId = newCust.customerId;
       }
 
-      // Create Device record
-      const newDev = await createDevice({
-        type: deviceType === "Other" ? customDeviceCategory : deviceType,
+      // Create Device record (matching successful devices/new/page structure)
+      const devicePayload = {
+        shopId: user.shopId,
+        customerId: finalCustomerId,
         brand: brand === "Other" ? customBrand : brand,
         model: model === "Other" ? customModel : model,
-        customerId: finalCustomerId,
-        shopId: user.shopId,
-        tenantId: user.tenantId,
-        ...(serialNo && { serialNo }),
-        ...(imei && { imei })
-      }).unwrap();
+        serialNumber: imei || serialNo || "N/A",
+        type: deviceType === "Other" ? customDeviceCategory : deviceType,
+        price: 0,
+        status: "AVAILABLE",
+        warrantyStatus: "None",
+        warrantyExpiry: null
+      };
+      
+      console.log('[CreateRepair] Device payload:', devicePayload);
+      
+      const newDev = await createDevice(devicePayload).unwrap();
+      
+      console.log('[CreateRepair] Device response:', newDev);
+      console.log('[CreateRepair] Device ID path - newDev.id:', newDev?.id);
+      console.log('[CreateRepair] Device ID path - newDev.data.id:', newDev?.data?.id);
+      
+      // Extract device ID - try both possible structures
+      const deviceId = newDev?.id || newDev?.data?.id || newDev?.deviceId;
+      console.log('[CreateRepair] Extracted device ID:', deviceId);
 
       // Create Repair
       const repairData = {
         shopId: user.shopId,
         customerId: finalCustomerId,
-        deviceId: newDev.data.id,
+        deviceId: deviceId,
         issue: issueDescription || issueCategory,
         estimatedCost: Math.round(pricingTotal),
         technicianId: technician || null,
@@ -319,8 +371,44 @@ export default function CreateRepairPage() {
       setIsConfirmModalOpen(false);
       setIsReceiptModalOpen(true);
     } catch (err: any) {
-      console.error("Failed to create repair", err);
-      toast.error(err.data?.message || err.message || "Failed to create repair task. Please check if your backend is synchronized.");
+      console.error("❌ Failed to create repair - Full Error Details:");
+      console.error("Status:", err.status);
+      console.error("Error Data:", err.data);
+      console.error("Error Message:", err.message);
+      
+      // Log detailed validation errors
+      if (err.data?.errors && Array.isArray(err.data.errors)) {
+        console.error("📋 Validation Errors Details:");
+        err.data.errors.forEach((e: any, index: number) => {
+          console.error(`  Error ${index + 1}:`, {
+            field: e.field || e.path || 'unknown',
+            message: e.message || e.msg || e,
+            value: e.value,
+            constraint: e.constraint || e.rule
+          });
+        });
+      }
+      
+      // Extract the most useful error message
+      let errorMsg = "Failed to create repair task";
+      if (err.data?.message) {
+        errorMsg = err.data.message;
+      } else if (err.data?.error) {
+        errorMsg = err.data.error;
+      } else if (err.data?.errors) {
+        // If errors is an array
+        if (Array.isArray(err.data.errors)) {
+          errorMsg = err.data.errors.map((e: any) => e.message || e.msg || e).join(", ");
+        } else if (typeof err.data.errors === 'object') {
+          // If errors is an object
+          errorMsg = Object.values(err.data.errors).join(", ");
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      console.error("Final Error Message:", errorMsg);
+      toast.error(errorMsg);
     }
   }
 
@@ -721,16 +809,51 @@ export default function CreateRepairPage() {
 
                  <div>
                    <label className="block text-[13px] font-bold text-foreground mb-3">{mounted ? t('repairs.form.photos') : 'Device Photos'} ({mounted ? t('common.optional') : 'Optional'})</label>
-                   <label className="w-full h-32 border-2 border-dashed border-border rounded-xl bg-[#F8FAFC] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors block">
-                     <input type="file" multiple accept="image/png, image/jpeg, image/jpg" className="hidden" />
-                     <div className="flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm text-muted-foreground">
-                       <Camera className="h-5 w-5" />
-                     </div>
-                     <div className="text-center">
-                       <span className="text-[13px] font-bold text-[#4F46E5]">{mounted ? t('repairs.actions.uploadPhotos') : 'Click to upload'}</span> <span className="text-[13px] font-medium text-muted-foreground">{mounted ? t('repairs.actions.dragDrop') : 'or drag and drop'}</span>
-                       <p className="text-[11px] text-muted-foreground mt-0.5">{mounted ? t('repairs.actions.photoSpecs') : 'JPG, PNG, JPG up to 10MB (max 5 files)'}</p>
-                     </div>
-                   </label>
+                   <div>
+                     <label htmlFor="device-photos" className="w-full h-32 border-2 border-dashed border-border rounded-xl bg-[#F8FAFC] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors block">
+                       <input 
+                         id="device-photos"
+                         ref={fileInputRef}
+                         type="file" 
+                         multiple 
+                         accept="image/png, image/jpeg, image/jpg" 
+                         className="hidden" 
+                         onChange={handleImageUpload}
+                       />
+                       <div className="flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm text-muted-foreground">
+                         <Camera className="h-5 w-5" />
+                       </div>
+                       <div className="text-center">
+                         <span className="text-[13px] font-bold text-[#4F46E5]">{mounted ? t('repairs.actions.uploadPhotos') : 'Click to upload'}</span> <span className="text-[13px] font-medium text-muted-foreground">{mounted ? t('repairs.actions.dragDrop') : 'or drag and drop'}</span>
+                         <p className="text-[11px] text-muted-foreground mt-0.5">{mounted ? t('repairs.actions.photoSpecs') : 'JPG, PNG, JPG up to 10MB (max 5 files)'}</p>
+                       </div>
+                     </label>
+                     {/* Display uploaded images */}
+                     {uploadedImages.length > 0 && (
+                       <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                         {uploadedImages.map((file, index) => (
+                           <div key={index} className="relative group">
+                             <img 
+                               src={URL.createObjectURL(file)} 
+                               alt={`Upload ${index + 1}`}
+                               className="w-full h-24 object-cover rounded-lg border border-border"
+                             />
+                             <button
+                               type="button"
+                               onClick={() => removeImage(index)}
+                               className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                             >
+                               <X className="h-4 w-4" />
+                             </button>
+                             <p className="text-[10px] text-muted-foreground mt-1 truncate">{file.name}</p>
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     {uploadedImages.length > 0 && (
+                       <p className="text-[12px] text-muted-foreground mt-2">{uploadedImages.length} / 5 files uploaded</p>
+                     )}
+                   </div>
                  </div>
               </section>
 

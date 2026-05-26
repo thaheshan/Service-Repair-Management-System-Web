@@ -29,7 +29,7 @@ const COLORS = [
 ]
 
 export default function ManageRolesPage() {
-  const { data: settingsData, isLoading } = useGetSettingsQuery({})
+  const { data: settingsData, isLoading } = useGetSettingsQuery()
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation()
   
   const [tiers, setTiers] = useState<Tier[]>([])

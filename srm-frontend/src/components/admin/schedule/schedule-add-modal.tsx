@@ -21,7 +21,7 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
   const [task, setTask] = useState("")
   const [technician, setTechnician] = useState("")
 
-  const { data: staffData } = useGetStaffListQuery({})
+  const { data: staffData } = useGetStaffListQuery()
   const { data: repairsData } = useGetRepairsQuery({})
 
   const unassignedRepairs = (repairsData?.data || []).filter((r: any) => r.status === 'NOT_STARTED')

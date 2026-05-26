@@ -128,7 +128,7 @@ export default function RegisterDevicePage() {
         serialNumber: imei || "N/A",
         type: deviceType,
         price: price ? Number(price) : 0,
-        status: "Available",
+        status: "AVAILABLE",
         warrantyStatus: hasWarranty ? warrantyProvider : "None",
         warrantyExpiry: hasWarranty ? warrantyExpiry : null
       }).unwrap()

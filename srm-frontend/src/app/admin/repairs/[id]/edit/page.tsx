@@ -59,7 +59,7 @@ export default function EditRepairPage() {
 
   // API Hooks
   const { data: repairResponse, isLoading } = useGetRepairByIdQuery(id)
-  const { data: staffResponse } = useGetStaffListQuery({})
+  const { data: staffResponse } = useGetStaffListQuery(undefined, { skip: user?.role === 'TECHNICIAN' })
   const [updateRepair, { isLoading: isUpdating }] = useUpdateRepairStatusMutation()
 
   const repair = repairResponse?.data

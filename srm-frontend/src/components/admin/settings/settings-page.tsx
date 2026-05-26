@@ -37,7 +37,7 @@ import { RootState } from "@/store/store"
 type SettingsTab = "profile" | "general" | "business" | "notifications" | "security" | "team"
 
 export default function SettingsView() {
-  const { data: apiSettings, isLoading: settingsLoading } = useGetSettingsQuery({});
+  const { data: apiSettings, isLoading: settingsLoading } = useGetSettingsQuery();
   const [updateSettings] = useUpdateSettingsMutation();
   const { user } = useSelector((state: RootState) => state.auth);
   const { data: staffResponse } = useGetStaffListQuery({}, { skip: user?.role === 'TECHNICIAN' });

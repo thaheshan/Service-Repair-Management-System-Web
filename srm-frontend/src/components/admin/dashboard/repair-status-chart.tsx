@@ -15,7 +15,7 @@ const fallbackData = [
 export function RepairStatusChart() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
-  const { data: response } = useGetDashboardAnalyticsQuery({});
+  const { data: response } = useGetDashboardAnalyticsQuery(7);
 
   const data = response?.data?.statusData?.length > 0
     ? response.data.statusData

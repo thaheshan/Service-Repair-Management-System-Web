@@ -32,7 +32,7 @@ export function TopTechnicians() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
-  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery(7);
 
   const technicians = response?.data?.topTechnicians?.length > 0
     ? response.data.topTechnicians

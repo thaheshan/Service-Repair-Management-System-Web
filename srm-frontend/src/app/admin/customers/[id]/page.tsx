@@ -32,7 +32,7 @@ export default function CustomerDetailedPage() {
   const [deleteCustomerMutation] = useDeleteCustomerMutation()
   const [addCustomerNoteMutation] = useAddCustomerNoteMutation()
   const [updateCustomer] = useUpdateCustomerMutation()
-  const { data: settingsData } = useGetSettingsQuery({})
+  const { data: settingsData } = useGetSettingsQuery()
   const shopName = settingsData?.settings?.businessName || "Service Repair Management"
   const shopLogo = settingsData?.settings?.appearance?.logo || ""
 

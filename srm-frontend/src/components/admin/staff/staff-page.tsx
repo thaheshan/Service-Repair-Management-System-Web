@@ -48,7 +48,7 @@ export default function StaffManagementPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { data: response, isLoading } = useGetStaffListQuery({});
+  const { data: response, isLoading } = useGetStaffListQuery();
   const [createStaff] = useCreateStaffMutation();
   const [updateStaff] = useUpdateStaffMutation();
   const [deleteStaffMutation] = useDeleteStaffMutation();

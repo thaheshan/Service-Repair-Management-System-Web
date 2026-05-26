@@ -55,7 +55,7 @@ export function RecentRepairs() {
   useEffect(() => { setMounted(true) }, [])
 
   const user = useSelector((state: RootState) => state.auth.user);
-  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery(7);
   const apiRepairs = response?.data?.recentRepairs || [];
 
   // Map backend data to frontend format

@@ -25,33 +25,47 @@ export default function LoginForm() {
     setError('');
 
     try {
+      // Call login mutation
       const result = await login({ email, password }).unwrap();
-      
-      // Save token to cookie for the middleware
-      document.cookie = `token=${result.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      
+
+      console.log('[LoginForm] Login successful:', result.user.email);
+
+      // Dispatch to Redux - this saves token to localStorage and Redux store
       dispatch(setCredentials({
         user: result.user,
-        accessToken: result.accessToken,
+        accessToken: result.accessToken || result.token,
       }));
+
+      // Save token to cookie for the middleware (optional)
+      const token = result.accessToken || result.token;
+      if (token) {
+        document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
+        console.log('✓ Token saved to cookie');
+      }
+
+      console.log('✓ Credentials saved to Redux');
+      toast.success('Login successful!');
 
       // Role-based routing
       const role = result.user.role;
-      if (role === 'ADMIN') {
+      console.log('[LoginForm] User role:', role);
+
+      if (role === 'ADMIN' || role === 'admin') {
         window.location.href = '/admin/dashboard';
-      } else if (role === 'MANAGER') {
+      } else if (role === 'MANAGER' || role === 'manager') {
         window.location.href = '/manager/dashboard';
-      } else if (role === 'TECHNICIAN') {
+      } else if (role === 'TECHNICIAN' || role === 'technician') {
         window.location.href = '/technician/dashboard';
-      } else if (role === 'CUSTOMER') {
+      } else if (role === 'CUSTOMER' || role === 'customer') {
         window.location.href = '/customer/dashboard';
       } else {
         window.location.href = '/admin/dashboard';
       }
     } catch (err: any) {
       console.error('[LoginForm] Login error:', err);
-      setError(err.data?.message || 'Invalid email or password. Please try again.');
-      toast.error('Login failed');
+      const errorMessage = err.data?.message || err.message || 'Invalid email or password. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -157,7 +171,7 @@ export default function LoginForm() {
           className="w-full py-3.5 mt-2 rounded-[10px] bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-md shadow-[#4F46E5]/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Signing in...' : 'Sign in'}
-           <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" />
         </button>
       </form>
 

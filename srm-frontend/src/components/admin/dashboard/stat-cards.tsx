@@ -10,7 +10,7 @@ export function StatCards() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
-  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery(7);
   const analyticsData = response?.data;
   const user = useSelector((state: RootState) => state.auth.user)
 

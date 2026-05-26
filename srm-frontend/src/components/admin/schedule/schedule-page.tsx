@@ -95,7 +95,7 @@ export default function SchedulePage() {
   const [createAppointment] = useCreateAppointmentMutation();
   const [updateAppointment] = useUpdateAppointmentMutation();
   const [deleteAppointment] = useDeleteAppointmentMutation();
-  const { data: staffResponse } = useGetStaffListQuery({});
+  const { data: staffResponse } = useGetStaffListQuery();
   const { user } = useSelector((state: RootState) => state.auth);
   
   const [filters, setFilters] = useState<ScheduleFilters>({
