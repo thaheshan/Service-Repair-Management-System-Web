@@ -255,10 +255,10 @@ export default function InvoicesManagementPage() {
       }
    }
 
-   const handleStatusUpdate = async (id: string, newStatus: string) => {
-      const dbStatus = newStatus === 'Paid' ? 'COMPLETED' : newStatus === 'Pending' ? 'PENDING' : 'FAILED';
+   const handleStatusUpdate = async (id: string, newStatus: string, amount: number) => {
+      const dbStatus = newStatus === 'Paid' ? 'COMPLETED' : newStatus === 'Pending' ? 'PENDING' : 'OVERDUE';
       try {
-         await updateInvoiceStatus({ id, status: dbStatus }).unwrap();
+         await updateInvoiceStatus({ id, status: dbStatus, amount }).unwrap();
       } catch (err) {
          console.error('Failed to update invoice status', err);
       }
@@ -269,8 +269,19 @@ export default function InvoicesManagementPage() {
          try {
             await deleteInvoiceMutation(deleteFormTarget.id).unwrap();
             setDeleteFormTarget(null);
-         } catch (err) {
+         } catch (err: any) {
             console.error('Failed to delete invoice', err);
+            
+            // Handle 404 - Invoice doesn't exist on backend
+            if (err?.status === 404) {
+               alert('Invoice not found. It may have been already deleted.');
+               setDeleteFormTarget(null);
+               return;
+            }
+            
+            // Handle other errors
+            const errorMsg = err?.data?.message || 'Failed to delete invoice';
+            alert(`Error: ${errorMsg}`);
          }
       }
    }
@@ -913,9 +924,9 @@ export default function InvoicesManagementPage() {
                                     amount: finalAmount,
                                     shopId: user?.shopId,
                                     customerId: newInvoiceData.customerId || undefined,
-                                    status: 'Paid',
-                                    paymentType: 'FULL',
-                                    paymentMethod: 'CASH',
+                                    status: 'PENDING',
+                                    type: addInvoiceType,
+                                    date: new Date().toISOString(),
                                     notes: addInvoiceType === 'client_repair' 
                                       ? `Repair: ${newInvoiceData.category} ${newInvoiceData.brand} ${newInvoiceData.model} - ${newInvoiceData.fault} | Labour: Rs.${newInvoiceData.labour} | Parts: Rs.${newInvoiceData.parts} | Discount: Rs.${newInvoiceData.discount} | Total: Rs.${newInvoiceData.amount} | Priority: ${newInvoiceData.priority} | Date: ${newInvoiceData.estimatedDate} | Tech: ${newInvoiceData.technician} | Serial: ${newInvoiceData.serial}`
                                       : `Inventory Sale: ${invoiceItems.map(i => i.name).join(', ')}`,
@@ -991,8 +1002,7 @@ export default function InvoicesManagementPage() {
                               const status = (document.getElementById('edit_inv_status') as HTMLSelectElement).value;
 
                               try {
-                                 await handleStatusUpdate(editInvoiceTarget.id, status);
-                                 await updateInvoiceStatus({ id: editInvoiceTarget.id, status: status === 'Paid' ? 'COMPLETED' : status === 'Pending' ? 'PENDING' : 'FAILED', amount }).unwrap();
+                                 await handleStatusUpdate(editInvoiceTarget.id, status, amount);
                                  setEditInvoiceTarget(null);
                               } catch (err) {
                                  console.error("Update failed", err);
