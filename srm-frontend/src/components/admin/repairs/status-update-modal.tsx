@@ -16,7 +16,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Close Button */}
         <button 
@@ -54,7 +54,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
           <div className="flex w-full gap-4">
             <button 
               onClick={onClose}
-              className="flex-1 h-11 rounded-xl border border-[#4F46E5] text-[#4F46E5] font-semibold hover:bg-[#EEF2FF] transition-colors focus:outline-none"
+              className="flex-1 h-11 rounded-xl border border-[#4F46E5] text-[#4F46E5] font-semibold hover:bg-primary/10 transition-colors focus:outline-none"
             >
               Cancel
             </button>

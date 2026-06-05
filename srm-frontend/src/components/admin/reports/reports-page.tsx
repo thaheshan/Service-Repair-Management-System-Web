@@ -421,7 +421,7 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-2">
                   <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">Dashboard</Link>
                   <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-                  <span className="text-[#0F172A]">{mounted ? t('reportsPage.title') : 'Reports & Analytics'}</span>
+                  <span className="text-foreground">{mounted ? t('reportsPage.title') : 'Reports & Analytics'}</span>
                 </div>
                 <h1 className="text-[32px] font-black text-foreground tracking-tight leading-none mb-2">{mounted ? t('reportsPage.analyticsCenter') : 'Analytics Center'}</h1>
                 <p className="text-[14px] text-muted-foreground font-medium">{mounted ? t('reportsPage.subtitle') : 'Real-time performance metrics and business intelligence.'}</p>

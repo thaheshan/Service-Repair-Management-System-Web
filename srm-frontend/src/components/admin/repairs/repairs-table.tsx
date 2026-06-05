@@ -59,12 +59,12 @@ const DeviceIconLg = ({ type }: { type: string }) => {
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "Pending": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
-  "In Progress": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  "Ready": { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
-  "Completed": { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  "Paid": { bg: "bg-emerald-100", text: "text-emerald-800", border: "border-emerald-300" },
-  "On Hold": { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
+  "Pending":     { bg: "bg-amber-50 dark:bg-amber-900/30",   text: "text-amber-700 dark:text-amber-300",   border: "border-amber-200 dark:border-amber-700" },
+  "In Progress": { bg: "bg-blue-50 dark:bg-blue-900/30",     text: "text-blue-700 dark:text-blue-300",     border: "border-blue-200 dark:border-blue-700" },
+  "Ready":       { bg: "bg-green-50 dark:bg-green-900/30",   text: "text-green-700 dark:text-green-300",   border: "border-green-200 dark:border-green-700" },
+  "Completed":   { bg: "bg-emerald-50 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-700" },
+  "Paid":        { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-800 dark:text-emerald-200", border: "border-emerald-300 dark:border-emerald-600" },
+  "On Hold":     { bg: "bg-muted",                           text: "text-muted-foreground",                border: "border-border" },
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -75,10 +75,10 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 const DEVICE_ACCENT: Record<string, string> = {
-  phone: "bg-indigo-100 text-indigo-600",
-  tablet: "bg-sky-100 text-sky-600",
-  laptop: "bg-violet-100 text-violet-600",
-  console: "bg-orange-100 text-orange-600",
+  phone:   "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300",
+  tablet:  "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
+  laptop:  "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300",
+  console: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300",
 }
 
 // --- CARD VIEW ---
@@ -101,7 +101,7 @@ function RepairCard({
   const deviceAccent = DEVICE_ACCENT[r.device.type] || "bg-muted text-foreground"
 
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden group">
+    <div className="bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden group">
       {/* Card Header */}
       <div className="px-4 pt-4 pb-3 border-b border-border/60 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ function RepairCard({
               {userRole !== 'TECHNICIAN' && (
                 <DropdownMenuItem
                   onClick={() => onDeleteRequest?.(r.id, r.reference)}
-                  className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                  className="cursor-pointer flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span className="text-sm font-semibold">Delete Task</span>
@@ -330,7 +330,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
               ) : (
                 repairs.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50 transition-colors group">
-                    <td className="px-5 py-3 align-middle"><div className="h-4 w-4 rounded-[4px] border border-border bg-white cursor-pointer group-hover:border-[#4F46E5]" /></td>
+                    <td className="px-5 py-3 align-middle"><div className="h-4 w-4 rounded-[4px] border border-border bg-card cursor-pointer group-hover:border-[#4F46E5]" /></td>
                     <td className="px-3 py-3 align-middle select-all">
                       <span className="text-[13px] font-bold text-[#4F46E5] cursor-pointer hover:underline">{r.reference}</span>
                     </td>
@@ -358,7 +358,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                       <div className="flex justify-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="flex items-center gap-1 rounded-full border border-border bg-white px-3 py-1 text-[11px] font-bold text-[#4F46E5] hover:bg-muted shadow-sm shadow-black/5 min-w-[100px] justify-between focus:outline-none">
+                            <button className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-bold text-[#4F46E5] hover:bg-muted shadow-sm shadow-black/5 min-w-[100px] justify-between focus:outline-none">
                               {r.status}
                               <ChevronDown className="h-3 w-3 text-muted-foreground" />
                             </button>
@@ -387,7 +387,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                     <td className="px-3 py-3 align-middle min-w-[130px]">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="flex items-center gap-1.5 cursor-pointer hover:bg-white border border-transparent hover:border-border p-1 rounded-full w-max transition-colors focus:outline-none">
+                          <button className="flex items-center gap-1.5 cursor-pointer hover:bg-card border border-transparent hover:border-border p-1 rounded-full w-max transition-colors focus:outline-none">
                             {r.technician ? (
                               <>
                                 <div className={`h-6 w-6 rounded-full flex shrink-0 items-center justify-center text-[9px] font-bold text-white ${r.technician.bg} shadow-sm`}>
@@ -444,7 +444,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                             <DropdownMenuContent align="end" className="w-[160px] z-50">
                               <DropdownMenuItem
                                 onClick={() => onDeleteRequest?.(r.id, r.reference)}
-                                className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                                className="cursor-pointer flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span className="text-sm font-semibold">Delete Task</span>
@@ -479,7 +479,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
           <select
             value={perPage}
             onChange={(e) => { onPerPageChange(Number(e.target.value)); onPageChange(1); }}
-            className="border border-border rounded-md bg-white cursor-pointer px-2 py-1 outline-none text-foreground font-semibold text-[12px] focus:border-[#4F46E5]"
+            className="border border-border rounded-md bg-card cursor-pointer px-2 py-1 outline-none text-foreground font-semibold text-[12px] focus:border-[#4F46E5]"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -493,7 +493,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
           <button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             &lt;
           </button>
@@ -524,7 +524,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                   onClick={() => onPageChange(p as number)}
                   className={`flex h-7 w-7 items-center justify-center rounded-md text-[12px] font-semibold transition-colors ${currentPage === p
                       ? "bg-[#4F46E5] text-white shadow-sm"
-                      : "border border-border bg-white hover:bg-muted text-foreground"
+                      : "border border-border bg-card hover:bg-muted text-foreground"
                     }`}
                 >
                   {p}
@@ -537,7 +537,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
           <button
             onClick={() => onPageChange(Math.min(Math.ceil(totalFiltered / perPage), currentPage + 1))}
             disabled={currentPage >= Math.ceil(totalFiltered / perPage)}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             &gt;
           </button>

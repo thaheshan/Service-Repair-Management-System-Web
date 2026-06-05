@@ -357,7 +357,7 @@ export default function CustomerManagementPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                 {paginated.map(c => (
                   <div key={c.id} className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md hover:border-[#4F46E5]/30 transition-all group flex flex-col items-center text-center">
-                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[#000] text-[20px] font-black mb-4 shadow-sm ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
+                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[#000] text-[20px] dark:text-slate-300 font-black mb-4 shadow-sm ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
                     <div className="flex flex-wrap items-center justify-center gap-1.5 mb-1">
                       <h2 className="text-[15px] font-bold text-foreground">{c.name}</h2>
                       {c.type === "VIP" && <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 text-[10px] font-bold rounded-full border border-amber-500/20">VIP</span>}
@@ -440,13 +440,13 @@ export default function CustomerManagementPage() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-t border-border">
               <span className="text-[13px] text-muted-foreground font-medium">{mounted ? t('customers.showing') : 'Showing'} <span className="font-bold text-foreground">{filtered.length === 0 ? 0 : (currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, filtered.length)}</span> {mounted ? t('customers.of') : 'of'} <span className="font-bold text-foreground">{filtered.length}</span> {mounted ? t('customers.total') : 'customers'}</span>
               <div className="flex items-center gap-1">
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center h-8 px-3 text-[13px] font-semibold text-muted-foreground hover:bg-muted rounded disabled:opacity-40 focus:outline-none"><ChevronLeft className="h-4 w-4 mr-1" />Previous</button>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center h-8 px-3 text-[13px] font-semibold text-muted-foreground dark:text-white hover:bg-muted rounded disabled:opacity-40 focus:outline-none"><ChevronLeft className="h-4 w-4 mr-1" />Previous</button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1).reduce((acc, p, i, arr) => {
                   if (i > 0 && arr[i - 1] !== p - 1) acc.push(-1); acc.push(p); return acc
                 }, [] as number[]).map((p, i) => p === -1 ? <span key={`e${i}`} className="px-1 text-muted-foreground font-bold text-[13px]">…</span> : (
                   <button key={p} onClick={() => setCurrentPage(p)} className={`h-8 w-8 rounded text-[13px] font-semibold flex items-center justify-center focus:outline-none transition-colors ${currentPage === p ? "bg-[#4F46E5] text-white shadow-sm" : "text-foreground hover:bg-muted border border-border bg-card"}`}>{p}</button>
                 ))}
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center h-8 px-3 text-[13px] font-semibold text-foreground hover:bg-muted rounded border border-border bg-card disabled:opacity-40 focus:outline-none">Next<ChevronRight className="h-4 w-4 ml-1" /></button>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center h-8 px-3 text-[13px] font-semibold text-foreground hover:bg-muted rounded border border-border bg-card dark:text-white disabled:opacity-40 focus:outline-none">Next<ChevronRight className="h-4 w-4 ml-1" /></button>
               </div>
               <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
                 Show: <select value={perPage} onChange={e => { setPerPage(+e.target.value); setCurrentPage(1) }} className="h-8 px-2 rounded border border-border bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-[#4F46E5]"><option value={6}>6</option><option value={12}>12</option><option value={24}>24</option></select> per page
