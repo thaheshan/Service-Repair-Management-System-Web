@@ -14,10 +14,19 @@ export const settingsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Settings'],
     }),
+    renewSubscription: builder.mutation({
+      query: (data) => ({
+        url: '/v1/subscription/renew',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Settings'], // Reload settings after renewal to update UI
+    }),
   }),
 });
 
 export const {
   useGetSettingsQuery,
   useUpdateSettingsMutation,
+  useRenewSubscriptionMutation,
 } = settingsApiSlice;
