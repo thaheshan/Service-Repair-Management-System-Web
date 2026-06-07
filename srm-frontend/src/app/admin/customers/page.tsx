@@ -160,10 +160,8 @@ export default function CustomerManagementPage() {
         tier: form.tier
       }).unwrap()
 
-
       setShowAddModal(false)
       setForm({ name: "", email: "", phone: "", address: "", tier: "Regular" })
-
     } catch (err) {
       console.error("Failed to add customer:", err);
     }
