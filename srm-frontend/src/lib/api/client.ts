@@ -1,4 +1,4 @@
-﻿const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 // Helper to get token from localStorage
 const getToken = () => {
@@ -31,6 +31,9 @@ export const apiClient = {
       // Token expired, clear it
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
     return res.json();
   },
@@ -44,6 +47,9 @@ export const apiClient = {
       console.error('❌ Unauthorized - token may be expired');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
     return res.json();
   },

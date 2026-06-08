@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetMeQuery } from '@/services/api/authApiSlice';
 import { setCredentials, logout, restoreAuth } from '@/store/slices/authSlice';
@@ -20,7 +20,7 @@ export function AuthLoader({ children }: AuthLoaderProps) {
   useEffect(() => {
     console.log('[AuthLoader] Mounting - checking localStorage');
     const savedToken = localStorage.getItem('auth_token');
-    
+
     if (savedToken && !token) {
       console.log('[AuthLoader] Found saved token in localStorage, restoring to Redux...');
       dispatch(restoreAuth());
@@ -36,12 +36,12 @@ export function AuthLoader({ children }: AuthLoaderProps) {
   useEffect(() => {
     if (isSuccess && meData?.data && token) {
       console.log('[AuthLoader] ✓ Successfully fetched user profile from /me', meData.data);
-      
+
       dispatch(setCredentials({
         user: meData.data,
         accessToken: token,
       }));
-      
+
       // Save user to localStorage for quick restoration
       localStorage.setItem('auth_user', JSON.stringify(meData.data));
       console.log('✓ User saved to localStorage');
@@ -54,7 +54,7 @@ export function AuthLoader({ children }: AuthLoaderProps) {
   useEffect(() => {
     if (isError) {
       console.error('[AuthLoader] ❌ Failed to load user profile', error);
-      
+
       // Token is invalid or expired
       dispatch(logout());
       localStorage.removeItem('auth_user');

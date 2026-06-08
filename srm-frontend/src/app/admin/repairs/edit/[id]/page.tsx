@@ -81,7 +81,7 @@ export default function EditRepairPage() {
   }
 
   const { data: repairResponse, isLoading } = useGetRepairByIdQuery(id)
-  const { data: staffResponse } = useGetStaffListQuery(undefined, { skip: user?.role === 'TECHNICIAN' })
+  const { data: staffResponse } = useGetStaffListQuery(undefined, { skip: !user || user?.role === 'TECHNICIAN' })
   const [updateRepair, { isLoading: isUpdating }] = useUpdateRepairStatusMutation()
   const [updateDevice] = useUpdateDeviceMutation()
 

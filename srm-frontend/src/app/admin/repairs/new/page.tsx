@@ -60,7 +60,15 @@ export default function CreateRepairPage() {
   
   // Image Upload State
   const [uploadedImages, setUploadedImages] = useState<File[]>([])
+  //Memory leak issue
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const urls = uploadedImages.map(f => URL.createObjectURL(f));
+    setPreviewUrls(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [uploadedImages]);
   
   // Custom Parts State
   const [partsRequired, setPartsRequired] = useState<string[]>(["Premium Screen Assembly - iPhone 13 Pro"])
@@ -351,6 +359,8 @@ export default function CreateRepairPage() {
       // Extract device ID - try both possible structures
       const deviceId = newDev?.id || newDev?.data?.id || newDev?.deviceId;
       console.log('[CreateRepair] Extracted device ID:', deviceId);
+      
+      if (!deviceId) throw new Error('Failed to extract device ID from response');
 
       // Create Repair
       const repairData = {
@@ -834,7 +844,7 @@ export default function CreateRepairPage() {
                          {uploadedImages.map((file, index) => (
                            <div key={index} className="relative group">
                              <img 
-                               src={URL.createObjectURL(file)} 
+                               src={previewUrls[index] || ""} 
                                alt={`Upload ${index + 1}`}
                                className="w-full h-24 object-cover rounded-lg border border-border"
                              />
