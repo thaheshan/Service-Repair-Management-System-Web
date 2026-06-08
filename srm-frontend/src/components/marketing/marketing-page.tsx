@@ -26,6 +26,7 @@ export default function SRMMarketingPage() {
         <FAQSection />
         <ContactSection />
         <CTASection />
+        <ContactSection />
       </main>
       <Footer />
     </div>

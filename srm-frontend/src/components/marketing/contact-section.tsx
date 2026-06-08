@@ -24,8 +24,8 @@ export default function ContactSection() {
 
     try {
       // Point this to your actual backend URL when deploying
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/contact`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/v1/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
