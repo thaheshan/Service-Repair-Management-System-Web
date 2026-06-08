@@ -24,6 +24,7 @@ export default function SRMMarketingPage() {
         <TestimonialsSection />
         <SecuritySection />
         <FAQSection />
+        <ContactSection />
         <CTASection />
         <ContactSection />
       </main>

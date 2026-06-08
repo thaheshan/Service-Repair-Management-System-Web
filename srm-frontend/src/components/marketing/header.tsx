@@ -29,8 +29,8 @@ export default function Header() {
           <Link href="#faqs" className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
             FAQs
           </Link>
-          <Link href="#" className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
-            Docs
+          <Link href="#contact" className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
+            Contact
           </Link>
         </nav>
 
