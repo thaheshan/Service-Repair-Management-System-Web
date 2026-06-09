@@ -356,8 +356,8 @@ export default function CustomerManagementPage() {
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                 {paginated.map(c => (
-                  <div key={c.id} className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md hover:border-[#4F46E5]/30 transition-all group flex flex-col items-center text-center">
-                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[#000] text-[20px] dark:text-slate-300 font-black mb-4 shadow-sm ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
+                  <div key={c.id} className="bg-card rounded-2xl border border-border dark:border-white p-6 shadow-sm hover:shadow-md hover:border-[#4F46E5]/30 dark:hover:border-[#4F46E5]/50 transition-all group flex flex-col items-center text-center">
+                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[20px] font-black mb-4 shadow-sm text-slate-900 dark:text-white dark:ring-2 dark:ring-white/20 ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
                     <div className="flex flex-wrap items-center justify-center gap-1.5 mb-1">
                       <h2 className="text-[15px] font-bold text-foreground">{c.name}</h2>
                       {c.type === "VIP" && <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 text-[10px] font-bold rounded-full border border-amber-500/20">VIP</span>}
@@ -417,9 +417,9 @@ export default function CustomerManagementPage() {
                         <td className="px-6 py-4"><div className="text-[12px] text-muted-foreground font-medium space-y-0.5"><div className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{c.email}</div><div className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{c.phone}</div></div></td>
                         <td className="px-6 py-4 text-center">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${c.type === "VIP" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                              c.type === "Corporate" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" :
-                                c.type === "New" ? "bg-green-500/10 text-green-500 border-green-500/20" :
-                                  "bg-muted text-muted-foreground border-border"
+                            c.type === "Corporate" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" :
+                              c.type === "New" ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                                "bg-muted text-muted-foreground border-border"
                             }`}>{c.type}</span>
 
                         </td>
