@@ -32,12 +32,14 @@ export default function HeroSection() {
           >
             Get Started Free
           </Link>
-          <Link
-            href="#demo"
+          <a
+            href="https://www.youtube.com/watch?v=P7QHU6uJr74"
+            target="_blank"
+            rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center border-2 border-white/30 hover:border-white/60 bg-white/5 hover:bg-white/10 text-white px-8 py-3.5 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all duration-200"
           >
             <Play className="w-5 h-5 mr-2 fill-current" /> Watch Demo
-          </Link>
+          </a>
         </div>
 
         <div className="text-indigo-100/80 text-sm font-medium mb-16 flex items-center justify-center gap-3 flex-wrap">

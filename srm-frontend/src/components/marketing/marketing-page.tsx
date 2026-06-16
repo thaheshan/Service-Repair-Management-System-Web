@@ -5,7 +5,7 @@ import HeroSection from './hero-section';
 import FeaturesSection from './features-section';
 import HowItWorks from './how-it-works';
 import PricingSection from './pricing-section';
-import TestimonialsSection from './testimonials-section';
+
 import SecuritySection from './security-section';
 import FAQSection from './faq-section';
 import ContactSection from './contact-section';
@@ -21,10 +21,8 @@ export default function SRMMarketingPage() {
         <FeaturesSection />
         <HowItWorks />
         <PricingSection />
-        <TestimonialsSection />
         <SecuritySection />
         <FAQSection />
-        <ContactSection />
         <CTASection />
         <ContactSection />
       </main>

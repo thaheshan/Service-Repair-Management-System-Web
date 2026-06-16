@@ -197,7 +197,7 @@ export default function InvoicesManagementPage() {
          });
 
          const canvas = await html2canvas(element, {
-            scale: 3,
+            scale: 2,
             useCORS: true,
             logging: false,
             backgroundColor: "#ffffff",
@@ -237,13 +237,13 @@ export default function InvoicesManagementPage() {
             }
          })
 
-         const imgData = canvas.toDataURL('image/png')
+         const imgData = canvas.toDataURL('image/jpeg', 0.85)
          const pdf = new jsPDF('p', 'mm', 'a4')
          const imgProps = pdf.getImageProperties(imgData)
          const pdfWidth = pdf.internal.pageSize.getWidth()
          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
 
-         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
          pdf.save(`Invoice_${targetInv.invoiceId}.pdf`)
 
          if (inv) setHiddenInvoiceTarget(null)
