@@ -32,7 +32,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
             Are You Sure to Update this <br/> Repair Task?
           </h2>
           <p className="text-sm text-muted-foreground mb-8">
-            Once Your Updated and it will <br/> notify to the cusotmer
+            Updating this task will automatically <br/> notify the customer via SMS
           </p>
 
           <label className="flex items-center gap-3 self-start mb-8 cursor-pointer group">

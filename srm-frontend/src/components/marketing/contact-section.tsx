@@ -62,7 +62,7 @@ export default function ContactSection() {
             Get in Touch
           </h2>
           <p className="text-lg text-slate-600">
-            Have questions about FixiTech? We're here to help you optimize your repair shop operations.
+            Have questions about AllFix? We're here to help you optimize your repair shop operations.
           </p>
         </div>
 
@@ -76,8 +76,8 @@ export default function ContactSection() {
                 <div className="ml-4">
                   <h3 className="text-lg font-medium text-slate-900">Email Us</h3>
                   <p className="mt-1 text-slate-600">Our friendly team is here to help.</p>
-                  <a href="mailto:support@fixitech.com" className="mt-2 text-blue-600 hover:text-blue-500 font-medium block">
-                    support@fixitech.com
+                  <a href="mailto:Info@allfix.space" className="mt-2 text-blue-600 hover:text-blue-500 font-medium block">
+                    Info@allfix.space
                   </a>
                 </div>
               </div>
@@ -88,9 +88,12 @@ export default function ContactSection() {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-medium text-slate-900">Call Us</h3>
-                  <p className="mt-1 text-slate-600">Mon-Fri from 8am to 5pm PST.</p>
-                  <a href="tel:+18001234567" className="mt-2 text-blue-600 hover:text-blue-500 font-medium block">
-                    +1 (800) 123-4567
+                  <p className="mt-1 text-slate-600">Mon-Fri from 8am to 5pm.</p>
+                  <a href="tel:+940756645486" className="mt-2 text-blue-600 hover:text-blue-500 font-medium block">
+                    +94 075 664 5486
+                  </a>
+                  <a href="tel:+940769696083" className="mt-1 text-blue-600 hover:text-blue-500 font-medium block">
+                    +94 076 969 6083
                   </a>
                 </div>
               </div>
@@ -103,8 +106,7 @@ export default function ContactSection() {
                   <h3 className="text-lg font-medium text-slate-900">Visit Us</h3>
                   <p className="mt-1 text-slate-600">Come say hello at our office HQ.</p>
                   <p className="mt-2 text-slate-600">
-                    100 Tech Lane, Suite 200<br />
-                    San Francisco, CA 94105
+                    Colombo, Sri Lanka
                   </p>
                 </div>
               </div>

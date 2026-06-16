@@ -88,8 +88,8 @@ export default function PricingSection() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
-          {tiers.map((tier, index) => (
+        <div className="grid md:grid-cols-1 gap-8 max-w-sm mx-auto items-center">
+          {tiers.filter(t => t.name === 'Enterprise').map((tier, index) => (
             <div
               key={index}
               className={`relative rounded-3xl p-8 max-w-sm mx-auto w-full ${

@@ -292,13 +292,13 @@ export default function ReportsPage() {
         }
       })
       
-      const imgData = canvas.toDataURL('image/png')
+      const imgData = canvas.toDataURL('image/jpeg', 0.85)
       const pdf = new jsPDF('p', 'mm', 'a4')
       const imgProps = pdf.getImageProperties(imgData)
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
       pdf.save(`SRM_Analytics_Report_${timeRange.toUpperCase()}__${new Date().toISOString().slice(0,10)}.pdf`)
     } catch (err) {
       console.error("PDF generation failed:", err)
@@ -389,13 +389,13 @@ export default function ReportsPage() {
         }
       })
       
-      const imgData = canvas.toDataURL('image/png')
+      const imgData = canvas.toDataURL('image/jpeg', 0.85)
       const pdf = new jsPDF('p', 'mm', 'a4')
       const imgProps = pdf.getImageProperties(imgData)
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
       pdf.save(`SRM_${title.replace(/\s+/g, '_')}__${new Date().toISOString().slice(0,10)}.pdf`)
     } catch (err) {
       console.error("PDF generation failed:", err)
