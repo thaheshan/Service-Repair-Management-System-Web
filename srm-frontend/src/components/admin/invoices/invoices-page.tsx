@@ -164,7 +164,7 @@ export default function InvoicesManagementPage() {
        }
 
        try {
-          generateClientInvoicePDF(targetInv, user);
+          await generateClientInvoicePDF(targetInv, user);
        } catch (err) {
           console.error("PDF generation failed:", err)
           alert("Error: Could not generate PDF. Please try again.")
