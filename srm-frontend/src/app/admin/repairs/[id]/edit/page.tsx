@@ -10,6 +10,9 @@ import PhotoUploadModal from "@/components/shared/modals/PhotoUploadModal"
 import { useGetRepairByIdQuery, useUpdateRepairStatusMutation, useDeleteRepairPhotoMutation } from "@/services/api/repairsApiSlice"
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
 import { toast } from "sonner"
+import { useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+import { generateRepairInvoicePDF } from "@/lib/pdf-generator"
 
 // Device icons
 const PhoneIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -22,6 +25,7 @@ export default function EditRepairPage() {
   const params = useParams()
   const id = params?.id as string
   const router = useRouter()
+  const { user } = useSelector((state: RootState) => state.auth)
 
   // Form States
   const [deviceCategory, setDeviceCategory] = useState("Mobile Phone")
@@ -168,76 +172,28 @@ export default function EditRepairPage() {
   }
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) return
     setIsGeneratingPDF(true)
-
-    const tempStyle = document.createElement('style')
-    tempStyle.id = '__pdf_color_fix'
-    tempStyle.textContent = `
-      :root, * {
-        --background: #ffffff !important;
-        --foreground: #111111 !important;
-        --muted: #f3f4f6 !important;
-        --muted-foreground: #6b7280 !important;
-        --border: #e5e7eb !important;
-        --card: #ffffff !important;
-        --card-foreground: #111111 !important;
-        --primary: #4F46E5 !important;
-        --primary-foreground: #ffffff !important;
-        --secondary: #f3f4f6 !important;
-        --secondary-foreground: #111111 !important;
-        --accent: #f3f4f6 !important;
-        --accent-foreground: #111111 !important;
-        --ring: #4F46E5 !important;
-        --input: #e5e7eb !important;
-        color: inherit !important;
-        background-color: transparent;
-      }
-      body, html { background-color: #ffffff !important; }
-    `
-    document.head.appendChild(tempStyle)
-
+    toast.loading("Generating invoice...", { id: "pdf-gen" })
     try {
-      const html2canvas = (await import('html2canvas')).default
-      const jsPDF = (await import('jspdf')).default
-
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: (clonedDoc) => {
-          const styles = clonedDoc.getElementsByTagName("style")
-          for (let i = styles.length - 1; i >= 0; i--) {
-            if (styles[i].id !== '__pdf_color_fix') styles[i].remove()
-          }
-          const links = clonedDoc.getElementsByTagName("link")
-          for (let i = links.length - 1; i >= 0; i--) {
-            if (links[i].rel === "stylesheet") links[i].remove()
-          }
-          const elements = clonedDoc.getElementsByTagName("*")
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement
-            el.style.color = "#000000"
-            if (el.classList.contains("bg-[#4F46E5]")) {
-              el.style.backgroundColor = "#4F46E5"
-              el.style.color = "#ffffff"
-            }
-          }
-        }
-      })
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.85)
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
-      pdf.save(`Invoice_${currentRef || 'Draft'}.pdf`)
+      generateRepairInvoicePDF({
+        customer,
+        deviceType,
+        brand,
+        model,
+        invoiceRef: currentRef,
+        invoiceDate: new Date().toLocaleDateString(),
+        issueCategory,
+        status,
+        laborCost: parseFloat(laborCost || "0"),
+        partsCost: parseFloat(partsCost || "0"),
+        discount: applyDiscount ? parseFloat(discount || "0") : 0,
+        pricingTotal
+      }, user)
+      toast.success("Invoice generated successfully!", { id: "pdf-gen" })
     } catch (err) {
       console.error("Failed to generate PDF", err)
-      toast.error("Failed to generate PDF.")
+      toast.error("Failed to generate PDF.", { id: "pdf-gen" })
     } finally {
-      document.getElementById('__pdf_color_fix')?.remove()
       setIsGeneratingPDF(false)
     }
   }

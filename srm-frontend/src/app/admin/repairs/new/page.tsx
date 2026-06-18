@@ -20,6 +20,8 @@ import { RootState } from "@/store/store"
 import { setCredentials } from "@/store/slices/authSlice"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
+import { sanitizeCloneForPDF } from "@/lib/pdf-canvas-utils"
+import { generateRepairInvoicePDF } from "@/lib/pdf-generator"
 
 // Mock device icons
 const PhoneIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -135,92 +137,28 @@ export default function CreateRepairPage() {
 
   // PDF Generation Logic
   const handleDownloadPDF = async () => {
-    if (!printRef.current) return
     setIsGeneratingPDF(true)
-
-    // Fix: html2canvas cannot parse modern `oklab()`/`oklch()` CSS color functions.
-    const tempStyle = document.createElement('style')
-    tempStyle.id = '__pdf_color_fix'
-    tempStyle.textContent = `
-      :root, * {
-        --background: #ffffff !important;
-        --foreground: #111111 !important;
-        --muted: #f3f4f6 !important;
-        --muted-foreground: #6b7280 !important;
-        --border: #e5e7eb !important;
-        --card: #ffffff !important;
-        --card-foreground: #111111 !important;
-        --primary: #4F46E5 !important;
-        --primary-foreground: #ffffff !important;
-        --secondary: #f3f4f6 !important;
-        --secondary-foreground: #111111 !important;
-        --accent: #f3f4f6 !important;
-        --accent-foreground: #111111 !important;
-        --ring: #4F46E5 !important;
-        --input: #e5e7eb !important;
-        color: inherit !important;
-        background-color: transparent;
-      }
-      body, html { background-color: #ffffff !important; }
-    `
-    document.head.appendChild(tempStyle)
-
+    toast.loading("Generating invoice...", { id: "pdf-gen" })
     try {
-      // Dynamic imports to prevent SSR hydration errors and bundle bloat
-      const html2canvas = (await import('html2canvas')).default
-      const jsPDF = (await import('jspdf')).default
-      
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: (clonedDoc) => {
-          // Nuclear fix for html2canvas oklab/oklch/lab issue
-          // We remove ALL stylesheets from the clone to prevent parsing errors
-          const styles = clonedDoc.getElementsByTagName("style");
-          for (let i = styles.length - 1; i >= 0; i--) {
-            if (styles[i].id !== '__pdf_color_fix') {
-              styles[i].remove();
-            }
-          }
-          const links = clonedDoc.getElementsByTagName("link");
-          for (let i = links.length - 1; i >= 0; i--) {
-            if (links[i].rel === "stylesheet") {
-              links[i].remove();
-            }
-          }
-
-          // Force HEX colors on all elements in the clone
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            el.style.color = "#000000";
-            if (el.classList.contains("bg-[#4F46E5]")) {
-              el.style.backgroundColor = "#4F46E5";
-              el.style.color = "#ffffff";
-            }
-          }
-        }
-      })
-      
-      const imgData = canvas.toDataURL('image/jpeg', 0.85)
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      })
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
-      pdf.save(`Invoice_${currentRef || 'Draft'}.pdf`)
+      generateRepairInvoicePDF({
+        customer,
+        deviceType,
+        brand,
+        model,
+        invoiceRef: currentRef,
+        invoiceDate: new Date().toLocaleDateString(),
+        issueCategory,
+        status,
+        laborCost: parseFloat(laborCost || "0"),
+        partsCost: parseFloat(partsCost || "0"),
+        discount: applyDiscount ? parseFloat(discount || "0") : 0,
+        pricingTotal
+      }, user)
+      toast.success("Invoice generated successfully!", { id: "pdf-gen" })
     } catch (err) {
       console.error("Failed to generate PDF", err)
-      toast.error("Failed to generate PDF. Make sure html2canvas and jspdf are installed.");
+      toast.error("Failed to generate PDF.", { id: "pdf-gen" })
     } finally {
-      document.getElementById('__pdf_color_fix')?.remove()
       setIsGeneratingPDF(false)
     }
   }
@@ -1232,13 +1170,13 @@ export default function CreateRepairPage() {
                  <div className="flex justify-between items-start mb-16">
                      <div>
                         <div className="flex items-center gap-2 mb-2">
-                           <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
-                           <h2 className="text-[24px] font-black text-[#0F172A] tracking-tighter uppercase">{user?.shopName || "SRM Solutions"}</h2>
+                           <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                           <h2 className="text-[24px] font-black text-[#0F172A] tracking-tighter uppercase">{user?.shopName || "All Fix Private Limited"}</h2>
                         </div>
                         <div className="text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">
-                           <p>Shop ID: {user?.shopCode || "N/A"}</p>
-                           <p>{user?.email || "hello@servicepro.com"}</p>
-                           <p>+94 11 234 5678</p>
+                           <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                           <p>{user?.email || "Info@allfix.space"}</p>
+                           <p>{user?.phone || "+94 075 664 5486"}</p>
                         </div>
                      </div>
                      <div className="text-right text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">

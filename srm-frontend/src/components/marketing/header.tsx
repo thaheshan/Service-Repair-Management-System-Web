@@ -17,14 +17,14 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
 
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center">
           <img
             src="/all-fix-logo-black.png"
             alt="All Fix Logo"
-            className="h-20 w-auto object-contain"
+            className="h-28 w-auto object-contain"
           />
         </Link>
 

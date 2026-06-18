@@ -43,7 +43,7 @@ export function RepairsHeader({
   const handleExportPDF = async () => {
     setIsExportingPDF(true)
     try {
-      const { default: jsPDF } = await import("jspdf")
+      const { jsPDF } = await import("jspdf")
       const { default: autoTable } = await import("jspdf-autotable")
 
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })

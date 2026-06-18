@@ -192,7 +192,7 @@ export default function StaffManagementPage() {
   const handleExportPDF = async () => {
     setIsExporting(true)
     try {
-      const { default: jsPDF } = await import("jspdf"); const { default: autoTable } = await import("jspdf-autotable")
+      const { jsPDF } = await import("jspdf"); const { default: autoTable } = await import("jspdf-autotable")
       const doc = new jsPDF({ orientation: "landscape" })
       doc.setFillColor(79, 70, 229); doc.rect(0, 0, 297, 16, "F")
       doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Staff Report", 14, 11)
