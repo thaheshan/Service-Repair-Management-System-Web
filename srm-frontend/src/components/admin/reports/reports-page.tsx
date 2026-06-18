@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { useTranslation } from "react-i18next"
 import Link from 'next/link'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
+import { generateReportsPDF } from "@/lib/pdf-generator"
 import { 
   BarChart3, 
   TrendingUp, 
@@ -197,6 +197,7 @@ export default function ReportsPage() {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const { user } = useSelector((state: any) => state.auth);
 
   const [timeRange, setTimeRange] = useState('30d')
   const [isExportOpen, setIsExportOpen] = useState(false)
@@ -255,51 +256,37 @@ export default function ReportsPage() {
     };
   }, [mounted]);
 
+  const getReportPayload = (title?: string) => {
+    const services = dashResponse?.data?.topServices || currentData.topServices;
+    const techs = dashResponse?.data?.topTechnicians || currentData.technicianPerformance;
+
+    return {
+      timeRange: timeRange,
+      ref: reportTimestamp.ref,
+      datetime: reportTimestamp.datetime,
+      stats: liveStats.map((s: any) => ({
+        label: s.label,
+        value: s.value,
+        change: s.change
+      })),
+      topServices: services.map((s: any) => ({
+        name: s.name,
+        count: s.count,
+        revenue: srvFormatted(s.revenue)
+      })),
+      technicians: techs.map((t_item: any) => ({
+        name: t_item.name,
+        count: dashResponse?.data?.topTechnicians ? t_item.jobsCompleted : t_item.completed
+      }))
+    };
+  };
+
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true)
     setIsExportOpen(false)
     try {
-      const element = hiddenReportRef.current
-      if (!element) return
-
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        backgroundColor: "#ffffff",
-        onclone: (clonedDoc) => {
-          // Robust Fix for "lab()" / "oklch()" color parsing errors
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            const style = window.getComputedStyle(el);
-            
-            const colorProps = ['color', 'backgroundColor', 'borderColor', 'outlineColor', 'textDecorationColor', 'stopColor', 'fill', 'stroke'];
-            colorProps.forEach(prop => {
-              const val = (style as any)[prop];
-              if (val && (val.includes('oklch') || val.includes('lab') || val.includes('color-mix'))) {
-                if (prop === 'backgroundColor') el.style.backgroundColor = '#ffffff';
-                else if (prop === 'color') el.style.color = '#000000';
-                else el.style[prop as any] = 'transparent';
-              }
-            });
-
-            const shadow = style.boxShadow;
-            if (shadow && (shadow.includes('oklch') || shadow.includes('lab') || shadow.includes('color-mix'))) {
-              el.style.boxShadow = 'none';
-            }
-          }
-        }
-      })
-      
-      const imgData = canvas.toDataURL('image/jpeg', 0.85)
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const imgProps = pdf.getImageProperties(imgData)
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
-      pdf.save(`SRM_Analytics_Report_${timeRange.toUpperCase()}__${new Date().toISOString().slice(0,10)}.pdf`)
+      generateReportsPDF(getReportPayload(), user);
+      toast.success("Executive report generated successfully!");
     } catch (err) {
       console.error("PDF generation failed:", err)
       alert("Error: Could not generate PDF. Please try again.")
@@ -356,47 +343,10 @@ export default function ReportsPage() {
       return
     }
     
-    // PDF Logic for specific report (re-uses existing hidden target for simplicity but changes filename)
     setIsGeneratingPDF(true)
     try {
-      const element = hiddenReportRef.current
-      if (!element) return
-
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        backgroundColor: "#ffffff",
-        onclone: (clonedDoc) => {
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            const style = window.getComputedStyle(el);
-            const colorProps = ['color', 'backgroundColor', 'borderColor', 'outlineColor', 'textDecorationColor', 'stopColor', 'fill', 'stroke'];
-            colorProps.forEach(prop => {
-              const val = (style as any)[prop];
-              if (val && (val.includes('oklch') || val.includes('lab') || val.includes('color-mix'))) {
-                if (prop === 'backgroundColor') el.style.backgroundColor = '#ffffff';
-                else if (prop === 'color') el.style.color = '#000000';
-                else el.style[prop as any] = 'transparent';
-              }
-            });
-            const shadow = style.boxShadow;
-            if (shadow && (shadow.includes('oklch') || shadow.includes('lab') || shadow.includes('color-mix'))) {
-              el.style.boxShadow = 'none';
-            }
-          }
-        }
-      })
-      
-      const imgData = canvas.toDataURL('image/jpeg', 0.85)
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const imgProps = pdf.getImageProperties(imgData)
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
-      pdf.save(`SRM_${title.replace(/\s+/g, '_')}__${new Date().toISOString().slice(0,10)}.pdf`)
+      generateReportsPDF(getReportPayload(title), user);
+      toast.success(`${title} PDF generated successfully!`);
     } catch (err) {
       console.error("PDF generation failed:", err)
       alert("Error: Could not generate PDF. Please try again.")
@@ -851,7 +801,7 @@ export default function ReportsPage() {
           <DashboardFooter />
           
           {/* 🛠️ INVISIBLE PDF RENDER TARGET FOR BUSINESS REPORT */}
-          <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+          <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
              <div 
                ref={hiddenReportRef}
                className="w-[1000px] bg-card p-16 flex flex-col min-h-[1400px]"
@@ -860,8 +810,8 @@ export default function ReportsPage() {
                 <div className="flex justify-between items-start mb-16">
                     <div>
                        <div className="flex items-center gap-3 mb-3">
-                          <div className="h-12 w-12 bg-primary rounded-xl flex items-center justify-center text-white font-black text-2xl shadow-lg">S</div>
-                          <h2 className="text-[32px] font-black text-foreground tracking-tighter uppercase">SRM Solutions</h2>
+                          <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-12 w-auto object-contain" />
+                          <h2 className="text-[32px] font-black text-foreground tracking-tighter uppercase">{user?.shopName || "All Fix Private Limited"}</h2>
                        </div>
                        <div className="text-[12px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">
                           <p className="flex items-center gap-2 text-primary"><PieChartIcon className="h-4 w-4" /> Comprehensive Performance Audit</p>
