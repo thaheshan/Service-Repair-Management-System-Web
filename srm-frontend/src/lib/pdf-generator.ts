@@ -1,5 +1,34 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { store } from '@/store/store';
+
+async function getLogoBase64(): Promise<string | null> {
+  try {
+    const state = store.getState() as any;
+    const queryCache = state.api?.queries;
+    if (!queryCache) return null;
+    
+    const settingsQuery = Object.keys(queryCache).find(key => key.startsWith('getSettings'));
+    let logoUrl = null;
+    if (settingsQuery && queryCache[settingsQuery]?.data) {
+      const data = queryCache[settingsQuery].data;
+      logoUrl = data?.logoUrl || data?.settings?.appearance?.logoUrl || null;
+    }
+    if (!logoUrl) return null;
+    
+    const res = await fetch(logoUrl);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.error("Failed to load logo for PDF", err);
+    return null;
+  }
+}
 
 // Shop detail defaults
 const getShopDetails = (user: any) => ({
@@ -12,9 +41,11 @@ const getShopDetails = (user: any) => ({
 });
 
 // Draws a premium header banner and company details
-function drawHeader(doc: jsPDF, title: string, user: any, orientation: 'portrait' | 'landscape' = 'portrait') {
+async function drawHeader(doc: jsPDF, title: string, user: any, orientation: 'portrait' | 'landscape' = 'portrait') {
   const shop = getShopDetails(user);
   const pageWidth = doc.internal.pageSize.getWidth();
+
+  const logoBase64 = await getLogoBase64();
 
   // Indigo top bar
   doc.setFillColor(79, 70, 229);
@@ -26,15 +57,25 @@ function drawHeader(doc: jsPDF, title: string, user: any, orientation: 'portrait
   doc.setFontSize(11);
   doc.text(title.toUpperCase(), 14, 10);
 
-  // Shop Details below bar
+  // Logo & Shop Details below bar
+  let startX = 14;
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', 14, 17, 15, 15);
+      startX = 33;
+    } catch(e) {
+      console.error("Failed to add logo to PDF:", e);
+    }
+  }
+
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFontSize(14);
-  doc.text(shop.name, 14, 25);
+  doc.text(shop.name, startX, 25);
 
   doc.setTextColor(100, 116, 139); // slate-500
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`${shop.website}  |  ${shop.email}  |  ${shop.phone}`, 14, 30);
+  doc.text(`${shop.website}  |  ${shop.email}  |  ${shop.phone}`, startX, 30);
 
   // Right-aligned Shop Address / Tax
   doc.setFont("helvetica", "bold");
@@ -84,11 +125,11 @@ function drawFooter(doc: jsPDF, message: string, orientation: 'portrait' | 'land
    1. DEVICES PAGE PDF GENERATORS
    ========================================================================== */
 
-export function generateDeviceInvoicePDF(device: any, user: any) {
+export async function generateDeviceInvoicePDF(device: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  drawHeader(doc, "Device Specification & Valuation", user);
+  await drawHeader(doc, "Device Specification & Valuation", user);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
@@ -156,9 +197,9 @@ export function generateDeviceInvoicePDF(device: any, user: any) {
   doc.save(`SRM_Device_Invoice_${(device.name || "device").replace(/\s+/g, '_')}.pdf`);
 }
 
-export function generateDevicesInventoryPDF(devices: any[], user: any) {
+export async function generateDevicesInventoryPDF(devices: any[], user: any) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  drawHeader(doc, "Global Device Inventory Stock Report", user, 'landscape');
+  await drawHeader(doc, "Master Device Inventory Report", user, 'landscape');
 
   autoTable(doc, {
     startY: 42,
@@ -185,11 +226,11 @@ export function generateDevicesInventoryPDF(devices: any[], user: any) {
    2. INVOICES PAGE PDF GENERATORS
    ========================================================================== */
 
-export function generateClientInvoicePDF(invoice: any, user: any) {
+export async function generateClientInvoicePDF(invoice: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  drawHeader(doc, "Invoice / Service Receipt", user);
+  await drawHeader(doc, "Client Tax Invoice", user);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
@@ -266,11 +307,11 @@ export function generateClientInvoicePDF(invoice: any, user: any) {
    3. INVENTORY PAGE PDF GENERATORS
    ========================================================================== */
 
-export function generateInventoryAssetPDF(asset: any, user: any) {
+export async function generateInventoryAssetPDF(asset: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  drawHeader(doc, "Asset Specification & Data Record", user);
+  await drawHeader(doc, "Inventory Asset Details", user);
 
   doc.setFillColor(248, 250, 252);
   doc.rect(14, 42, 182, 28, "F");
@@ -322,9 +363,9 @@ export function generateInventoryAssetPDF(asset: any, user: any) {
   doc.save(`Asset_Record_${asset.code || "item"}.pdf`);
 }
 
-export function generateInventoryAssetsPDF(assets: any[], user: any) {
+export async function generateInventoryAssetsPDF(assets: any[], user: any) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  drawHeader(doc, "Global Inventory Stock Status Report", user, 'landscape');
+  await drawHeader(doc, "Global Inventory Stock Status Report", user, 'landscape');
 
   autoTable(doc, {
     startY: 42,
@@ -347,11 +388,11 @@ export function generateInventoryAssetsPDF(assets: any[], user: any) {
   doc.save(`Global_Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-export function generatePOInvoicePDF(po: any, user: any) {
+export async function generatePOInvoicePDF(po: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  drawHeader(doc, "Purchase Order / Supplier Invoice", user);
+  await drawHeader(doc, "Purchase Order Invoice", user);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
@@ -418,11 +459,11 @@ export function generatePOInvoicePDF(po: any, user: any) {
    4. REPORTS PAGE PDF GENERATORS
    ========================================================================== */
 
-export function generateReportsPDF(reportData: any, user: any) {
+export async function generateReportsPDF(reportData: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  drawHeader(doc, "Comprehensive Business Performance Audit", user);
+  await drawHeader(doc, "Comprehensive Business Performance Audit", user);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
@@ -507,11 +548,11 @@ export function generateReportsPDF(reportData: any, user: any) {
   doc.save(`Executive_Performance_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-export function generateRepairInvoicePDF(repair: any, user: any) {
+export async function generateRepairInvoicePDF(repair: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  drawHeader(doc, "Repair Invoice / Service Job Summary", user);
+  await drawHeader(doc, "Repair Service Invoice", user);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);

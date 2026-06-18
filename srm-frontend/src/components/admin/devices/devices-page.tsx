@@ -192,7 +192,7 @@ export default function DevicesManagementPage() {
     setIsExportingDevice(true);
     toast.loading("Generating professional invoice...", { id: "pdf-gen" });
     try {
-      generateDeviceInvoicePDF(viewDevice, user);
+      await generateDeviceInvoicePDF(viewDevice, user);
       toast.success("Invoice generated successfully!", { id: "pdf-gen" });
     } catch (err) {
       console.error("PDF GEN ERR:", err);
@@ -205,7 +205,7 @@ export default function DevicesManagementPage() {
   const handleDownloadInventoryPdf = async () => {
     setIsExporting(true)
     try {
-      generateDevicesInventoryPDF(filtered, user);
+      await generateDevicesInventoryPDF(filtered, user);
       toast.success("Inventory report generated successfully!");
     } catch (err) {
       console.error("PDF generation failed:", err)

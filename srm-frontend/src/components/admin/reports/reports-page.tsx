@@ -285,7 +285,7 @@ export default function ReportsPage() {
     setIsGeneratingPDF(true)
     setIsExportOpen(false)
     try {
-      generateReportsPDF(getReportPayload(), user);
+      await generateReportsPDF(getReportPayload(), user);
       toast.success("Executive report generated successfully!");
     } catch (err) {
       console.error("PDF generation failed:", err)
