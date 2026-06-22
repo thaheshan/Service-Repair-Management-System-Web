@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "All Fix - Complete Service & Repair Hub",
   description: "All Fix is a complete service and repair management platform for modern repair shops.",
   icons: {
-    icon: "/all-fix-logo.png",
-    shortcut: "/all-fix-logo.png",
-    apple: "/all-fix-logo.png",
+    icon: "/main_allfix_logo.jpeg",
+    shortcut: "/main_allfix_logo.jpeg",
+    apple: "/main_allfix_logo.jpeg",
   },
 };
 
