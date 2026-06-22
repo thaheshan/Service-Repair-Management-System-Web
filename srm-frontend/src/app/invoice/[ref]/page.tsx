@@ -40,7 +40,7 @@ export default function PublicInvoicePage() {
   useEffect(() => {
     if (!ref) return;
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-    fetch(`${API_BASE}/api/v1/track/${ref}`)
+    fetch(`${API_BASE}/v1/track/${ref}`)
       .then((res) => res.json())
       .then((json) => {
         if (json.success) setInvoice(json.data);
