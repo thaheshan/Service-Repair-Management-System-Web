@@ -10,7 +10,7 @@ interface StatusUpdateModalProps {
 }
 
 export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }: StatusUpdateModalProps) {
-  const [autoUpdate, setAutoUpdate] = useState(false)
+  const [autoUpdate, setAutoUpdate] = useState(true)
 
   if (!isOpen || !pendingStatus) return null
 
@@ -61,7 +61,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
             <button 
               onClick={() => {
                 onConfirm(autoUpdate, pendingStatus)
-                setAutoUpdate(false) // Reset for next time
+                setAutoUpdate(true) // Reset for next time
               }}
               className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-semibold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
             >

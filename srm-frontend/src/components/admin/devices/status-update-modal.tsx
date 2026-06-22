@@ -10,7 +10,7 @@ interface DeviceStatusUpdateModalProps {
 }
 
 export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }: DeviceStatusUpdateModalProps) {
-  const [autoUpdate, setAutoUpdate] = useState(false)
+  const [autoUpdate, setAutoUpdate] = useState(true)
 
   if (!isOpen || !pendingStatus) return null
 
@@ -69,7 +69,7 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
             <button 
               onClick={() => {
                 onConfirm(autoUpdate, pendingStatus)
-                setAutoUpdate(false) 
+                setAutoUpdate(true) // Reset to default (notify) for next time
               }}
               className="flex-1 h-12 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-[0_4px_12px_rgba(79,70,229,0.25)] transition-all focus:outline-none"
             >
