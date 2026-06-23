@@ -153,6 +153,7 @@
       "totalRepairs": "Total Repairs",
       "pendingRepairs": "Pending Repairs",
       "revenue": "Total Revenue",
+      "netProfit": "Net Profit",
       "activeTechnicians": "Active Technicians",
       "actionRequired": "Action required",
       "currentlyAssigned": "Currently assigned"
