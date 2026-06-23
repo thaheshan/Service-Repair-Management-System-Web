@@ -70,7 +70,7 @@ export default function CreateRepairPage() {
   const [selectedDeviceId, setSelectedDeviceId] = useState("")
   
   // Custom Parts State
-  const [partsRequired, setPartsRequired] = useState<string[]>(["Premium Screen Assembly - iPhone 13 Pro"])
+  const [partsRequired, setPartsRequired] = useState<{partId: string; partName: string; unitPrice: number; quantity: number}[]>([])
   const [partInput, setPartInput] = useState("")
   
   // Pricing States
@@ -188,7 +188,8 @@ export default function CreateRepairPage() {
   const handleAddPart = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && partInput.trim() !== "") {
       e.preventDefault()
-      setPartsRequired([...partsRequired, partInput.trim()])
+      // Only for visual representation, won't be sent to API if it lacks a valid partId
+      setPartsRequired([...partsRequired, { partId: "", partName: partInput.trim(), unitPrice: 0, quantity: 1 }])
       setPartInput("")
     }
   }
@@ -263,7 +264,14 @@ export default function CreateRepairPage() {
                 status === "In Progress" ? "IN_PROGRESS" : 
                 status === "Ready" ? "READY_TO_TAKE" : "NOT_STARTED",
         priority: priority.toUpperCase(),
-        photoUrls: uploadedPhotos
+        photoUrls: uploadedPhotos,
+        partsUsed: partsRequired
+          .filter(p => p.partId) // Only send valid inventory parts
+          .map(p => ({
+            partId: p.partId,
+            quantity: p.quantity,
+            unitPrice: p.unitPrice
+          }))
       };
 
       await createRepair(repairData).unwrap();
@@ -461,7 +469,6 @@ export default function CreateRepairPage() {
                          onChange={(e) => setEstimatedDate(e.target.value)}
                          className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" 
                        />
-                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
                   </div>
                 </div>
@@ -815,8 +822,14 @@ export default function CreateRepairPage() {
                    <div className="flex flex-wrap items-center gap-2 mb-3">
                      {partsRequired.map((part, idx) => (
                        <div key={idx} className="px-3 py-1.5 border border-border rounded-lg bg-muted/30 flex items-center gap-2 inline-flex">
-                         <span className="text-[12px] font-medium text-foreground">{part}</span>
-                      <button onClick={(e) => { e.preventDefault(); setPartsRequired(partsRequired.filter((_, i) => i !== idx)) }} className="h-4 w-4 rounded-full bg-white border border-border flex items-center justify-center text-[10px] text-muted-foreground hover:bg-red-50 hover:text-red-500 hover:border-red-200">
+                         <span className="text-[12px] font-medium text-foreground">{part.partName} {part.unitPrice > 0 ? `(Rs. ${part.unitPrice})` : ''}</span>
+                      <button onClick={(e) => { 
+                        e.preventDefault(); 
+                        setPartsRequired(partsRequired.filter((_, i) => i !== idx));
+                        if (part.unitPrice > 0) {
+                          setPartsCost(prev => Math.max(0, parseFloat(prev || "0") - part.unitPrice).toString());
+                        }
+                      }} className="h-4 w-4 rounded-full bg-white border border-border flex items-center justify-center text-[10px] text-muted-foreground hover:bg-red-50 hover:text-red-500 hover:border-red-200">
                            <X className="h-2.5 w-2.5" />
                          </button>
                        </div>
@@ -840,8 +853,8 @@ export default function CreateRepairPage() {
                              onClick={() => {
                                const partName = item.partName || item.name || "Unnamed Part";
                                 const price = item.sellingPrice || item.price || 0;
-                                if (!partsRequired.includes(partName)) {
-                                 setPartsRequired(prev => [...prev, partName]);
+                                if (!partsRequired.find(p => p.partId === item.id)) {
+                                 setPartsRequired(prev => [...prev, { partId: item.id, partName, unitPrice: price, quantity: 1 }]);
                                   setPartsCost(prev => (parseFloat(prev || "0") + parseFloat(price.toString())).toString());
                                }
                                setPartInput("");
@@ -975,10 +988,16 @@ export default function CreateRepairPage() {
                            <span className="text-[13px] font-bold text-foreground">+{tax}%</span>
                          </div>
                       )}
+                      {(parseFloat(advancePayment || "0") > 0) && (
+                         <div className="flex flex-col">
+                           <span className="text-[11px] font-bold text-green-600 uppercase tracking-wide">Advance</span>
+                           <span className="text-[13px] font-bold text-green-700">-Rs. {parseFloat(advancePayment || "0").toLocaleString()}</span>
+                         </div>
+                      )}
                       <div className="hidden lg:block h-10 w-px bg-[#C7D2FE] mx-2" />
                       <div className="flex flex-col items-start lg:items-end col-span-2 lg:col-span-1 pt-2 lg:pt-0 border-t lg:border-0 border-[#C7D2FE]">
-                        <span className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wide">{mounted ? t('repairs.form.total') : 'Total Quote'}</span>
-                        <span className="text-[20px] font-black text-[#3730A3]">Rs. {pricingTotal.toLocaleString()}</span>
+                        <span className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wide">{mounted ? (parseFloat(advancePayment || "0") > 0 ? 'Remaining Balance' : t('repairs.form.total')) : (parseFloat(advancePayment || "0") > 0 ? 'Remaining Balance' : 'Total Quote')}</span>
+                        <span className="text-[20px] font-black text-[#3730A3]">Rs. {Math.max(0, pricingTotal - parseFloat(advancePayment || "0")).toLocaleString()}</span>
                       </div>
                    </div>
                    
@@ -1247,7 +1266,7 @@ export default function CreateRepairPage() {
                     <div className="grid grid-cols-12 mb-12 items-center">
                         <div className="col-span-6">
                            <p className="text-[13px] font-black text-[#0F172A] mb-0.5">Parts & Materials</p>
-                           <p className="text-[11px] text-muted-foreground font-medium">{partsRequired[0] || "OEM Grade Replacement Components"}</p>
+                           <p className="text-[11px] text-muted-foreground font-medium">{partsRequired.length > 0 ? partsRequired.map(p => p.partName).join(', ') : "OEM Grade Replacement Components"}</p>
                         </div>
                         <div className="col-span-2 text-[12px] font-bold text-[#0F172A] text-center">1</div>
                         <div className="col-span-2 text-[12px] font-bold text-[#0F172A] text-center">Rs.{parseFloat(partsCost || "0").toLocaleString()}</div>
