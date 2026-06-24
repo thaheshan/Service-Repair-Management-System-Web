@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import BookDemoModal from '@/components/marketing/BookDemoModal';
 
 export default function ContactSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -187,7 +189,34 @@ export default function ContactSection() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Demo Booking Banner */}
+        <div className="mt-24 rounded-3xl bg-gradient-to-br from-indigo-900 to-blue-900 overflow-hidden relative shadow-2xl">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+          <div className="relative p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="max-w-2xl text-center md:text-left">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                Want to see AllFix in action?
+              </h3>
+              <p className="text-blue-200 text-lg">
+                Schedule a free 30-minute discovery call with our product experts. We'll show you exactly how AllFix can streamline your specific repair shop workflows.
+              </p>
+            </div>
+            <Button 
+              size="lg" 
+              onClick={() => setIsDemoModalOpen(true)}
+              className="bg-white text-indigo-900 hover:bg-blue-50 font-bold px-8 py-6 rounded-xl shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] transition-all hover:scale-105"
+            >
+              Book a Schedule Now
+            </Button>
+          </div>
+        </div>
       </div>
+      
+      <BookDemoModal 
+        isOpen={isDemoModalOpen} 
+        onClose={() => setIsDemoModalOpen(false)} 
+      />
     </section>
   );
 }
