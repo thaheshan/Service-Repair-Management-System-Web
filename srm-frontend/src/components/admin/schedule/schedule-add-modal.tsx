@@ -59,9 +59,9 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
 
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[500px] rounded-xl shadow-xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full max-w-[500px] rounded-xl shadow-xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-[#F8FAFC]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/50">
               <h3 className="text-base font-bold text-foreground">{mounted ? t('schedule.scheduleNewService') : 'Schedule New Service'}</h3>
               <button 
                 onClick={() => setIsOpen(false)} 
@@ -79,7 +79,7 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
                 <select 
                   value={task}
                   onChange={(e) => setTask(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
+                  className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
                 >
                   <option value="" disabled>{mounted ? t('schedule.selectPendingRepair') : 'Select a pending repair...'}</option>
                   {unassignedRepairs.map((t: any) => (
@@ -95,7 +95,7 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
                 <select 
                   value={technician}
                   onChange={(e) => setTechnician(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
+                  className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
                 >
                   <option value="" disabled>{mounted ? t('schedule.selectTech') : 'Select a technician...'}</option>
                   {(staffData?.staff || []).map((t: any) => (
@@ -136,7 +136,7 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
                 <select 
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
+                  className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
                 >
                   <option value="1">{mounted ? t('schedule.hours.1') : '1 Hour'}</option>
                   <option value="2">{mounted ? t('schedule.hours.2') : '2 Hours'}</option>

@@ -200,7 +200,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
                 type="date"
                 value={customDateFrom}
                 onChange={(e) => setCustomDateFrom(e.target.value)}
-                className="w-full h-9 rounded-lg border border-border bg-white px-3 text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5] focus:border-[#4F46E5]"
+                className="w-full h-9 rounded-lg border border-border bg-card px-3 text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5] focus:border-[#4F46E5]"
               />
             </div>
             <div>
@@ -209,7 +209,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
                 type="date"
                 value={customDateTo}
                 onChange={(e) => setCustomDateTo(e.target.value)}
-                className="w-full h-9 rounded-lg border border-border bg-white px-3 text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5] focus:border-[#4F46E5]"
+                className="w-full h-9 rounded-lg border border-border bg-card px-3 text-[12px] font-medium focus:outline-none focus:ring-1 focus:ring-[#4F46E5] focus:border-[#4F46E5]"
               />
             </div>
           </div>
@@ -283,7 +283,7 @@ export function RepairsFilterSidebar({ onApply, onReset, onClose }: RepairsFilte
         </button>
         <button
           onClick={handleReset}
-          className="h-9 w-full text-[13px] font-semibold text-[#EF4444] hover:bg-red-50 rounded-lg transition-colors focus:outline-none"
+          className="h-9 w-full text-[13px] font-semibold text-[#EF4444] hover:bg-destructive/10 rounded-lg transition-colors focus:outline-none"
         >
           {mounted ? t('schedule.resetAll', 'Reset All') : 'Reset All'}
         </button>

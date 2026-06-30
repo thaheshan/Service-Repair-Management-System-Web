@@ -184,9 +184,9 @@ export function RecentActivity() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
 
-          <DialogHeader className="p-6 pb-4 border-b border-border bg-[#F8FAFC]">
+          <DialogHeader className="p-6 pb-4 border-b border-border bg-muted/50">
             <div className="flex items-center justify-between mb-4 pr-8">
-              <DialogTitle className="text-xl font-bold text-[#0F172A]">{mounted ? t('dashboard.activityLog') || 'Activity Log' : 'Activity Log'}</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-foreground">{mounted ? t('dashboard.activityLog') || 'Activity Log' : 'Activity Log'}</DialogTitle>
               <button
                 onClick={handleDownloadPdf}
                 className="flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors focus:outline-none shadow-sm"
@@ -203,7 +203,7 @@ export function RecentActivity() {
                   <span className="text-sm font-medium text-muted-foreground">{mounted ? t('common.filter') || 'Filter' : 'Filter'}:</span>
                 </div>
                 <select
-                  className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
                 >
@@ -221,7 +221,7 @@ export function RecentActivity() {
                   <span className="text-sm font-medium text-muted-foreground">{mounted ? t('common.sortBy') || 'Sort By' : 'Sort By'}:</span>
                 </div>
                 <select
-                  className="h-9 px-3 rounded-md border border-border bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
                 >
@@ -232,7 +232,7 @@ export function RecentActivity() {
             </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto w-full p-2 bg-[#F8FAFC]/50 min-h-[400px]">
+          <div className="flex-1 overflow-y-auto w-full p-2 bg-muted/20 min-h-[400px]">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-full py-20">
                 <div className="h-8 w-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
@@ -263,9 +263,9 @@ export function RecentActivity() {
                       <div className="flex items-start justify-between gap-4">
                         <p className="text-[14px] text-foreground">
                           {activity.title}{" "}
-                          <span className="font-bold text-[#0F172A]">{activity.highlight}</span>
+                          <span className="font-bold text-foreground">{activity.highlight}</span>
                         </p>
-                        <span className="text-[12px] font-semibold text-muted-foreground whitespace-nowrap bg-white px-2 py-0.5 rounded-full border border-border shadow-sm">
+                        <span className="text-[12px] font-semibold text-muted-foreground whitespace-nowrap bg-card px-2 py-0.5 rounded-full border border-border shadow-sm">
                           {activity.time}
                         </span>
                       </div>

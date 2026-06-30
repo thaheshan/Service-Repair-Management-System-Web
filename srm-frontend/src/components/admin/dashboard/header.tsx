@@ -32,10 +32,10 @@ export const mockSearchData = [
   { id: 5, type: "Device", name: "Samsung S22 Ultra", sub: "In Inventory: 5 units", link: "/admin/devices" },
 ]
 
-import { 
-  useGetDashboardAnalyticsQuery, 
-  useMarkReadMutation, 
-  useClearNotificationsMutation 
+import {
+  useGetDashboardAnalyticsQuery,
+  useMarkReadMutation,
+  useClearNotificationsMutation
 } from "@/services/api/dashboardApiSlice"
 import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 
@@ -64,10 +64,10 @@ export function DashboardHeader() {
   const { data: settingsResponse } = useGetSettingsQuery({})
   const [markRead] = useMarkReadMutation()
   const [clearNotifications] = useClearNotificationsMutation()
-  
+
   const shopName = settingsResponse?.shop?.name || "SRM"
   const logoUrl = settingsResponse?.logoUrl || settingsResponse?.settings?.appearance?.logoUrl
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -92,9 +92,9 @@ export function DashboardHeader() {
     }
   }
 
-  const filteredSearch = mockSearchData.filter(item => 
+  const filteredSearch = mockSearchData.filter(item =>
     searchQuery && (
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.sub.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.type.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -133,10 +133,10 @@ export function DashboardHeader() {
       if (notification.unread) {
         await markRead(notification.id).unwrap()
       }
-      
+
       // Close modal if open
       setIsModalOpen(false)
-      
+
       // Navigate based on type
       if (notification.type === "REPAIR" && notification.repairId) {
         router.push(`/admin/repairs/${notification.repairId}?from=notifications`)
@@ -158,285 +158,285 @@ export function DashboardHeader() {
 
   return (
     <>
-    <header className="sticky top-0 z-20 flex h-[64px] items-center justify-between border-b border-border bg-card px-4 lg:px-8 pl-[60px] lg:pl-8">
-      <div className="relative w-full max-w-[180px] sm:max-w-[240px] md:max-w-sm flex items-center gap-6">
-        {/* Search Bar */}
-        <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={mounted ? t('common.search') : 'Search...'}
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setIsSearchOpen(true)
-            }}
-            onFocus={() => setIsSearchOpen(true)}
-            onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
-            className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-all"
-          />
-          {isSearchOpen && searchQuery && (
-            <div className="absolute top-full left-0 mt-1 w-[400px] bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-              {filteredSearch.length > 0 ? (
-                <div className="flex flex-col py-1 max-h-[300px] overflow-y-auto">
-                  {filteredSearch.map((item) => (
-                    <button
-                      key={item.id}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        setIsSearchOpen(false)
-                        setSearchQuery("")
-                        router.push(item.link)
-                      }}
-                      className="flex flex-col items-start px-4 py-2.5 hover:bg-muted focus:bg-muted border-b border-border/40 last:border-0 text-left focus:outline-none transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5 mb-1 w-full">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-accent/50 px-2 py-0.5 rounded shadow-sm border border-primary/20">
-                          {item.type}
+      <header className="sticky top-0 z-20 flex h-[64px] items-center justify-between border-b border-border bg-card px-4 lg:px-8 pl-[60px] lg:pl-8">
+        <div className="relative w-full max-w-[180px] sm:max-w-[240px] md:max-w-sm flex items-center gap-6">
+          {/* Search Bar */}
+          <div className="relative w-full">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder={mounted ? t('common.search') : 'Search...'}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setIsSearchOpen(true)
+              }}
+              onFocus={() => setIsSearchOpen(true)}
+              onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
+              className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition-all"
+            />
+            {isSearchOpen && searchQuery && (
+              <div className="absolute top-full left-0 mt-1 w-[400px] bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                {filteredSearch.length > 0 ? (
+                  <div className="flex flex-col py-1 max-h-[300px] overflow-y-auto">
+                    {filteredSearch.map((item) => (
+                      <button
+                        key={item.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault()
+                          setIsSearchOpen(false)
+                          setSearchQuery("")
+                          router.push(item.link)
+                        }}
+                        className="flex flex-col items-start px-4 py-2.5 hover:bg-muted focus:bg-muted border-b border-border/40 last:border-0 text-left focus:outline-none transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 mb-1 w-full">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-accent/50 px-2 py-0.5 rounded shadow-sm border border-primary/20">
+                            {item.type}
+                          </span>
+                          <span className="text-sm font-bold text-foreground truncate">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span className="text-[12px] font-medium text-muted-foreground w-full truncate">
+                          {item.sub}
                         </span>
-                        <span className="text-sm font-bold text-foreground truncate">
-                          {item.name}
-                        </span>
-                      </div>
-                      <span className="text-[12px] font-medium text-muted-foreground w-full truncate">
-                        {item.sub}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-5 py-8 text-[13px] font-medium text-muted-foreground text-center flex flex-col items-center justify-center gap-2">
-                  <Search className="h-6 w-6 text-muted-foreground/40 mb-1" />
-                  No results found for "{searchQuery}"
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-5 py-8 text-[13px] font-medium text-muted-foreground text-center flex flex-col items-center justify-center gap-2">
+                    <Search className="h-6 w-6 text-muted-foreground/40 mb-1" />
+                    No results found for "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-3">
+          {/* Shop ID for Admin/Shop Owner - shows the shopCode staff use to join */}
+          {(user?.role === 'ADMIN' || user?.role === 'admin') && user?.shopCode && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/50 border border-primary/20 rounded-lg mr-2">
+              <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Shop ID:</span>
+              <code className="text-xs font-mono font-bold text-foreground select-all">{user.shopCode}</code>
+              <button
+                onClick={handleCopyShopId}
+                className="ml-1 text-primary hover:text-[#4338CA] focus:outline-none transition-colors"
+                title="Copy Shop ID - share this with staff to join"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-3">
-        {/* Shop ID for Admin/Shop Owner - shows the shopCode staff use to join */}
-        {(user?.role === 'ADMIN' || user?.role === 'admin') && user?.shopCode && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/50 border border-primary/20 rounded-lg mr-2">
-            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Shop ID:</span>
-            <code className="text-xs font-mono font-bold text-foreground select-all">{user.shopCode}</code>
-            <button 
-              onClick={handleCopyShopId} 
-              className="ml-1 text-primary hover:text-[#4338CA] focus:outline-none transition-colors"
-              title="Copy Shop ID - share this with staff to join"
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* Notifications Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted focus:outline-none transition-colors">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-[14px] min-w-[14px] px-1 items-center justify-center rounded-full bg-[#EF4444] text-[9px] font-bold text-white ring-2 ring-card shadow-sm">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-xl border-border/60">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/20">
-              <span className="font-semibold text-foreground">{mounted ? t('dashboard.notifications') || 'Notifications' : 'Notifications'}</span>
-              <div className="flex items-center gap-3">
+          {/* Notifications Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted focus:outline-none transition-colors">
+                <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <button 
+                  <span className="absolute right-1.5 top-1.5 flex h-[14px] min-w-[14px] px-1 items-center justify-center rounded-full bg-[#EF4444] text-[9px] font-bold text-white ring-2 ring-card shadow-sm">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-xl border-border/60">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/20">
+                <span className="font-semibold text-foreground">{mounted ? t('dashboard.notifications') || 'Notifications' : 'Notifications'}</span>
+                <div className="flex items-center gap-3">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 focus:outline-none"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {mounted ? t('common.markAllRead') || 'Mark all read' : 'Mark all read'}
+                    </button>
+                  )}
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={handleClearAll}
+                      className="text-xs font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 focus:outline-none"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {mounted ? t('common.clear') || 'Clear' : 'Clear'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-[360px] overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                      <Bell className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">{mounted ? t('common.noNotifications') || 'No notifications' : 'No notifications'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{mounted ? t('common.allCaughtUp') || "You're all caught up!" : "You're all caught up!"}</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    {notifications.map((notification) => (
+                      <DropdownMenuItem
+                        key={notification.id}
+                        className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-border/40 last:border-b-0 rounded-none focus:bg-muted/50 transition-colors ${notification.unread ? 'bg-primary/[0.03]' : ''}`}
+                        onSelect={(e) => {
+                          e.preventDefault()
+                          handleNotificationClick(notification)
+                        }}
+                      >
+                        <div className="flex w-full items-start gap-3">
+                          <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.unread ? 'bg-primary' : 'bg-transparent'}`} />
+                          <div className="flex flex-col gap-1 w-full">
+                            <div className="flex items-start justify-between gap-2">
+                              <span className={`text-sm ${notification.unread ? 'font-semibold' : 'font-medium'} text-foreground leading-none`}>
+                                {notification.title}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                {notification.time}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                              {notification.description}
+                            </span>
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-2 border-t border-border/60 bg-muted/10">
+                <button
+                  className="w-full py-2.5 flex items-center justify-center rounded-md text-sm font-semibold text-primary hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  {mounted ? t('common.viewAllNotifications') || 'View all notifications' : 'View all notifications'}
+                </button>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* User Menu Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-muted focus:outline-none transition-colors">
+                <Avatar className="h-8 w-8 border border-border">
+                  <AvatarImage src={logoUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80"} alt={user?.name || "User"} className="object-cover" />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-black">
+                    {user?.name?.substring(0, 2).toUpperCase() || "AD"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-1 hidden sm:flex">
+                  <span className="text-sm font-black text-foreground">{shopName || "Admin User"}</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>{mounted ? t('common.myAccount') || 'My Account' : 'My Account'}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings")}>
+                <User className="h-4 w-4 mr-2" />
+                {mounted ? t('common.profile') || 'Profile' : 'Profile'}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings")}>
+                <Settings className="h-4 w-4 mr-2" />
+                {mounted ? t('common.settings') : 'Settings'}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <CreditCard className="h-4 w-4 mr-2" />
+                {mounted ? t('common.billing') || 'Billing' : 'Billing'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {mounted ? t('common.logout') || 'Log out' : 'Log out'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-6 pb-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-bold">{mounted ? t('common.allNotifications') || 'All Notifications' : 'All Notifications'}</DialogTitle>
+              <div className="flex items-center gap-4">
+                {unreadCount > 0 && (
+                  <button
                     onClick={handleMarkAllRead}
-                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 focus:outline-none"
+                    className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 focus:outline-none"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {mounted ? t('common.markAllRead') || 'Mark all read' : 'Mark all read'}
+                    <CheckCircle2 className="w-4 h-4" />
+                    Mark all read
                   </button>
                 )}
                 {notifications.length > 0 && (
-                  <button 
+                  <button
                     onClick={handleClearAll}
-                    className="text-xs font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 focus:outline-none"
+                    className="text-sm font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1.5 focus:outline-none"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    {mounted ? t('common.clear') || 'Clear' : 'Clear'}
+                    <Trash2 className="w-4 h-4" />
+                    Clear all
                   </button>
                 )}
               </div>
             </div>
-            
-            {/* Notifications List */}
-            <div className="max-h-[360px] overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                    <Bell className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">{mounted ? t('common.noNotifications') || 'No notifications' : 'No notifications'}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{mounted ? t('common.allCaughtUp') || "You're all caught up!" : "You're all caught up!"}</p>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto w-full">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full py-20 px-4 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                  <Bell className="h-8 w-8 text-muted-foreground" />
                 </div>
-              ) : (
-                <div className="flex flex-col">
-                  {notifications.map((notification) => (
-                    <DropdownMenuItem 
-                      key={notification.id} 
-                      className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-border/40 last:border-b-0 rounded-none focus:bg-muted/50 transition-colors ${notification.unread ? 'bg-primary/[0.03]' : ''}`}
-                      onSelect={(e) => {
-                        e.preventDefault()
-                        handleNotificationClick(notification)
-                      }}
-                    >
-                      <div className="flex w-full items-start gap-3">
-                        <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.unread ? 'bg-primary' : 'bg-transparent'}`} />
-                        <div className="flex flex-col gap-1 w-full">
-                          <div className="flex items-start justify-between gap-2">
-                            <span className={`text-sm ${notification.unread ? 'font-semibold' : 'font-medium'} text-foreground leading-none`}>
-                              {notification.title}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                              {notification.time}
-                            </span>
-                          </div>
-                          <span className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                            {notification.description}
-                          </span>
-                        </div>
+                <p className="text-lg font-medium text-foreground">No notifications</p>
+                <p className="text-sm text-muted-foreground mt-2">You're all caught up!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col w-full divide-y divide-border/40">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`flex items-start gap-4 p-6 hover:bg-muted/30 transition-colors cursor-pointer ${notification.unread ? 'bg-primary/[0.04]' : ''}`}
+                    onClick={() => {
+                      handleNotificationClick(notification)
+                    }}
+                  >
+                    <div className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.unread ? 'bg-primary' : 'bg-transparent'}`} />
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <div className="flex items-start justify-between gap-4">
+                        <span className={`text-base ${notification.unread ? 'font-semibold' : 'font-medium'} text-foreground`}>
+                          {notification.title}
+                        </span>
+                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap pt-1">
+                          {notification.time}
+                        </span>
                       </div>
-                    </DropdownMenuItem>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Footer */}
-            <div className="p-2 border-t border-border/60 bg-muted/10">
-              <button 
-                className="w-full py-2.5 flex items-center justify-center rounded-md text-sm font-semibold text-primary hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
-                onClick={() => setIsModalOpen(true)}
-              >
-                {mounted ? t('common.viewAllNotifications') || 'View all notifications' : 'View all notifications'}
-              </button>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* User Menu Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-muted focus:outline-none transition-colors">
-              <Avatar className="h-8 w-8 border border-border">
-                <AvatarImage src={logoUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80"} alt={user?.name || "User"} className="object-cover" />
-                <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-black">
-                  {user?.name?.substring(0, 2).toUpperCase() || "AD"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex items-center gap-1 hidden sm:flex">
-                <span className="text-sm font-black text-foreground">{shopName || "Admin User"}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel>{mounted ? t('common.myAccount') || 'My Account' : 'My Account'}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings")}>
-              <User className="h-4 w-4 mr-2" />
-              {mounted ? t('common.profile') || 'Profile' : 'Profile'}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings")}>
-              <Settings className="h-4 w-4 mr-2" />
-              {mounted ? t('common.settings') : 'Settings'}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <CreditCard className="h-4 w-4 mr-2" />
-              {mounted ? t('common.billing') || 'Billing' : 'Billing'}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="cursor-pointer text-destructive focus:text-destructive"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              {mounted ? t('common.logout') || 'Log out' : 'Log out'}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
-
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-6 pb-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">{mounted ? t('common.allNotifications') || 'All Notifications' : 'All Notifications'}</DialogTitle>
-            <div className="flex items-center gap-4">
-              {unreadCount > 0 && (
-                <button 
-                  onClick={handleMarkAllRead}
-                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 focus:outline-none"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Mark all read
-                </button>
-              )}
-              {notifications.length > 0 && (
-                <button 
-                  onClick={handleClearAll}
-                  className="text-sm font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1.5 focus:outline-none"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Clear all
-                </button>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto w-full">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-20 px-4 text-center">
-              <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
-                <Bell className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-lg font-medium text-foreground">No notifications</p>
-              <p className="text-sm text-muted-foreground mt-2">You're all caught up!</p>
-            </div>
-          ) : (
-            <div className="flex flex-col w-full divide-y divide-border/40">
-              {notifications.map((notification) => (
-                <div 
-                  key={notification.id} 
-                  className={`flex items-start gap-4 p-6 hover:bg-muted/30 transition-colors cursor-pointer ${notification.unread ? 'bg-primary/[0.04]' : ''}`}
-                  onClick={() => {
-                    handleNotificationClick(notification)
-                  }}
-                >
-                  <div className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.unread ? 'bg-primary' : 'bg-transparent'}`} />
-                  <div className="flex flex-col gap-1.5 w-full">
-                    <div className="flex items-start justify-between gap-4">
-                      <span className={`text-base ${notification.unread ? 'font-semibold' : 'font-medium'} text-foreground`}>
-                        {notification.title}
-                      </span>
-                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap pt-1">
-                        {notification.time}
+                      <span className="text-sm text-muted-foreground leading-relaxed">
+                        {notification.description}
                       </span>
                     </div>
-                    <span className="text-sm text-muted-foreground leading-relaxed">
-                      {notification.description}
-                    </span>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

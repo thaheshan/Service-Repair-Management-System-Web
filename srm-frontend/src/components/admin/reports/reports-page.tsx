@@ -421,7 +421,7 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-2">
                   <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">Dashboard</Link>
                   <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-                  <span className="text-[#0F172A]">{mounted ? t('reportsPage.title') : 'Reports & Analytics'}</span>
+                  <span className="text-foreground">{mounted ? t('reportsPage.title') : 'Reports & Analytics'}</span>
                 </div>
                 <h1 className="text-[32px] font-black text-foreground tracking-tight leading-none mb-2">{mounted ? t('reportsPage.analyticsCenter') : 'Analytics Center'}</h1>
                 <p className="text-[14px] text-muted-foreground font-medium">{mounted ? t('reportsPage.subtitle') : 'Real-time performance metrics and business intelligence.'}</p>
@@ -749,13 +749,13 @@ export default function ReportsPage() {
             {/* Bottom Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Technician Productivity */}
-              <div className="bg-card rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
+              <div className="bg-card dark:bg-card/90 rounded-[24px] border border-border shadow-sm p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h2 className="text-[18px] font-black text-foreground tracking-tight">{mounted ? t('reportsPage.staffProficiency') : 'Staff Proficiency'}</h2>
-                    <p className="text-[13px] text-muted-foreground font-medium">{mounted ? t('reportsPage.staffProficiencyDesc') : 'Repairs completed vs satisfaction index'}</p>
+                    <h2 className="text-[18px] font-black text-foreground dark:text-foreground tracking-tight">{mounted ? t('reportsPage.staffProficiency') : 'Staff Proficiency'}</h2>
+                    <p className="text-[13px] text-muted-foreground dark:text-muted-foreground/80 font-medium">{mounted ? t('reportsPage.staffProficiencyDesc') : 'Repairs completed vs satisfaction index'}</p>
                   </div>
-                  <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-muted/30 text-muted-foreground hover:text-primary transition-colors"><MoreHorizontal className="h-5 w-5" /></button>
+                  <button className="h-9 w-9 flex items-center justify-center rounded-xl bg-muted/30 dark:bg-muted/10 text-muted-foreground dark:text-muted-foreground/80 hover:bg-muted hover:text-primary dark:hover:bg-muted/30 dark:hover:text-primary transition-colors"><MoreHorizontal className="h-5 w-5" /></button>
                 </div>
                 
                 <div className="h-[300px] w-full mt-auto">

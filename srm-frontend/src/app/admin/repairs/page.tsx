@@ -273,9 +273,9 @@ export default function RepairsPage() {
             <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
               <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title', 'Dashboard') : 'Dashboard'}</Link>
               <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-              <span className="text-[#0F172A]">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
+              <span className="text-[#0F172A] dark:text-white">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
             </div>
-            <h1 className="text-[28px] font-black text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
+            <h1 className="dark:text-white text-[28px] font-black text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
           </div>
 
           <div className="flex-1 px-4 lg:px-8 pb-6 pt-0 m-0 flex flex-col">
