@@ -591,7 +591,7 @@ export default function InventoryManagementPage() {
                     <div className="w-px h-6 bg-border mx-2" />
                     <button
                       onClick={() => setIsAdjustStockOpen(true)}
-                      className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-sm font-semibold text-[#0F172A] hover:bg-muted transition-colors shadow-sm focus:outline-none"
+                      className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition-colors shadow-sm focus:outline-none"
                     >
                       <Package className="h-4 w-4" /> Adjust Stock
                     </button>
@@ -705,12 +705,12 @@ export default function InventoryManagementPage() {
 
                     <div className="h-[250px] w-full relative">
                       {usageLoading ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-[1px] z-10">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/50 backdrop-blur-[1px] z-10">
                           <RefreshCw className="h-8 w-8 text-[#4F46E5] animate-spin mb-2" />
                           <span className="text-[11px] font-black text-[#4F46E5] uppercase tracking-widest">Syncing Ledger...</span>
                         </div>
                       ) : fastMovingItemsData.length === 0 ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
                           <Package className="h-10 w-10 mb-2 opacity-20" />
                           <span className="text-[12px] font-bold">No movement data yet</span>
                         </div>
@@ -1244,9 +1244,9 @@ export default function InventoryManagementPage() {
         {/* 🔵 PREMIUM INVOICE MODAL (Professional Device-Style) */}
         {viewInvoiceTarget && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-[#f8fafc] w-full max-w-[900px] h-[90vh] rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200 flex flex-col">
+            <div className="bg-card w-full max-w-[900px] h-[90vh] rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-border flex flex-col">
               {/* STICKY ACTION HEADER */}
-              <div className="w-full bg-white border-b border-slate-100 p-6 flex justify-end gap-3 shrink-0 z-20">
+              <div className="w-full bg-card border-b border-border p-6 flex justify-end gap-3 shrink-0 z-20">
                 <button
                   onClick={handleDownloadInvoicePdf}
                   disabled={isGeneratingInvoicePdf}
@@ -1257,14 +1257,14 @@ export default function InventoryManagementPage() {
                 </button>
                 <button
                   onClick={() => setViewInvoiceTarget(null)}
-                  className="h-11 w-11 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100 hover:text-[#0F172A] transition-all focus:outline-none active:scale-95 border border-slate-100"
+                  className="h-11 w-11 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 hover:text-foreground transition-all focus:outline-none active:scale-95 border border-border"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* SCROLLABLE PAPER AREA */}
-              <div className="flex-1 overflow-y-auto p-12 flex justify-center bg-slate-100/30 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-12 flex justify-center bg-muted/20 custom-scrollbar">
                 {/* PAPER CONTENT */}
                 <div className="w-full max-w-[800px] bg-white shadow-sm border border-slate-200 p-16 flex flex-col min-h-[1050px] relative overflow-hidden">
                   {/* BRANDING HEADER */}

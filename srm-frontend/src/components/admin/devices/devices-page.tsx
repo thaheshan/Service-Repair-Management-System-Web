@@ -536,7 +536,7 @@ export default function DevicesManagementPage() {
                           <button onClick={() => setViewDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Eye className="h-3.5 w-3.5" /></button>
                           <button onClick={() => { setEditDevice({ ...d }); setEditForm({ model: d.name, brand: d.brand, type: d.type as DeviceType, imei: (d as any).rawImei || '', serialNo: (d as any).rawSerialNo || '', price: d.price || "" }) }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Edit2 className="h-3.5 w-3.5" /></button>
                           {user?.role !== 'TECHNICIAN' && (
-                            <button onClick={() => setDeleteDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => setDeleteDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
                           )}
                         </div></td>
                       </tr>

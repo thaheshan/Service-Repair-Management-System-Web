@@ -427,10 +427,10 @@ export default function SettingsView() {
                   )}
                 </nav>
 
-                <div className="mt-8 p-6 rounded-2xl bg-indigo-50 border border-indigo-100 hidden lg:block">
-                  <h4 className="text-[13px] font-black text-indigo-900 mb-2">{mounted ? t('settings.needAssistance') : 'Need Assistance?'}</h4>
-                  <p className="text-[12px] text-indigo-700/80 leading-relaxed mb-4 font-medium">{mounted ? t('settings.assistanceDesc') : 'Check our technical documentation for advanced configuration options.'}</p>
-                  <button className="text-[12px] font-bold text-indigo-600 hover:underline">{mounted ? t('settings.viewDocs') : 'View Documentation'}</button>
+                <div className="mt-8 p-6 rounded-2xl bg-primary/10 border border-primary/20 hidden lg:block">
+                  <h4 className="text-[13px] font-black text-foreground mb-2">{mounted ? t('settings.needAssistance') : 'Need Assistance?'}</h4>
+                  <p className="text-[12px] text-muted-foreground leading-relaxed mb-4 font-medium">{mounted ? t('settings.assistanceDesc') : 'Check our technical documentation for advanced configuration options.'}</p>
+                  <button className="text-[12px] font-bold text-primary hover:underline">{mounted ? t('settings.viewDocs') : 'View Documentation'}</button>
                 </div>
               </aside>
 
@@ -920,8 +920,8 @@ export default function SettingsView() {
                                  "Enforce password rotation every 90 days"
                                ].map((req, idx) => (
                                  <div key={idx} className="flex items-center gap-3">
-                                    <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
-                                       <Check className="h-3 w-3 text-emerald-600 stroke-[3px]" />
+                                    <div className="h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                       <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 stroke-[3px]" />
                                     </div>
                                     <span className="text-[13px] font-medium text-muted-foreground">{req}</span>
                                  </div>
@@ -929,12 +929,12 @@ export default function SettingsView() {
                             </div>
                          </section>
 
-                         <section className="bg-red-50 p-8 rounded-[24px] border border-red-100">
-                            <h4 className="text-[14px] font-black text-red-900 uppercase tracking-widest mb-2 flex items-center gap-2">
+                         <section className="bg-destructive/10 p-8 rounded-[24px] border border-destructive/20">
+                            <h4 className="text-[14px] font-black text-destructive uppercase tracking-widest mb-2 flex items-center gap-2">
                                <Building className="h-5 w-5" /> {mounted ? t('settings.deactivation') : 'Account Deactivation'}
                             </h4>
-                            <p className="text-[13px] text-red-700/80 mb-6 font-medium leading-relaxed">Permanently delete your business profile and all associated data. This action cannot be undone and will erase all repair history and customer records.</p>
-                            <button className="h-11 px-8 rounded-xl bg-red-600 text-white text-[13px] font-black uppercase tracking-tight hover:bg-red-700 shadow-lg shadow-red-200 transition-all">{mounted ? t('settings.requestDeletion') : 'Request Deletion'}</button>
+                            <p className="text-[13px] text-destructive/80 mb-6 font-medium leading-relaxed">Permanently delete your business profile and all associated data. This action cannot be undone and will erase all repair history and customer records.</p>
+                            <button className="h-11 px-8 rounded-xl bg-destructive text-destructive-foreground text-[13px] font-black uppercase tracking-tight hover:bg-destructive/90 shadow-lg transition-all">{mounted ? t('settings.requestDeletion') : 'Request Deletion'}</button>
                          </section>
                       </div>
                     </div>
@@ -964,7 +964,7 @@ export default function SettingsView() {
                                  </div>
                               </div>
                               
-                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 sm:gap-8 bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none">
+                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 sm:gap-8 bg-muted/30 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none">
                                  <div className="flex flex-col items-start sm:items-end">
                                     <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">{mounted ? t('settings.systemRole') : 'System Role'}</span>
                                     <span className="text-[12px] sm:text-[13px] font-bold text-primary">{member.role}</span>
@@ -1179,8 +1179,8 @@ export default function SettingsView() {
                </div>
                
                {activeEditMember.status === 'Suspended' && (
-                  <div className="bg-red-50 p-4 rounded-xl border border-red-200 mt-2">
-                    <p className="text-[12px] text-red-600 font-bold leading-tight">This user is currently suspended. They cannot log in, assign repairs, or view the CRM layer.</p>
+                  <div className="bg-destructive/10 p-4 rounded-xl border border-destructive/20 mt-2">
+                    <p className="text-[12px] text-destructive font-bold leading-tight">This user is currently suspended. They cannot log in, assign repairs, or view the CRM layer.</p>
                   </div>
                )}
 

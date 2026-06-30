@@ -12,7 +12,7 @@ export default function AdminLayout({ children }: any) {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#F9FAFB]">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="w-72 bg-[#111827] text-white hidden lg:flex flex-col sticky top-0 h-screen">
         <div className="p-8 border-b border-gray-800">
@@ -41,8 +41,8 @@ export default function AdminLayout({ children }: any) {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <header className="h-16 border-b bg-white flex items-center px-8 lg:hidden">
-           <h2 className="text-xl font-bold text-gray-900">SRM Admin</h2>
+        <header className="h-16 border-b bg-card flex items-center px-8 lg:hidden">
+           <h2 className="text-xl font-bold text-foreground">SRM Admin</h2>
         </header>
         <div className="max-w-7xl mx-auto">
           {children}

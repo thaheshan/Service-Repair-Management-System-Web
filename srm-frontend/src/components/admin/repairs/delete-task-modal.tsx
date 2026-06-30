@@ -12,7 +12,7 @@ export function DeleteTaskModal({ isOpen, onClose, onConfirm, taskRef }: DeleteT
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Close Button */}
         <button 
@@ -24,8 +24,8 @@ export function DeleteTaskModal({ isOpen, onClose, onConfirm, taskRef }: DeleteT
 
         {/* Content */}
         <div className="flex flex-col items-center text-center mt-2">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
-             <Trash2 className="h-7 w-7 text-red-600" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+             <Trash2 className="h-7 w-7 text-destructive" />
           </div>
           <h2 className="text-xl font-bold text-foreground mb-3">
             Delete Repair Task?

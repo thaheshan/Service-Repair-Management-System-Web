@@ -295,7 +295,7 @@ export default function InvoicesManagementPage() {
                               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 rounded-lg border text-[13px] font-bold transition-all focus:outline-none whitespace-nowrap ${isFiltersOpen ? 'bg-[#4F46E5] border-[#4F46E5] text-white shadow-lg' : 'bg-card border-border text-foreground hover:bg-muted shadow-sm hover:shadow'}`}
                            >
                               <Filter className={`h-4 w-4 ${isFiltersOpen ? 'text-white' : 'text-muted-foreground'}`} />
-                              {mounted ? t('invoicesPage.filters') : 'Filters'} {(filterTypes.length + filterStatuses.length) > 0 && <span className="flex items-center justify-center h-4 w-4 bg-white text-[#4F46E5] rounded-full text-[10px] ml-1">{filterTypes.length + filterStatuses.length}</span>}
+                              {mounted ? t('invoicesPage.filters') : 'Filters'} {(filterTypes.length + filterStatuses.length) > 0 && <span className="flex items-center justify-center h-4 w-4 bg-card text-primary rounded-full text-[10px] ml-1">{filterTypes.length + filterStatuses.length}</span>}
                            </button>
 
                            <div className="relative flex-1 sm:flex-none">
@@ -472,8 +472,8 @@ export default function InvoicesManagementPage() {
                                        </td>
                                        <td className="px-6 py-4 text-right">
                                           <div className="flex items-center justify-end gap-1.5 transition-opacity">
-                                             <button onClick={() => setViewDocumentTarget(inv)} className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-[#EEF2FF] hover:text-[#4F46E5] transition-all"><Eye className="h-4 w-4" /></button>
-                                             <button onClick={() => setEditInvoiceTarget(inv)} className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-[#EEF2FF] hover:text-[#4F46E5] transition-all"><Edit2 className="h-4 w-4" /></button>
+                                             <button onClick={() => setViewDocumentTarget(inv)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"><Eye className="h-4 w-4" /></button>
+                                             <button onClick={() => setEditInvoiceTarget(inv)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></button>
                                              <div className="relative">
                                                  <button onClick={(e) => { e.stopPropagation(); setActiveDropdownId(activeDropdownId === inv.id ? null : inv.id) }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"><MoreVertical className="h-4 w-4" /></button>
                                                 {activeDropdownId === inv.id && (
@@ -528,21 +528,21 @@ export default function InvoicesManagementPage() {
                               <p className="text-[13px] text-muted-foreground font-bold">{mounted ? t('invoicesPage.subtitle') : 'Comprehensive invoicing for professional workflows.'}</p>
                            </div>
                         </div>
-                        <button onClick={() => setIsAddInvoiceOpen(false)} className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all focus:outline-none"><X className="h-5 w-5" /></button>
+                        <button onClick={() => setIsAddInvoiceOpen(false)} className="h-10 w-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted transition-all focus:outline-none"><X className="h-5 w-5" /></button>
                      </div>
 
                      <div className="flex-1 overflow-y-auto custom-scrollbar">
                         <div className="p-8 pb-4">
-                           <div className="flex bg-slate-100/80 p-1.5 rounded-[20px] mb-8 border border-slate-200/50">
+                           <div className="flex bg-muted/60 p-1.5 rounded-[20px] mb-8 border border-border">
                               <button
                                  onClick={() => setAddInvoiceType("client_repair")}
-                                 className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'client_repair' ? 'bg-white text-[#4F46E5] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                                 className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'client_repair' ? 'bg-card text-[#4F46E5] shadow-sm border border-border' : 'text-muted-foreground hover:text-foreground'}`}
                               >
                                  <Wrench className="h-4 w-4" /> {mounted ? t('invoicesPage.repairIntake') : 'Repair Intake'}
                               </button>
                               <button
                                  onClick={() => setAddInvoiceType("inventory_item")}
-                                 className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'inventory_item' ? 'bg-white text-[#EA580C] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                                 className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'inventory_item' ? 'bg-card text-[#EA580C] shadow-sm border border-border' : 'text-muted-foreground hover:text-foreground'}`}
                               >
                                  <ShoppingCart className="h-4 w-4" /> {mounted ? t('invoicesPage.bulkSale') : 'Bulk Sale / Inventory'}
                               </button>
@@ -566,7 +566,7 @@ export default function InvoicesManagementPage() {
                                     />
 
                                     {isCustomerSearchOpen && searchResults?.customers?.length > 0 && (
-                                       <div className="absolute top-full left-0 w-full bg-white rounded-xl border border-slate-200 shadow-xl mt-2 py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200 max-h-[240px] overflow-y-auto custom-scrollbar">
+                                       <div className="absolute top-full left-0 w-full bg-card rounded-xl border border-border shadow-xl mt-2 py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200 max-h-[240px] overflow-y-auto custom-scrollbar">
                                          {searchResults.customers.map((c: any) => (
                                            <button
                                              key={c.id}
@@ -574,7 +574,7 @@ export default function InvoicesManagementPage() {
                                                setNewInvoiceData(p => ({ ...p, name: c.name, phone: c.phone || "", customerId: c.id }))
                                                setIsCustomerSearchOpen(false)
                                              }}
-                                             className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex flex-col transition-colors"
+                                             className="w-full text-left px-4 py-2.5 hover:bg-muted flex flex-col transition-colors"
                                            >
                                              <span className="text-[14px] font-bold text-[#0F172A]">{c.name}</span>
                                              <span className="text-[11px] text-slate-400 font-medium">{c.phone || "No phone"}</span>
@@ -661,7 +661,7 @@ export default function InvoicesManagementPage() {
                                           <select 
                                              value={newInvoiceData.category}
                                              onChange={(e) => setNewInvoiceData(p => ({...p, category: e.target.value}))}
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           >
                                              {DEVICE_TYPES.map(type => (
                                                 <option key={type} value={type}>{type}</option>
@@ -675,7 +675,7 @@ export default function InvoicesManagementPage() {
                                              onChange={(e) => setNewInvoiceData(p => ({...p, brand: e.target.value}))}
                                              type="text" 
                                              placeholder="e.g. Samsung" 
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
                                           />
                                        </div>
                                        <div>
@@ -685,7 +685,7 @@ export default function InvoicesManagementPage() {
                                              onChange={(e) => setNewInvoiceData(p => ({...p, model: e.target.value}))}
                                              type="text" 
                                              placeholder="e.g. Galaxy S21" 
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
                                           />
                                        </div>
                                        <div>
@@ -695,7 +695,7 @@ export default function InvoicesManagementPage() {
                                              onChange={(e) => setNewInvoiceData(p => ({...p, serial: e.target.value}))}
                                              type="text" 
                                              placeholder="IMEI number..." 
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
                                           />
                                        </div>
                                     </div>
@@ -706,7 +706,7 @@ export default function InvoicesManagementPage() {
                                           <select 
                                              value={newInvoiceData.priority}
                                              onChange={(e) => setNewInvoiceData(p => ({...p, priority: e.target.value}))}
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           >
                                              <option value="LOW">Low</option>
                                              <option value="MEDIUM">Medium</option>
@@ -720,7 +720,7 @@ export default function InvoicesManagementPage() {
                                              value={newInvoiceData.estimatedDate}
                                              onChange={(e) => setNewInvoiceData(p => ({...p, estimatedDate: e.target.value}))}
                                              type="date" 
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
                                           />
                                        </div>
                                        <div>
@@ -728,7 +728,7 @@ export default function InvoicesManagementPage() {
                                           <select 
                                              value={newInvoiceData.technician}
                                              onChange={(e) => setNewInvoiceData(p => ({...p, technician: e.target.value}))}
-                                             className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           >
                                              {STAFF_LIST.map(staff => (
                                                 <option key={staff} value={staff}>{staff}</option>
@@ -746,11 +746,11 @@ export default function InvoicesManagementPage() {
                                           onChange={(e) => setNewInvoiceData(p => ({...p, fault: e.target.value}))}
                                           rows={3} 
                                           placeholder="Describe the issue in detail..." 
-                                          className="w-full rounded-xl border border-slate-200 bg-white p-4 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors resize-none"
+                                          className="w-full rounded-xl border border-border bg-card p-4 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors resize-none"
                                        ></textarea>
                                     </div>
                                     <div className="space-y-4">
-                                    <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+                                    <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm">
                                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                           <Receipt className="h-4 w-4" /> Cost Breakdown
                                        </h4>
@@ -810,8 +810,8 @@ export default function InvoicesManagementPage() {
                         </div>
                      </div>
 
-                     <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
-                        <button onClick={() => setIsAddInvoiceOpen(false)} className="px-6 h-14 rounded-2xl border border-slate-200 bg-white text-slate-500 text-[15px] font-black hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none">Discard Changes</button>
+                     <div className="p-8 bg-muted/30 border-t border-border flex gap-4">
+                        <button onClick={() => setIsAddInvoiceOpen(false)} className="px-6 h-14 rounded-2xl border border-border bg-card text-foreground text-[15px] font-black hover:bg-muted hover:text-foreground transition-all focus:outline-none">Discard Changes</button>
                         <button
                            onClick={async () => {
                               const { name, phone, amount } = newInvoiceData;
@@ -941,7 +941,7 @@ export default function InvoicesManagementPage() {
                      </button>
                      <button
                         onClick={() => setViewDocumentTarget(null)}
-                        className="h-11 w-11 rounded-full bg-white text-slate-400 flex items-center justify-center shadow-xl hover:bg-slate-50 hover:text-[#0F172A] transition-all focus:outline-none active:scale-95 border border-slate-100"
+                        className="h-11 w-11 rounded-full bg-card text-muted-foreground flex items-center justify-center shadow-xl hover:bg-muted hover:text-foreground transition-all focus:outline-none active:scale-95 border border-border"
                      >
                         <X className="h-5 w-5" />
                       </button>

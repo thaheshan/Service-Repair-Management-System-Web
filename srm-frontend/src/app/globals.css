@@ -138,6 +138,51 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Native browser form elements — ensure dark-mode colour-scheme */
+  .dark select,
+  .dark input[type="date"],
+  .dark input[type="time"],
+  .dark input[type="number"],
+  .dark input[type="email"],
+  .dark input[type="text"],
+  .dark input[type="password"],
+  .dark input[type="search"],
+  .dark input[type="tel"],
+  .dark input[type="url"],
+  .dark textarea {
+    color-scheme: dark;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Semantic Status Badge Utilities
+   Apply as className to any badge element — adapts to dark mode
+───────────────────────────────────────────────────────── */
+@layer utilities {
+  .status-pending {
+    @apply bg-amber-50 text-amber-700 border-amber-200
+           dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700;
+  }
+  .status-in-progress {
+    @apply bg-blue-50 text-blue-700 border-blue-200
+           dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700;
+  }
+  .status-ready {
+    @apply bg-green-50 text-green-700 border-green-200
+           dark:bg-green-900/30 dark:text-green-300 dark:border-green-700;
+  }
+  .status-completed {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200
+           dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700;
+  }
+  .status-paid {
+    @apply bg-emerald-100 text-emerald-800 border-emerald-300
+           dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-600;
+  }
+  .status-on-hold {
+    @apply bg-muted text-muted-foreground border-border;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────

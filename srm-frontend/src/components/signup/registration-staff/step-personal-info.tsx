@@ -6,6 +6,8 @@ import { Checkbox } from "@/components/ui/ui-staff/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
 import { PasswordStrength } from "@/components/common/inputs/password-strength"
+import { TermsConditionsModal } from "@/components/shared/modals/TermsConditionsModal"
+import { PrivacyPolicyModal } from "@/components/shared/modals/PrivacyPolicyModal"
 
 
 interface StepPersonalInfoProps {
@@ -59,6 +61,8 @@ export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
 
   const handleChange = (field: keyof PersonalInfoData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -291,21 +295,21 @@ export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
                   <Checkbox
                     checked={formData.agreeTerms}
                     onCheckedChange={(checked) => handleChange("agreeTerms", checked === true)}
-                    className={`mt-0.5 ${errors.agreeTerms ? "border-[#EF4444]" : ""}`}
+                    className={`mt-0.5 ${errors.agreeTerms ? "border-destructive" : ""}`}
                     id="terms-step1-staff"
                   />
                   <label
                     htmlFor="terms-step1-staff"
-                    className={`text-sm leading-relaxed ${errors.agreeTerms ? "text-[#EF4444]" : "text-[#374151]"}`}
+                    className={`text-sm leading-relaxed ${errors.agreeTerms ? "text-destructive" : "text-muted-foreground"}`}
                   >
                     I agree to the{" "}
-                    <a href="#" className="font-medium text-[#4F46E5] hover:underline">Terms of Service</a>
+                    <button type="button" onClick={() => setIsTermsModalOpen(true)} className="font-medium text-primary hover:underline focus:outline-none">Terms of Service</button>
                     {" "}and{" "}
-                    <a href="#" className="font-medium text-[#4F46E5] hover:underline">Privacy Policy</a>
+                    <button type="button" onClick={() => setIsPrivacyModalOpen(true)} className="font-medium text-primary hover:underline focus:outline-none">Privacy Policy</button>
                   </label>
                 </div>
                 {errors.agreeTerms && (
-                  <p className="text-xs text-[#EF4444]">{errors.agreeTerms}</p>
+                  <p className="text-xs text-destructive">{errors.agreeTerms}</p>
                 )}
               </div>
 
@@ -330,6 +334,16 @@ export function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
           </div>
         </div>
       </div>
+
+      <TermsConditionsModal 
+        isOpen={isTermsModalOpen} 
+        onClose={() => setIsTermsModalOpen(false)} 
+      />
+      
+      <PrivacyPolicyModal 
+        isOpen={isPrivacyModalOpen} 
+        onClose={() => setIsPrivacyModalOpen(false)} 
+      />
     </div>
   )
 }
