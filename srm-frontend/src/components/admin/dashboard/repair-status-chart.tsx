@@ -67,18 +67,36 @@ export function RepairStatusChart() {
                   const textX = cx + (outerRadius + 30) * Math.cos(-midAngle * RADIAN);
                   const textY = cy + (outerRadius + 30) * Math.sin(-midAngle * RADIAN);
 
+                  const labelStr = mounted ? t(`dashboard.status.${entry.name.toLowerCase().replace(/[\s_]+/g, '')}`) : entry.name;
+                  
+                  // Allocate fixed width space for the status label to ensure counts perfectly align
+                  // and never overlap with the text, satisfying single/double/triple digit requirements
+                  const labelWidth = 95;
+                  const countX = isLeft ? textX - labelWidth : textX + labelWidth;
+
                   return (
                     <text
                       x={textX}
                       y={textY}
-                      fill={entry.color}
-                      textAnchor={textAnchor}
                       dominantBaseline="central"
                     >
-                      <tspan x={textX} dy="-0.4em" fontSize="13px" fontWeight="bold">
-                        {mounted ? t(`dashboard.status.${entry.name.toLowerCase().replace(/[\s_]+/g, '')}`) : entry.name}
+                      <tspan 
+                        x={textX} 
+                        fill={entry.color}
+                        textAnchor={textAnchor} 
+                        fontSize="13px" 
+                        fontWeight="bold"
+                      >
+                        {labelStr}
                       </tspan>
-                      <tspan x={textX} dy="1.4em" fontSize="12px" fill="#6B6B6B" fontWeight="600">
+                      <tspan 
+                        x={countX} 
+                        fill="currentColor"
+                        className="text-foreground"
+                        textAnchor={textAnchor} 
+                        fontSize="14px" 
+                        fontWeight="700"
+                      >
                         {entry.value}
                       </tspan>
                     </text>
@@ -101,12 +119,15 @@ export function RepairStatusChart() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-5 border-t border-border px-5 py-3">
+      <div className="flex flex-wrap items-center justify-center gap-5 border-t border-border px-5 py-3">
         {data.map((item) => (
           <div key={item.name} className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: item.color }} />
             <span className="text-xs font-medium text-muted-foreground">
               {mounted ? t(`dashboard.status.${item.name.toLowerCase().replace(/[\s_]+/g, '')}`) : item.name}
+            </span>
+            <span className="text-xs font-bold text-foreground">
+              {item.value}
             </span>
           </div>
         ))}
