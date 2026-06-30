@@ -162,7 +162,7 @@ export default function RepairsPage() {
   const handleStatusChangeRequest = (repairId: string, newStatus: RepairStatus) => {
     setPendingStatusUpdate({ repairId, newStatus }); setIsStatusModalOpen(true)
   }
-  const handleConfirmStatusChange = async (_: boolean, newStatus: RepairStatus) => {
+  const handleConfirmStatusChange = async (autoUpdateCustomer: boolean, newStatus: RepairStatus) => {
     if (pendingStatusUpdate) {
       const backendStatusMap: Record<string, string> = {
         "Pending": "NOT_STARTED",
@@ -177,7 +177,8 @@ export default function RepairsPage() {
       try {
         await updateRepairStatus({
           id: pendingStatusUpdate.repairId,
-          status: backendStatusMap[newStatus] || "NOT_STARTED"
+          status: backendStatusMap[newStatus] || "NOT_STARTED",
+          autoUpdateCustomer // true or false from the modal checkbox
         }).unwrap();
 
         // Local state update for immediate feedback

@@ -10,7 +10,7 @@ interface StatusUpdateModalProps {
 }
 
 export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }: StatusUpdateModalProps) {
-  const [autoUpdate, setAutoUpdate] = useState(false)
+  const [autoUpdate, setAutoUpdate] = useState(true)
 
   if (!isOpen || !pendingStatus) return null
 
@@ -32,7 +32,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
             Are You Sure to Update this <br/> Repair Task?
           </h2>
           <p className="text-sm text-muted-foreground mb-8">
-            Once Your Updated and it will <br/> notify to the cusotmer
+            "Updating this task will automatically notify the customer via SMS" (When updating the task status)
           </p>
 
           <label className="flex items-center gap-3 self-start mb-8 cursor-pointer group">
@@ -61,7 +61,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
             <button 
               onClick={() => {
                 onConfirm(autoUpdate, pendingStatus)
-                setAutoUpdate(false) // Reset for next time
+                setAutoUpdate(true) // Reset for next time
               }}
               className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-semibold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
             >

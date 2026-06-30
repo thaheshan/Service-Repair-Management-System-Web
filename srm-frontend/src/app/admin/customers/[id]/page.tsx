@@ -186,7 +186,7 @@ export default function CustomerDetailedPage() {
 
   const handleDownloadRepairReport = async (repair: any) => {
     try {
-      const { default: jsPDF } = await import("jspdf")
+      const { jsPDF } = await import("jspdf")
       const { default: autoTable } = await import("jspdf-autotable")
       const doc = new jsPDF()
 
@@ -318,7 +318,7 @@ export default function CustomerDetailedPage() {
 
   const handleDownloadDeviceSpecs = async (device: any) => {
     try {
-      const { default: jsPDF } = await import("jspdf")
+      const { jsPDF } = await import("jspdf")
       const { default: autoTable } = await import("jspdf-autotable")
       const doc = new jsPDF()
 

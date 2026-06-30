@@ -6,7 +6,7 @@ import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
-import { Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Plus, X, Shield, Star, Trash2, Edit2, Check, FileDown, Loader2, UserPlus, Calendar as CalendarIcon, Grid, List as ListIcon } from "lucide-react"
+import { Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Plus, X, Shield, Star, Trash2, Edit2, Check, FileDown, Loader2, UserPlus, Calendar as CalendarIcon, Grid, List as ListIcon, Eye, EyeOff } from "lucide-react"
 import { INITIAL_STAFF, StaffMember, StaffRole, StaffStatus, Specialty, ROLES, SPECIALTIES, STATUSES, BRANCHES, ROLE_COLOR, STATUS_DOT, STATUS_BADGE, getInitials, getAvatarBg, UNASSIGNED_REPAIRS } from "@/app/admin/staff/staff-data"
 
 type SortKey = "name-az" | "name-za" | "rating-desc" | "rating-asc" | "jobs-desc" | "jobs-asc" | "newest" | "oldest"
@@ -122,6 +122,7 @@ export default function StaffManagementPage() {
 
   // Add form
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "Technician" as StaffRole, branch: "Main Branch", specialties: [] as Specialty[], status: "Available" as StaffStatus })
+  const [showPassword, setShowPassword] = useState(false)
 
   const toggle = <T extends string>(val: T, arr: T[], set: (f: (p: T[]) => T[]) => void) =>
     set(p => p.includes(val) ? p.filter(x => x !== val) : [...p, val])
@@ -174,6 +175,7 @@ export default function StaffManagementPage() {
         specialties: form.specialties
       }).unwrap()
       setShowAddModal(false)
+      setShowPassword(false)
       setForm({ name: "", email: "", phone: "", password: "", role: "Technician", branch: "Main Branch", specialties: [], status: "Available" })
       toast.success("Staff member added successfully!");
     } catch (err) {
@@ -192,7 +194,7 @@ export default function StaffManagementPage() {
   const handleExportPDF = async () => {
     setIsExporting(true)
     try {
-      const { default: jsPDF } = await import("jspdf"); const { default: autoTable } = await import("jspdf-autotable")
+      const { jsPDF } = await import("jspdf"); const { default: autoTable } = await import("jspdf-autotable")
       const doc = new jsPDF({ orientation: "landscape" })
       doc.setFillColor(79, 70, 229); doc.rect(0, 0, 297, 16, "F")
       doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Staff Report", 14, 11)
@@ -470,9 +472,24 @@ export default function StaffManagementPage() {
                 <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.email') : 'Email *'}</label><input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
                 <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.phone') : 'Phone'}</label><input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
               </div>
-              <div>
-                <label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.password') : 'Password *'}</label>
-                <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} type="password" placeholder="Min 8 characters" className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" />
+      <div>
+                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.password') : 'Password *'}</label>
+                <div className="relative">
+                  <input 
+                    value={form.password} 
+                    onChange={e => setForm(p => ({ ...p, password: e.target.value }))} 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="Min 8 characters" 
+                    className="w-full h-10 rounded-lg border border-border pl-3 pr-10 text-[13px] focus:outline-none focus:border-[#4F46E5]" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.role') : 'Role'}</label>

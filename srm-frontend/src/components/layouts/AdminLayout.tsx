@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, UserPlus, Settings, Users, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, UserPlus, Settings, Users, ShoppingBag, MessageSquare } from 'lucide-react';
 
 export default function AdminLayout({ children }: any) {
   const menuItems = [
@@ -7,6 +7,7 @@ export default function AdminLayout({ children }: any) {
     { name: 'Onboarding Requests', icon: UserPlus, href: '/admin/onboarding' },
     { name: 'Shops', icon: ShoppingBag, href: '/admin/shops' },
     { name: 'Users', icon: Users, href: '/admin/users' },
+    { name: 'Contact Messages', icon: MessageSquare, href: '/admin/contact-messages' },
     { name: 'Settings', icon: Settings, href: '/admin/settings' },
   ];
 

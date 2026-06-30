@@ -22,22 +22,14 @@ import {
 } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { useTranslation } from "react-i18next"
 
-
-
-export const mockSearchData = [
-  { id: 1, type: "Customer", name: "Sarah Anderson", sub: "sarah@example.com", link: "/admin/customers/1" },
-  { id: 2, type: "Customer", name: "Vikram Singh", sub: "+94 77 123 4567", link: "/admin/customers/2" },
-  { id: 3, type: "Repair", name: "REP-2023-089", sub: "iPhone 13 Pro Screen Fix", link: "/admin/repairs/1" },
-  { id: 4, type: "Repair", name: "REP-2023-090", sub: "MacBook Pro Keyboard", link: "/admin/repairs/2" },
-  { id: 5, type: "Device", name: "Samsung S22 Ultra", sub: "In Inventory: 5 units", link: "/admin/devices" },
-]
-
 import {
   useGetDashboardAnalyticsQuery,
   useMarkReadMutation,
   useClearNotificationsMutation
 } from "@/services/api/dashboardApiSlice"
 import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
+import { useGlobalSearchQuery } from "@/services/api/searchApiSlice"
+import { useDebounce } from "@/hooks/useDebounce"
 
 const formatTimeAgo = (date: any) => {
   if (!date) return "Just now";
@@ -73,8 +65,6 @@ export function DashboardHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const user = useSelector((state: RootState) => state.auth.user)
 
-
-
   const notifications = useMemo(() => {
     return response?.data?.notifications?.map((n: any) => ({
       ...n,
@@ -92,13 +82,13 @@ export function DashboardHeader() {
     }
   }
 
-  const filteredSearch = mockSearchData.filter(item =>
-    searchQuery && (
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sub.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.type.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  )
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  const { data: searchResults, isFetching: isSearching } = useGlobalSearchQuery(debouncedSearchQuery, {
+    skip: !debouncedSearchQuery || debouncedSearchQuery.trim().length === 0
+  })
+
+  const filteredSearch = useMemo(() => searchResults?.data || [], [searchResults])
 
   const handleLogout = () => {
     // Clear the auth cookie
@@ -177,9 +167,14 @@ export function DashboardHeader() {
             />
             {isSearchOpen && searchQuery && (
               <div className="absolute top-full left-0 mt-1 w-[400px] bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                {filteredSearch.length > 0 ? (
+                {isSearching ? (
+                  <div className="px-5 py-8 text-[13px] font-medium text-muted-foreground text-center flex flex-col items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mb-1"></div>
+                    Searching...
+                  </div>
+                ) : filteredSearch.length > 0 ? (
                   <div className="flex flex-col py-1 max-h-[300px] overflow-y-auto">
-                    {filteredSearch.map((item) => (
+                    {filteredSearch.map((item: any) => (
                       <button
                         key={item.id}
                         onMouseDown={(e) => {
@@ -352,7 +347,7 @@ export function DashboardHeader() {
                 <Settings className="h-4 w-4 mr-2" />
                 {mounted ? t('common.settings') : 'Settings'}
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(user?.role === 'TECHNICIAN' ? "/technician/settings" : "/admin/settings?tab=billing")}>
                 <CreditCard className="h-4 w-4 mr-2" />
                 {mounted ? t('common.billing') || 'Billing' : 'Billing'}
               </DropdownMenuItem>

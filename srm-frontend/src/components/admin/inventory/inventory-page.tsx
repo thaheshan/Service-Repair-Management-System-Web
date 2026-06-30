@@ -6,8 +6,7 @@ import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { toast } from "sonner"
 import Link from "next/link"
-import html2canvas from "html2canvas"
-import jsPDF from "jspdf"
+import { generateInventoryAssetPDF, generateInventoryAssetsPDF, generatePOInvoicePDF } from "@/lib/pdf-generator"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { useSearchParams } from "next/navigation"
@@ -441,47 +440,8 @@ export default function InventoryManagementPage() {
     setIsGeneratingPDF(true)
     setIsExportOpen(false)
     try {
-      const element = hiddenInventoryReportRef.current
-      if (!element) return
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        onclone: (clonedDoc) => {
-          // Robust Fix for "lab()" / "oklch()" color parsing errors
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            const style = window.getComputedStyle(el);
-
-            const colorProps = ['color', 'backgroundColor', 'borderColor', 'outlineColor', 'textDecorationColor', 'stopColor', 'fill', 'stroke'];
-            colorProps.forEach(prop => {
-              const val = (style as any)[prop];
-              if (val && (val.includes('oklch') || val.includes('lab') || val.includes('color-mix'))) {
-                if (prop === 'backgroundColor') el.style.backgroundColor = '#ffffff';
-                else if (prop === 'color') el.style.color = '#000000';
-                else el.style[prop as any] = 'transparent';
-              }
-            });
-
-            const shadow = style.boxShadow;
-            if (shadow && (shadow.includes('oklch') || shadow.includes('lab') || shadow.includes('color-mix'))) {
-              el.style.boxShadow = 'none';
-            }
-          }
-        }
-      })
-
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const imgProps = pdf.getImageProperties(imgData)
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`Inventory_Status_Report_${new Date().toISOString().slice(0, 10)}.pdf`)
+      generateInventoryAssetsPDF(filteredData, user);
+      toast.success("Inventory report generated successfully!");
     } catch (err) {
       console.error("PDF generation failed:", err)
       alert("Error: Could not generate PDF. Please try again.")
@@ -502,132 +462,24 @@ export default function InventoryManagementPage() {
   }
 
   const handleDownloadPOPdf = async (po: any) => {
-    setPoPdfTarget(po);
     setIsGeneratingPOPdf(true);
-    await new Promise(r => setTimeout(r, 350));
     try {
-      const element = poPdfRef.current;
-      if (!element) return;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          const elements = clonedDoc.getElementsByTagName('*');
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            const style = window.getComputedStyle(el);
-            ['color', 'backgroundColor', 'borderColor'].forEach(prop => {
-              const val = (style as any)[prop];
-              if (val && (val.includes('oklch') || val.includes('lab') || val.includes('color-mix'))) {
-                if (prop === 'backgroundColor') el.style.backgroundColor = '#ffffff';
-                else if (prop === 'color') el.style.color = '#000000';
-                else el.style[prop as any] = 'transparent';
-              }
-            });
-          }
-        }
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Purchase_Order_${po.orderNumber}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      generatePOInvoicePDF(po, user);
+      toast.success("Purchase Order PDF generated successfully!");
     } catch (err) {
       console.error('PO PDF generation failed:', err);
       toast.error('Could not generate PDF.');
     } finally {
       setIsGeneratingPOPdf(false);
-      setPoPdfTarget(null);
     }
   };
 
   const handleDownloadInvoicePdf = async () => {
-    if (!invoicePdfRef.current || !viewInvoiceTarget) return;
+    if (!viewInvoiceTarget) return;
     setIsGeneratingInvoicePdf(true);
     toast.loading("Generating professional invoice...", { id: "pdf-gen" });
-
-    await new Promise(r => setTimeout(r, 300));
-
     try {
-      const elements = Array.from(invoicePdfRef.current.getElementsByTagName("*"));
-      const computedStyles = elements.map(el => {
-        const style = window.getComputedStyle(el);
-        return {
-          cssText: style.cssText,
-          color: style.color,
-          backgroundColor: style.backgroundColor,
-          borderColor: style.borderColor,
-          borderWidth: style.borderWidth,
-          borderStyle: style.borderStyle,
-          padding: style.padding,
-          margin: style.margin,
-          display: style.display,
-          flexDirection: style.flexDirection,
-          alignItems: style.alignItems,
-          justifyContent: style.justifyContent,
-          fontSize: style.fontSize,
-          fontWeight: style.fontWeight,
-          fontFamily: style.fontFamily,
-          gap: style.gap,
-          width: style.width,
-          height: style.height,
-          boxShadow: style.boxShadow.includes('lab') || style.boxShadow.includes('oklch') ? 'none' : style.boxShadow
-        };
-      });
-
-      const canvas = await html2canvas(invoicePdfRef.current, {
-        scale: 3,
-        logging: false,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        onclone: (clonedDoc) => {
-          const clonedElements = Array.from(clonedDoc.getElementsByTagName("*"));
-          clonedElements.forEach((el, i) => {
-            const cel = el as HTMLElement;
-            const s = computedStyles[i];
-            if (!s) return;
-
-            cel.style.color = s.color.includes('lab') || s.color.includes('oklch') ? '#000000' : s.color;
-            cel.style.backgroundColor = s.backgroundColor.includes('lab') || s.backgroundColor.includes('oklch') ? '#ffffff' : s.backgroundColor;
-            cel.style.borderColor = s.borderColor;
-            cel.style.borderWidth = s.borderWidth;
-            cel.style.borderStyle = s.borderStyle;
-            cel.style.padding = s.padding;
-            cel.style.display = s.display;
-            cel.style.fontSize = s.fontSize;
-            cel.style.fontWeight = s.fontWeight;
-            cel.style.fontFamily = "Arial, sans-serif";
-            cel.style.width = s.width;
-            cel.style.height = s.height;
-            cel.style.boxShadow = s.boxShadow;
-
-            if (s.display === 'flex') {
-               cel.style.flexDirection = s.flexDirection;
-              cel.style.alignItems = s.alignItems;
-              cel.style.justifyContent = s.justifyContent;
-              cel.style.gap = s.gap;
-            }
-          });
-
-          const heads = clonedDoc.getElementsByTagName("head");
-          if (heads[0]) {
-            while (heads[0].firstChild) heads[0].removeChild(heads[0].firstChild);
-          }
-          const bodyStyles = clonedDoc.querySelectorAll('style');
-          bodyStyles.forEach(s => s.remove());
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`SRM_Invoice_${viewInvoiceTarget.orderNumber}.pdf`);
+      generatePOInvoicePDF(viewInvoiceTarget, user);
       toast.success("Invoice generated successfully!", { id: "pdf-gen" });
     } catch (err) {
       console.error("PDF GEN ERR:", err);
@@ -1419,9 +1271,7 @@ export default function InventoryManagementPage() {
                   <div className="flex justify-between items-start mb-20">
                     <div>
                       <div className="flex items-center gap-2.5 mb-2">
-                        <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
-                          {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                        </div>
+                        <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
                         <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                           {user?.shopName || "All Fix Private Limited"}
                         </h2>
@@ -1572,7 +1422,7 @@ export default function InventoryManagementPage() {
         )}
 
         {/* 🛠️ INVISIBLE PDF RENDER TARGET FOR INVOICE */}
-        <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+        <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
           {viewInvoiceTarget && (
             <div
               ref={invoicePdfRef}
@@ -1583,9 +1433,7 @@ export default function InventoryManagementPage() {
               <div className="flex justify-between items-start mb-20">
                 <div>
                   <div className="flex items-center gap-2.5 mb-2">
-                    <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
-                      {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                    </div>
+                    <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
                     <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                       {user?.shopName || "All Fix Private Limited"}
                     </h2>
@@ -2405,7 +2253,7 @@ export default function InventoryManagementPage() {
         )}
 
         {/* 🛠️ INVISIBLE PDF RENDER TARGET FOR INVENTORY REPORT */}
-        <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+        <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
           <div
             ref={hiddenInventoryReportRef}
             className="w-[1000px] bg-white p-16 flex flex-col min-h-[1400px]"
@@ -2414,9 +2262,7 @@ export default function InventoryManagementPage() {
             <div className="flex justify-between items-start mb-16">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-12 w-12 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-2xl shadow-lg">
-                    {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                  </div>
+                  <img src="/all-fix-logo-black.png" alt="Shop Logo" style={{ height: 48, width: 'auto', objectFit: 'contain' }} />
                   <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">
                     {user?.shopName || "All Fix Private Limited"}
                   </h2>
@@ -2519,16 +2365,14 @@ export default function InventoryManagementPage() {
         </div>
 
         {/* 🧾 INVISIBLE PO PDF RENDER TARGET */}
-        <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+        <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
           <div ref={poPdfRef} className="bg-white p-14 flex flex-col" style={{ width: '794px', minHeight: '1123px' }}>
             {poPdfTarget && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48, paddingBottom: 24, borderBottom: '2px solid #0f172a' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <div style={{ width: 44, height: 44, backgroundColor: '#4F46E5', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 20 }}>
-                        {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                      </div>
+                      <img src="/all-fix-logo-black.png" alt="Shop Logo" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
                       <span style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.5px' }}>{user?.shopName || "All Fix Private Limited"}</span>
                     </div>
                     <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px' }}>Purchase Order</p>

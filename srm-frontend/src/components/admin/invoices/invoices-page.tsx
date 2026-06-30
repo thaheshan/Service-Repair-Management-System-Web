@@ -4,8 +4,6 @@ import { useState, useMemo, useRef, useEffect } from "react"
 import { useSelector } from "react-redux"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
-import html2canvas from "html2canvas"
-import jsPDF from "jspdf"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
@@ -23,6 +21,7 @@ import {
    useDeleteInvoiceMutation,
 } from "@/services/api/invoicesApiSlice"
 import { useSearchCustomersQuery } from "@/services/api/customersApiSlice"
+import { generateClientInvoicePDF } from "@/lib/pdf-generator"
 
 const STAFF_LIST = ["John Smith", "Mike Chen", "Sarah Connor", "Alex Kumar", "Admin"]
 const DEVICE_TYPES = ["Mobile Phone", "Tablet", "Laptop", "Desktop PC", "Smart Watch", "Console", "Headset/Audio", "Display/Monitor", "Printer", "Router/Network", "Internal", "Other"]
@@ -155,105 +154,24 @@ export default function InvoicesManagementPage() {
      return () => document.removeEventListener("mousedown", handleClickOutside)
    }, [])
 
-   const handleDownloadPDF = async (inv?: any) => {
-      setIsGeneratingPDF(true)
+    const handleDownloadPDF = async (inv?: any) => {
+       setIsGeneratingPDF(true)
 
-      const targetInv = inv || viewDocumentTarget || hiddenInvoiceTarget
-      if (!targetInv) {
-         setIsGeneratingPDF(false)
-         return
-      }
+       const targetInv = inv || viewDocumentTarget || hiddenInvoiceTarget
+       if (!targetInv) {
+          setIsGeneratingPDF(false)
+          return
+       }
 
-      try {
-         if (inv) {
-            setHiddenInvoiceTarget(inv)
-            await new Promise(r => setTimeout(r, 100))
-         }
-
-         const element = inv ? hiddenPrintRef.current : printRef.current
-         if (!element) throw new Error("No element found trace #PDF-CAPTURE-ERR")
-
-         const elements = Array.from(element.getElementsByTagName("*"));
-         const computedStyles = elements.map(el => {
-            const style = window.getComputedStyle(el);
-            return {
-               color: style.color,
-               backgroundColor: style.backgroundColor,
-               borderColor: style.borderColor,
-               borderWidth: style.borderWidth,
-               borderStyle: style.borderStyle,
-               padding: style.padding,
-               display: style.display,
-               flexDirection: style.flexDirection,
-               alignItems: style.alignItems,
-               justifyContent: style.justifyContent,
-               fontSize: style.fontSize,
-               fontWeight: style.fontWeight,
-               gap: style.gap,
-               width: style.width,
-               height: style.height,
-               boxShadow: style.boxShadow.includes('lab') || style.boxShadow.includes('oklch') ? 'none' : style.boxShadow
-            };
-         });
-
-         const canvas = await html2canvas(element, {
-            scale: 3,
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff",
-            onclone: (clonedDoc) => {
-               const clonedElements = Array.from(clonedDoc.getElementsByTagName("*"));
-               clonedElements.forEach((el, i) => {
-                  const cel = el as HTMLElement;
-                  const s = computedStyles[i];
-                  if (!s) return;
-
-                  cel.style.color = s.color.includes('lab') || s.color.includes('oklch') ? '#000000' : s.color;
-                  cel.style.backgroundColor = s.backgroundColor.includes('lab') || s.backgroundColor.includes('oklch') ? '#ffffff' : s.backgroundColor;
-                  cel.style.borderColor = s.borderColor;
-                  cel.style.borderWidth = s.borderWidth;
-                  cel.style.borderStyle = s.borderStyle;
-                  cel.style.padding = s.padding;
-                  cel.style.display = s.display;
-                  cel.style.fontSize = s.fontSize;
-                  cel.style.fontWeight = s.fontWeight;
-                  cel.style.fontFamily = "Arial, sans-serif";
-                  cel.style.width = s.width;
-                  cel.style.height = s.height;
-                  cel.style.boxShadow = s.boxShadow;
-
-                  if (s.display === 'flex') {
-                     cel.style.flexDirection = s.flexDirection;
-                     cel.style.alignItems = s.alignItems;
-                     cel.style.justifyContent = s.justifyContent;
-                     cel.style.gap = s.gap;
-                  }
-               });
-
-               const heads = clonedDoc.getElementsByTagName("head");
-               if (heads[0]) {
-                  while (heads[0].firstChild) heads[0].removeChild(heads[0].firstChild);
-               }
-            }
-         })
-
-         const imgData = canvas.toDataURL('image/png')
-         const pdf = new jsPDF('p', 'mm', 'a4')
-         const imgProps = pdf.getImageProperties(imgData)
-         const pdfWidth = pdf.internal.pageSize.getWidth()
-         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-
-         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-         pdf.save(`Invoice_${targetInv.invoiceId}.pdf`)
-
-         if (inv) setHiddenInvoiceTarget(null)
-      } catch (err) {
-         console.error("PDF generation failed:", err)
-         alert("Error: Could not generate PDF. Please try again.")
-      } finally {
-         setIsGeneratingPDF(false)
-      }
-   }
+       try {
+          await generateClientInvoicePDF(targetInv, user);
+       } catch (err) {
+          console.error("PDF generation failed:", err)
+          alert("Error: Could not generate PDF. Please try again.")
+       } finally {
+          setIsGeneratingPDF(false)
+       }
+    }
 
    const handleStatusUpdate = async (id: string, newStatus: string) => {
       const dbStatus = newStatus === 'Paid' ? 'COMPLETED' : newStatus === 'Pending' ? 'PENDING' : 'FAILED';
@@ -1036,9 +954,7 @@ export default function InvoicesManagementPage() {
                      <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                              <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
-                                 {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                              </div>
+                              <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
                               <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                                  {user?.shopName || "All Fix Private Limited"}
                               </h2>
@@ -1205,7 +1121,7 @@ export default function InvoicesManagementPage() {
             )}
 
             {/* 🛠️ INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
-            <div className="fixed -left-[2000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+            <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
                {hiddenInvoiceTarget && (
                   <div
                      ref={hiddenPrintRef}
@@ -1216,9 +1132,7 @@ export default function InvoicesManagementPage() {
                      <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                              <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
-                                 {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                              </div>
+                              <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
                               <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                                  {user?.shopName || "All Fix Private Limited"}
                               </h2>

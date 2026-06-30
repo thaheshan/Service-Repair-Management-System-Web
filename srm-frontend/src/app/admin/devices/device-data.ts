@@ -64,4 +64,126 @@ export const INITIAL_DEVICES: Device[] = [
   { id:"20", name:"Galaxy Z Fold 4",            brand:"Samsung", type:"Mobile Phone", imei:"352112233445566", owner:{name:"Preethi Kumari",   phone:"+94 76 012 3456"}, warranty:{status:"Active",        expiryDate:"Jul 2025"}, totalRepairs:2, lastService:{date:"Feb 12, 2024", type:"Inner Screen Repair"},   registered:"Jul 2022", status:"Available", color:"bg-[#059669]", price: 385000 },
 ]
 
-export const BRANDS = ["Apple","Samsung","Xiaomi","Google","Sony","Microsoft","Lenovo","Dell","HP","Oppo","OnePlus","Vivo","Nintendo"]
+
+export const BRANDS = [
+  "Apple", "Samsung", "Google", "Asus", "Acer", "Dell", "HP", "Lenovo", "Microsoft", "Sony", 
+  "LG", "Huawei", "Xiaomi", "OnePlus", "Oppo", "Vivo", "Motorola", "Nokia", "Nintendo", 
+  "PlayStation", "Xbox", "Bose", "JBL", "GoPro", "DJI", "Other"
+];
+
+export const DEVICE_MODELS_BY_BRAND: Record<string, string[]> = {
+  Apple: [
+    "iPhone 15 Pro Max", "iPhone 15 Pro", "iPhone 15 Plus", "iPhone 15",
+    "iPhone 14 Pro Max", "iPhone 14 Pro", "iPhone 14 Plus", "iPhone 14",
+    "iPhone 13 Pro Max", "iPhone 13 Pro", "iPhone 13", "iPhone 13 mini",
+    "iPhone 12 Pro Max", "iPhone 12 Pro", "iPhone 12", "iPhone 12 mini",
+    "iPhone 11 Pro Max", "iPhone 11 Pro", "iPhone 11",
+    "iPhone XS Max", "iPhone XS", "iPhone XR", "iPhone X",
+    "iPhone 8 Plus", "iPhone 8", "iPhone 7 Plus", "iPhone 7", "iPhone SE (3rd Gen)", "iPhone SE (2nd Gen)",
+    "iPad Pro 12.9-inch (M2)", "iPad Pro 11-inch (M2)", "iPad Air (5th Gen)", "iPad (10th Gen)", "iPad mini (6th Gen)",
+    "MacBook Pro 16-inch", "MacBook Pro 14-inch", "MacBook Air 15-inch", "MacBook Air 13-inch", "iMac 24-inch", "Mac mini", "Mac Studio", "Mac Pro",
+    "Apple Watch Ultra 2", "Apple Watch Ultra", "Apple Watch Series 9", "Apple Watch Series 8", "Apple Watch SE",
+    "AirPods Pro (2nd Gen)", "AirPods (3rd Gen)", "AirPods Max",
+    "Other"
+  ],
+  Samsung: [
+    "Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24",
+    "Galaxy S23 Ultra", "Galaxy S23+", "Galaxy S23", "Galaxy S23 FE",
+    "Galaxy S22 Ultra", "Galaxy S22+", "Galaxy S22",
+    "Galaxy S21 Ultra", "Galaxy S21+", "Galaxy S21", "Galaxy S21 FE",
+    "Galaxy S20 Ultra", "Galaxy S20+", "Galaxy S20", "Galaxy S20 FE",
+    "Galaxy Z Fold 5", "Galaxy Z Flip 5", "Galaxy Z Fold 4", "Galaxy Z Flip 4", "Galaxy Z Fold 3", "Galaxy Z Flip 3",
+    "Galaxy Note 20 Ultra", "Galaxy Note 20", "Galaxy Note 10+", "Galaxy Note 10",
+    "Galaxy A54", "Galaxy A34", "Galaxy A14", "Galaxy A73", "Galaxy A53", "Galaxy A33", "Galaxy A13", "Galaxy A52",
+    "Galaxy Tab S9 Ultra", "Galaxy Tab S9+", "Galaxy Tab S9", "Galaxy Tab S8 Ultra", "Galaxy Tab S8+", "Galaxy Tab S8", "Galaxy Tab A8",
+    "Galaxy Watch 6 Classic", "Galaxy Watch 6", "Galaxy Watch 5 Pro", "Galaxy Watch 5",
+    "Other"
+  ],
+  Google: [
+    "Pixel 8 Pro", "Pixel 8", "Pixel 7 Pro", "Pixel 7", "Pixel 7a", "Pixel 6 Pro", "Pixel 6", "Pixel 6a", 
+    "Pixel 5", "Pixel 5a", "Pixel 4 XL", "Pixel 4", "Pixel 4a",
+    "Pixel Fold", "Pixel Tablet", "Pixel Watch 2", "Pixel Watch", "Pixel Buds Pro",
+    "Other"
+  ],
+  Xiaomi: [
+    "Xiaomi 14 Pro", "Xiaomi 14", "Xiaomi 13 Ultra", "Xiaomi 13 Pro", "Xiaomi 13", "Xiaomi 13T Pro", "Xiaomi 13T",
+    "Xiaomi 12S Ultra", "Xiaomi 12 Pro", "Xiaomi 12",
+    "Redmi Note 13 Pro+", "Redmi Note 13 Pro", "Redmi Note 13", "Redmi Note 12 Pro+", "Redmi Note 12 Pro", "Redmi Note 12",
+    "POCO F5 Pro", "POCO F5", "POCO X5 Pro", "POCO X5",
+    "Xiaomi Pad 6", "Xiaomi Pad 5",
+    "Other"
+  ],
+  Sony: [
+    "Xperia 1 V", "Xperia 5 V", "Xperia 10 V", "Xperia 1 IV", "Xperia 5 IV", "Xperia 10 IV",
+    "PlayStation 5", "PlayStation 5 Digital Edition", "PlayStation 4 Pro", "PlayStation 4", "PlayStation VR2",
+    "WH-1000XM5", "WF-1000XM5", "WH-1000XM4",
+    "Other"
+  ],
+  OnePlus: [
+    "OnePlus 12", "OnePlus 11", "OnePlus 11R", "OnePlus 10 Pro", "OnePlus 10T", "OnePlus 9 Pro", "OnePlus 9",
+    "OnePlus Nord 3", "OnePlus Nord CE 3", "OnePlus Nord 2T", "OnePlus Pad",
+    "Other"
+  ],
+  Huawei: [
+    "Mate 60 Pro+", "Mate 60 Pro", "Mate 60", "P60 Pro", "P60", "Mate 50 Pro", "Mate 50", "P50 Pro", "P50",
+    "Nova 11 Pro", "Nova 11", "MatePad Pro 13.2", "MatePad Pro 11",
+    "Other"
+  ],
+  Motorola: [
+    "Edge 40 Pro", "Edge 40", "Edge 30 Ultra", "Edge 30 Pro",
+    "Razr 40 Ultra", "Razr 40", "Razr 2022",
+    "Moto G84", "Moto G54", "Moto G Stylus",
+    "Other"
+  ],
+  Oppo: [
+    "Find N3", "Find N3 Flip", "Find X6 Pro", "Find X6", "Find X5 Pro", "Find X5",
+    "Reno 10 Pro+", "Reno 10 Pro", "Reno 10", "Reno 8 Pro", "Reno 8",
+    "Other"
+  ],
+  Vivo: [
+    "X100 Pro", "X100", "X90 Pro+", "X90 Pro", "X90", "X80 Pro", "X80",
+    "V29 Pro", "V29", "V27 Pro", "V27", "X Fold 2", "X Flip",
+    "Other"
+  ],
+  Nintendo: [
+    "Nintendo Switch OLED", "Nintendo Switch", "Nintendo Switch Lite", "Wii U", "Nintendo 3DS",
+    "Other"
+  ],
+  Microsoft: [
+    "Xbox Series X", "Xbox Series S", "Xbox One X", "Xbox One S", "Xbox One",
+    "Surface Pro 9", "Surface Pro 8", "Surface Laptop 5", "Surface Laptop Studio 2", "Surface Go 3", "Surface Duo 2",
+    "Other"
+  ],
+  Dell: [
+    "XPS 17", "XPS 15", "XPS 13 Plus", "XPS 13", "Alienware m18", "Alienware m16", "Alienware x16", "Alienware x14",
+    "Inspiron 16", "Inspiron 15", "Inspiron 14", "Latitude 9000 Series", "Latitude 7000 Series",
+    "Other"
+  ],
+  HP: [
+    "Spectre x360 16", "Spectre x360 14", "Envy x360", "Envy 16", "OMEN 17", "OMEN 16", "Victus 16", "Victus 15",
+    "Pavilion Plus 14", "EliteBook 800 Series", "ProBook 400 Series",
+    "Other"
+  ],
+  Lenovo: [
+    "ThinkPad X1 Carbon Gen 11", "ThinkPad X1 Yoga Gen 8", "ThinkPad T14 Gen 4", "ThinkPad E14 Gen 5",
+    "Legion Pro 7i", "Legion Pro 5i", "Legion Slim 7i", "LOQ 15",
+    "Yoga 9i", "Yoga 7i", "IdeaPad Pro 5i", "IdeaPad Slim 5",
+    "Other"
+  ],
+  Asus: [
+    "ROG Zephyrus G14", "ROG Zephyrus M16", "ROG Strix SCAR 16", "ROG Strix SCAR 18", "TUF Gaming A15", "TUF Gaming F15",
+    "Zenbook Pro 16X OLED", "Zenbook 14 OLED", "Vivobook Pro 15 OLED", "ExpertBook B9",
+    "ROG Phone 7 Ultimate", "ROG Phone 7", "Zenfone 10",
+    "Other"
+  ],
+  Acer: [
+    "Predator Helios 18", "Predator Helios 16", "Nitro 17", "Nitro 16",
+    "Swift Go 14", "Swift X 14", "Aspire 5", "Aspire 3",
+    "Other"
+  ],
+  LG: [
+    "Gram 17", "Gram 16", "Gram 15", "Gram 14", "Gram Style",
+    "OLED C3 TV", "OLED G3 TV", "OLED B3 TV",
+    "Other"
+  ]
+};
