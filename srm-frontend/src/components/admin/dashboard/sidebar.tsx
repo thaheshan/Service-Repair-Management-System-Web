@@ -7,8 +7,6 @@ import {
   Wrench,
   Users,
   Smartphone,
-
-
   FileText,
   Package,
   BarChart3,
@@ -19,6 +17,7 @@ import {
   Check,
   Menu,
   X,
+  ScrollText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -37,6 +36,7 @@ interface NavItem {
   label: string
   href: string
   aliases?: string[]
+  adminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -44,11 +44,11 @@ const navItems: NavItem[] = [
   { icon: Wrench, label: "repairs", href: "/admin/repairs", aliases: ["/admin/schedule"] },
   { icon: Users, label: "customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
   { icon: Smartphone, label: "devices", href: "/admin/devices", aliases: ["/admin/devices/"] },
-
-  { icon: FileText, label: "invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"], roles: ["ADMIN", "TECHNICIAN"] },
+  { icon: FileText, label: "invoices", href: "/admin/invoices", aliases: ["/admin/invoices/"] },
   { icon: Package, label: "inventory", href: "/admin/inventory", aliases: ["/admin/inventory/"] },
   { icon: BarChart3, label: "reports", href: "/admin/reports" },
   { icon: UserCircle, label: "staff", href: "/admin/staff", aliases: ["/admin/staff/"] },
+  { icon: ScrollText, label: "logs", href: "/admin/logs", adminOnly: true },
   { icon: Settings, label: "settings", href: "/admin/settings" },
 ]
 
@@ -143,6 +143,7 @@ export function DashboardSidebar() {
         <nav className="mt-2 flex-1 px-3">
           <ul className="flex flex-col gap-0.5">
             {navItems.filter(item => {
+              if (item.adminOnly && user?.role !== 'ADMIN') return false;
               if (user?.role === 'TECHNICIAN') {
                 const allowed = ["dashboard", "repairs", "customers", "devices", "invoices", "inventory", "settings"]
                 return allowed.includes(item.label)
