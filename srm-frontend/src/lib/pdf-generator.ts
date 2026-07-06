@@ -2,21 +2,9 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { store } from '@/store/store';
 
-async function getLogoBase64(): Promise<string | null> {
+async function getUrlBase64(url: string): Promise<string | null> {
   try {
-    const state = store.getState() as any;
-    const queryCache = state.api?.queries;
-    if (!queryCache) return null;
-    
-    const settingsQuery = Object.keys(queryCache).find(key => key.startsWith('getSettings'));
-    let logoUrl = null;
-    if (settingsQuery && queryCache[settingsQuery]?.data) {
-      const data = queryCache[settingsQuery].data;
-      logoUrl = data?.logoUrl || data?.settings?.appearance?.logoUrl || null;
-    }
-    if (!logoUrl) return null;
-    
-    const res = await fetch(logoUrl);
+    const res = await fetch(url);
     const blob = await res.blob();
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -25,11 +13,40 @@ async function getLogoBase64(): Promise<string | null> {
       reader.readAsDataURL(blob);
     });
   } catch (err) {
-    console.error("Failed to load logo for PDF", err);
+    console.error("Failed to load image for PDF", err);
     return null;
   }
 }
 
+async function getLogosBase64(invoice?: any): Promise<{ shopLogo: string | null, srmLogo: string | null }> {
+  let srmLogo = await getUrlBase64('/all-fix-logo-black.png');
+  let shopLogoUrl = invoice?.shopLogoUrl;
+
+  if (!shopLogoUrl) {
+    try {
+      const state = store.getState() as any;
+      const queryCache = state.api?.queries;
+      if (queryCache) {
+        const settingsQuery = Object.keys(queryCache).find(key => key.startsWith('getSettings') || key.startsWith('getShopProfile'));
+        if (settingsQuery && queryCache[settingsQuery]?.data) {
+          const data = queryCache[settingsQuery].data;
+          shopLogoUrl = data?.logoUrl || data?.settings?.appearance?.logoUrl || data?.shopLogoUrl || null;
+        }
+      }
+    } catch (e) { }
+  }
+
+  if (!shopLogoUrl) {
+    shopLogoUrl = '/placeholder-logo.png';
+  }
+
+  let shopLogo = await getUrlBase64(shopLogoUrl);
+  if (!shopLogo) {
+    shopLogo = await getUrlBase64('/placeholder-logo.png');
+  }
+
+  return { shopLogo, srmLogo };
+}
 // Shop detail defaults
 const getShopDetails = (user: any) => ({
   name: user?.shopName || "All Fix Private Limited",
@@ -41,11 +58,11 @@ const getShopDetails = (user: any) => ({
 });
 
 // Draws a premium header banner and company details
-async function drawHeader(doc: jsPDF, title: string, user: any, orientation: 'portrait' | 'landscape' = 'portrait') {
+async function drawHeader(doc: jsPDF, title: string, user: any, orientation: 'portrait' | 'landscape' = 'portrait', invoice?: any) {
   const shop = getShopDetails(user);
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  const logoBase64 = await getLogoBase64();
+  const logos = await getLogosBase64(invoice);
 
   // Indigo top bar
   doc.setFillColor(79, 70, 229);
@@ -57,39 +74,46 @@ async function drawHeader(doc: jsPDF, title: string, user: any, orientation: 'po
   doc.setFontSize(11);
   doc.text(title.toUpperCase(), 14, 10);
 
-  // Logo & Shop Details below bar
-  let startX = 14;
-  if (logoBase64) {
+  // Logos on the left and right
+  if (logos.shopLogo) {
     try {
-      doc.addImage(logoBase64, 'PNG', 14, 17, 15, 15);
-      startX = 33;
-    } catch(e) {
-      console.error("Failed to add logo to PDF:", e);
+      // width 35mm, height 26mm for increased size
+      doc.addImage(logos.shopLogo, 'PNG', 14, 17, 35, 35, undefined, 'FAST');
+    } catch (e) {
+      console.error("Failed to add shop logo to PDF:", e);
     }
   }
 
+  if (logos.srmLogo) {
+    try {
+      doc.addImage(logos.srmLogo, 'PNG', pageWidth - 49, 17, 42, 26, undefined, 'FAST');
+    } catch (e) {
+      console.error("Failed to add srm logo to PDF:", e);
+    }
+  }
+
+  // Shop Details below logos (Shifted down by 20mm)
   doc.setTextColor(15, 23, 42); // slate-900
   doc.setFontSize(14);
-  doc.text(shop.name, startX, 25);
+  doc.text(shop.name, 14, 60);
 
   doc.setTextColor(100, 116, 139); // slate-500
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`${shop.website}  |  ${shop.email}  |  ${shop.phone}`, startX, 30);
+  doc.text(`${shop.website}  |  ${shop.email}  |  ${shop.phone}`, 14, 65);
 
   // Right-aligned Shop Address / Tax
   doc.setFont("helvetica", "bold");
-  doc.text("PREMIUM SERVICE CENTER", pageWidth - 14, 25, { align: 'right' });
+  doc.text("PREMIUM SERVICE CENTER", pageWidth - 14, 60, { align: 'right' });
   doc.setFont("helvetica", "normal");
-  doc.text(shop.address, pageWidth - 14, 30, { align: 'right' });
-  doc.text(shop.tax, pageWidth - 14, 35, { align: 'right' });
+  doc.text(shop.address, pageWidth - 14, 65, { align: 'right' });
+  doc.text(shop.tax, pageWidth - 14, 70, { align: 'right' });
 
   // Divider Line
   doc.setDrawColor(226, 232, 240); // border-slate-200
   doc.setLineWidth(0.5);
-  doc.line(14, 38, pageWidth - 14, 38);
+  doc.line(14, 73, pageWidth - 14, 73);
 }
-
 // Draws a professional signature footer
 function drawFooter(doc: jsPDF, message: string, orientation: 'portrait' | 'landscape' = 'portrait') {
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -129,38 +153,38 @@ export async function generateDeviceInvoicePDF(device: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  await drawHeader(doc, "Device Specification & Valuation", user);
+  await drawHeader(doc, "Device Specification & Valuation", user, 'portrait', device);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
-  doc.rect(14, 42, 182, 32, "F");
+  doc.rect(14, 82, 182, 32, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(79, 70, 229);
-  doc.text("REGISTERED OWNER:", 18, 48);
+  doc.text("REGISTERED OWNER:", 18, 88);
   doc.setTextColor(15, 23, 42);
-  doc.text(device.owner?.name || "Guest", 18, 53);
+  doc.text(device.owner?.name || "Guest", 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Phone: ${device.owner?.phone || "N/A"}`, 18, 58);
-  doc.text("Client Stored Record Verified", 18, 63);
+  doc.text(`Phone: ${device.owner?.phone || "N/A"}`, 18, 98);
+  doc.text("Client Stored Record Verified", 18, 103);
 
   // Right side of metadata block
   doc.setFont("helvetica", "bold");
   doc.setTextColor(79, 70, 229);
-  doc.text("ASSET CONTROL METRICS:", 110, 48);
+  doc.text("ASSET CONTROL METRICS:", 110, 88);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Device ID: #DEV-${device.id?.slice(-6).toUpperCase() || "N/A"}`, 110, 53);
-  doc.text(`Registered: ${device.registered || "N/A"}`, 110, 58);
-  doc.text(`Category: ${device.type || "N/A"}`, 110, 63);
-  doc.text(`Operational Status: ${device.status || "N/A"}`, 110, 68);
+  doc.text(`Device ID: #DEV-${device.id?.slice(-6).toUpperCase() || "N/A"}`, 110, 93);
+  doc.text(`Registered: ${device.registered || "N/A"}`, 110, 98);
+  doc.text(`Category: ${device.type || "N/A"}`, 110, 103);
+  doc.text(`Operational Status: ${device.status || "N/A"}`, 110, 108);
 
   // Technical Specs table
   autoTable(doc, {
-    startY: 80,
+    startY: 120,
     head: [["Technical Asset Specification", "Details / Brand", "Identity / IMEI", "Valuation (LKR)"]],
     body: [
       [
@@ -202,7 +226,7 @@ export async function generateDevicesInventoryPDF(devices: any[], user: any) {
   await drawHeader(doc, "Master Device Inventory Report", user, 'landscape');
 
   autoTable(doc, {
-    startY: 42,
+    startY: 82,
     head: [["Device Name", "Brand", "IMEI / Identity", "Owner Name", "Type", "Status", "Price (LKR)"]],
     body: devices.map(d => [
       d.name || "N/A",
@@ -230,74 +254,146 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  await drawHeader(doc, "Client Tax Invoice", user);
+  await drawHeader(doc, "Client Tax Invoice", user, 'portrait', invoice);
 
-  // Metadata block
+  const totalVal = invoice.amount || invoice.total || 0;
+
+  // Metadata block - matching "Logistics & Meta Grid"
   doc.setFillColor(248, 250, 252);
-  doc.rect(14, 42, 182, 32, "F");
+  // Add 20mm offset to the Y coordinate since drawHeader was expanded
+  doc.rect(14, 82, 182, 32, "F");
 
+  // Col 1: BILLED TO
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(79, 70, 229);
-  doc.text("BILLED TO:", 18, 48);
-  doc.setTextColor(15, 23, 42);
-  doc.text(invoice.name || "Guest", 18, 53);
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184); // slate-400
+  doc.text("BILLED TO,", 18, 88);
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42); // slate-900
+  doc.text(invoice.name || "Guest", 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Phone: ${invoice.phone || "N/A"}`, 18, 58);
-  doc.text("Customer Address Stored & Verified", 18, 63);
+  doc.setTextColor(100, 116, 139); // slate-500
+  doc.text(`${invoice.phone || "N/A"}`, 18, 98);
+  doc.text("Client Address Stored", 18, 102);
+  doc.text("Verification Required", 18, 106);
 
-  // Right side info
+  // Vertical Separator 1
+  doc.setDrawColor(79, 70, 229); // indigo-600 (border-l-2)
+  doc.setLineWidth(0.7);
+  doc.line(15, 86, 15, 110);
+
+  // Col 2: INVOICE DETAILS
+  // Invoice Reference
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(79, 70, 229);
-  doc.text("INVOICE SUMMARY:", 110, 48);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("INVOICE REFERENCE", 60, 88);
+  doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Reference: ${invoice.invoiceId || invoice.orderNumber || "N/A"}`, 110, 53);
-  doc.text(`Issue Date: ${invoice.date || new Date().toLocaleDateString()}`, 110, 58);
-  doc.text(`Service Category: ${(invoice.type || "Repair").replace(/_/g, ' ')}`, 110, 63);
-  doc.text(`Status: ${(invoice.status || "Pending").toUpperCase()}`, 110, 68);
+  doc.text(`${invoice.invoiceId || invoice.orderNumber || "#000000"}`, 60, 92);
+
+  // Service Category
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("SERVICE CATEGORY", 60, 100);
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${(invoice.type || "Repair").replace(/_/g, ' ').toUpperCase()}`, 60, 104);
+
+  // Issue Date (Right side of Col 2)
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("ISSUE DATE", 100, 88);
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  const rawDate = invoice.date ? invoice.date.toString().split('T')[0] : new Date().toISOString().split('T')[0];
+  doc.text(rawDate, 100, 92);
+
+  // Current Status
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("CURRENT STATUS", 100, 100);
+  doc.setFontSize(9);
+  const status = (invoice.status || "Pending").toUpperCase();
+  if (status === 'PAID') doc.setTextColor(4, 120, 87);
+  else if (status === 'PENDING') doc.setTextColor(180, 83, 9);
+  else doc.setTextColor(220, 38, 38);
+  doc.text(status, 100, 104);
+
+  // Col 2 Vertical Separators (border-x)
+  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.setLineWidth(0.3);
+  doc.line(54, 86, 54, 110);
+  doc.line(138, 86, 138, 110);
+
+  // Col 3: TOTAL PAYABLE
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("TOTAL PAYABLE", 144, 88);
+
+  doc.setFontSize(13);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`Rs. ${totalVal.toLocaleString()}`, 144, 95);
+
+  doc.setDrawColor(226, 232, 240);
+  doc.line(144, 99, 192, 99);
+
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text("DUE SCHEDULE", 144, 104);
+  doc.setFontSize(8);
+  doc.setTextColor(79, 70, 229); // indigo-600
+  doc.text("Payable on Receipt", 144, 109);
 
   // Determine items list
-  const totalVal = invoice.amount || invoice.total || 0;
   const items = invoice.items || [
     { description: "Advanced Technical Service Labor", qty: 1, price: totalVal * 0.4, amount: totalVal * 0.4 },
     { description: "OEM Grade Replacement Component Parts", qty: 1, price: totalVal * 0.6, amount: totalVal * 0.6 }
   ];
 
   autoTable(doc, {
-    startY: 80,
-    head: [["Transactional Item Details", "Qty", "Rate (LKR)", "Subtotal (LKR)"]],
+    startY: 120,
+    head: [["Transactional Detail", "Unit Qty", "Rate (LKR)", "Subtotal"]],
     body: items.map((itm: any) => [
       itm.description || itm.name || "Technical Service",
       itm.qty || itm.quantity || 1,
       `Rs. ${(itm.price || 0).toLocaleString()}`,
       `Rs. ${(itm.amount || (itm.qty * itm.price) || 0).toLocaleString()}`
     ]),
-    headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: "bold", fontSize: 8 },
+    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: "bold", fontSize: 8 },
     bodyStyles: { fontSize: 8, cellPadding: 4, textColor: [15, 23, 42] },
     alternateRowStyles: { fillColor: [248, 250, 252] }
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY + 8;
-  doc.setFillColor(248, 250, 252);
-  doc.rect(120, finalY, 76, 26, "F");
+  const finalY = (doc as any).lastAutoTable.finalY + 12;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(100, 116, 139);
-  doc.text("Subtotal Net:", 124, finalY + 7);
-  doc.text("Tax Valuation (VAT 0.0%):", 124, finalY + 13);
+  // Financial Totals block (mimicking the frontend)
+  // Subtotal line
   doc.setFont("helvetica", "bold");
-  doc.text("Total Payable (LKR):", 124, finalY + 20);
-
-  doc.setTextColor(15, 23, 42);
-  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 7, { align: 'right' });
-  doc.text("Rs. 0", 188, finalY + 13, { align: 'right' });
-  doc.setTextColor(79, 70, 229);
   doc.setFontSize(9);
-  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 20, { align: 'right' });
+  doc.setTextColor(100, 116, 139); // slate-500
+  doc.text("Subtotal", 130, finalY);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY, { align: 'right' });
+
+  // Border bottom for subtotal
+  doc.setDrawColor(241, 245, 249);
+  doc.setLineWidth(0.5);
+  doc.line(130, finalY + 4, 188, finalY + 4);
+
+  // Grand total line
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text("GRAND TOTAL BILLED", 130, finalY + 10);
+
+  doc.setFontSize(11);
+  doc.setTextColor(79, 70, 229);
+  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 10, { align: 'right' });
+
+  doc.setFontSize(6);
+  doc.setTextColor(148, 163, 184);
+  doc.text("AUTHORIZED FOR TRANSACTION", 188, finalY + 15, { align: 'right' });
 
   drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
   doc.save(`SRM_Invoice_${invoice.invoiceId || invoice.orderNumber || "receipt"}.pdf`);
@@ -311,34 +407,34 @@ export async function generateInventoryAssetPDF(asset: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  await drawHeader(doc, "Inventory Asset Details", user);
+  await drawHeader(doc, "Inventory Asset Details", user, 'portrait', asset);
 
   doc.setFillColor(248, 250, 252);
-  doc.rect(14, 42, 182, 28, "F");
+  doc.rect(14, 82, 182, 28, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(79, 70, 229);
-  doc.text("ASSET DESCRIPTION DETAILS:", 18, 48);
+  doc.text("ASSET DESCRIPTION DETAILS:", 18, 88);
   doc.setTextColor(15, 23, 42);
-  doc.text(asset.name || "N/A", 18, 53);
+  doc.text(asset.name || "N/A", 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Asset Supplier: ${asset.supplier || "N/A"}`, 18, 58);
-  doc.text(`Verification Profile: Internal Audit Ledger`, 18, 63);
+  doc.text(`Asset Supplier: ${asset.supplier || "N/A"}`, 18, 98);
+  doc.text(`Verification Profile: Internal Audit Ledger`, 18, 103);
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(79, 70, 229);
-  doc.text("LEDGER METRICS:", 110, 48);
+  doc.text("LEDGER METRICS:", 110, 88);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`System ID / Code: ${asset.code || "N/A"}`, 110, 53);
-  doc.text(`Stock Level Qty: ${asset.qty || asset.quantity || 0} Units`, 110, 58);
-  doc.text(`Category: ${asset.category || "General Inventory"}`, 110, 63);
+  doc.text(`System ID / Code: ${asset.code || "N/A"}`, 110, 93);
+  doc.text(`Stock Level Qty: ${asset.qty || asset.quantity || 0} Units`, 110, 98);
+  doc.text(`Category: ${asset.category || "General Inventory"}`, 110, 103);
 
   autoTable(doc, {
-    startY: 76,
+    startY: 116,
     head: [["Asset Property Metric", "Identity / Brand", "Ledger Status", "Stock Price Value"]],
     body: [
       [
@@ -368,7 +464,7 @@ export async function generateInventoryAssetsPDF(assets: any[], user: any) {
   await drawHeader(doc, "Global Inventory Stock Status Report", user, 'landscape');
 
   autoTable(doc, {
-    startY: 42,
+    startY: 82,
     head: [["Asset Name", "Code / Reference", "Brand", "Category", "Status", "Quantity", "Unit Price"]],
     body: assets.map(a => [
       a.name || "N/A",
@@ -396,35 +492,35 @@ export async function generatePOInvoicePDF(po: any, user: any) {
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
-  doc.rect(14, 42, 182, 32, "F");
+  doc.rect(14, 82, 182, 32, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(79, 70, 229);
-  doc.text("SUPPLIER / ISSUER:", 18, 48);
+  doc.text("SUPPLIER / ISSUER:", 18, 88);
   doc.setTextColor(15, 23, 42);
-  doc.text(po.supplier?.name || po.supplier || "Vendor Store", 18, 53);
+  doc.text(po.supplier?.name || po.supplier || "Vendor Store", 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Phone: ${po.supplier?.phone || "+94 00 000 0000"}`, 18, 58);
-  doc.text("Authorized Vendor Account Verified", 18, 63);
+  doc.text(`Phone: ${po.supplier?.phone || "+94 00 000 0000"}`, 18, 98);
+  doc.text("Authorized Vendor Account Verified", 18, 103);
 
   // Right side info
   doc.setFont("helvetica", "bold");
   doc.setTextColor(79, 70, 229);
-  doc.text("PURCHASE ORDER METRIC:", 110, 48);
+  doc.text("PURCHASE ORDER METRIC:", 110, 88);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Order Number: #${po.orderNumber || "N/A"}`, 110, 53);
-  doc.text(`Created Date: ${po.createdAt ? new Date(po.createdAt).toLocaleDateString() : "N/A"}`, 110, 58);
-  doc.text(`Asset Type: Inventory Stock`, 110, 63);
-  doc.text(`Audit Status: ${po.status || "Verified"}`, 110, 68);
+  doc.text(`Order Number: #${po.orderNumber || "N/A"}`, 110, 93);
+  doc.text(`Created Date: ${po.createdAt ? new Date(po.createdAt).toLocaleDateString() : "N/A"}`, 110, 98);
+  doc.text(`Asset Type: Inventory Stock`, 110, 103);
+  doc.text(`Audit Status: ${po.status || "Verified"}`, 110, 108);
 
   const priceVal = po.price || po.amount || 0;
 
   autoTable(doc, {
-    startY: 80,
+    startY: 120,
     head: [["Technical Asset Stock Description", "Qty Ordered", "Rate (LKR)", "Net Valuation (LKR)"]],
     body: [
       [
@@ -467,32 +563,32 @@ export async function generateReportsPDF(reportData: any, user: any) {
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
-  doc.rect(14, 42, 182, 28, "F");
+  doc.rect(14, 82, 182, 28, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(79, 70, 229);
-  doc.text("AUDIT REPORT HORIZON:", 18, 48);
+  doc.text("AUDIT REPORT HORIZON:", 18, 88);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Time Range: ${(reportData.timeRange || "Dashboard").toUpperCase()}`, 18, 53);
+  doc.text(`Time Range: ${(reportData.timeRange || "Dashboard").toUpperCase()}`, 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Ref Code: BI-${reportData.ref || "AUTO"}`, 18, 58);
-  doc.text(`Generated by Audit Systems`, 18, 63);
+  doc.text(`Ref Code: BI-${reportData.ref || "AUTO"}`, 18, 98);
+  doc.text(`Generated by Audit Systems`, 18, 103);
 
   // Right details
   doc.setFont("helvetica", "bold");
   doc.setTextColor(79, 70, 229);
-  doc.text("PERFORMANCE METRIC STATUS:", 110, 48);
+  doc.text("PERFORMANCE METRIC STATUS:", 110, 88);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Date Print: ${reportData.datetime || new Date().toLocaleString()}`, 110, 53);
-  doc.text("Integrity Level: Certified Executive Print", 110, 58);
+  doc.text(`Date Print: ${reportData.datetime || new Date().toLocaleString()}`, 110, 93);
+  doc.text("Integrity Level: Certified Executive Print", 110, 98);
 
   // Draw KPI highlights inside table-like rows
   autoTable(doc, {
-    startY: 76,
+    startY: 116,
     head: [["Key Business Performance Analytics Indicators", "Valuation / Count", "Change Rate"]],
     body: (reportData.stats || []).map((s: any) => [
       s.label || "N/A",
@@ -552,34 +648,34 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const shop = getShopDetails(user);
 
-  await drawHeader(doc, "Repair Service Invoice", user);
+  await drawHeader(doc, "Repair Service Invoice", user, 'portrait', repair);
 
   // Metadata block
   doc.setFillColor(248, 250, 252);
-  doc.rect(14, 42, 182, 32, "F");
+  doc.rect(14, 82, 182, 32, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(79, 70, 229);
-  doc.text("BILLED TO:", 18, 48);
+  doc.text("BILLED TO:", 18, 88);
   doc.setTextColor(15, 23, 42);
-  doc.text(repair.customer || "Walk-in Customer", 18, 53);
+  doc.text(repair.customer || "Walk-in Customer", 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Device: ${repair.deviceType || "Device"} (${repair.brand || "Generic"} ${repair.model || "Model"})`, 18, 58);
-  doc.text("Customer Address Stored & Verified", 18, 63);
+  doc.text(`Device: ${repair.deviceType || "Device"} (${repair.brand || "Generic"} ${repair.model || "Model"})`, 18, 98);
+  doc.text("Customer Address Stored & Verified", 18, 103);
 
   // Right side info
   doc.setFont("helvetica", "bold");
   doc.setTextColor(79, 70, 229);
-  doc.text("JOB OVERVIEW:", 110, 48);
+  doc.text("JOB OVERVIEW:", 110, 88);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Invoice Ref: ${repair.invoiceRef || "N/A"}`, 110, 53);
-  doc.text(`Invoice Date: ${repair.invoiceDate || new Date().toLocaleDateString()}`, 110, 58);
-  doc.text(`Issue Category: ${repair.issueCategory || "Repair"}`, 110, 63);
-  doc.text(`Status: ${(repair.status || "Pending").toUpperCase()}`, 110, 68);
+  doc.text(`Invoice Ref: ${repair.invoiceRef || "N/A"}`, 110, 93);
+  doc.text(`Invoice Date: ${repair.invoiceDate || new Date().toLocaleDateString()}`, 110, 98);
+  doc.text(`Issue Category: ${repair.issueCategory || "Repair"}`, 110, 103);
+  doc.text(`Status: ${(repair.status || "Pending").toUpperCase()}`, 110, 108);
 
   const labor = Number(repair.laborCost) || 0;
   const parts = Number(repair.partsCost) || 0;
@@ -587,7 +683,7 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   const total = Number(repair.pricingTotal) || (labor + parts - discount);
 
   autoTable(doc, {
-    startY: 80,
+    startY: 120,
     head: [["Technical Service Details", "Rate (LKR)"]],
     body: [
       ["Labor / Diagnostic Fee", `Rs. ${labor.toLocaleString()}`],
