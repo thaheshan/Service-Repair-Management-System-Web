@@ -101,14 +101,14 @@ export default function ManageRolesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8FAFC] dark:bg-[#020817]">
+      <div className="flex h-screen items-center justify-center bg-[#F8FAFC]">
         <Loader2 className="h-8 w-8 animate-spin text-[#4F46E5]" />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] dark:bg-[#020817]">
+    <div className="flex min-h-screen bg-[#F8FAFC]">
       <DashboardSidebar />
       
       <main className="flex-1 lg:ml-[200px]">
@@ -117,14 +117,14 @@ export default function ManageRolesPage() {
         <div className="p-4 md:p-8 max-w-6xl mx-auto">
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground mb-6 uppercase tracking-wider">
-             <Link href="/admin/customers" className="hover:text-[#4F46E5] dark:hover:text-indigo-400 transition-colors">Customers</Link>
+             <Link href="/admin/customers" className="hover:text-[#4F46E5] transition-colors">Customers</Link>
              <ChevronRight className="h-3 w-3" />
-             <span className="text-[#0F172A] dark:text-slate-50">Manage Roles</span>
+             <span className="text-[#0F172A]">Manage Roles</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-[28px] font-black text-[#0F172A] dark:text-slate-50 tracking-tight mb-1">Customer Roles</h1>
+              <h1 className="text-[28px] font-black text-[#0F172A] tracking-tight mb-1">Customer Roles</h1>
               <p className="text-muted-foreground text-[14px]">Define tiers, benefits, and special handling for your customer segments.</p>
             </div>
             <button 
@@ -141,13 +141,13 @@ export default function ManageRolesPage() {
               return (
                 <div 
                   key={tier.id} 
-                  className="bg-white dark:bg-[#0F172A] rounded-2xl border border-border p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                  className="bg-white rounded-2xl border border-border p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                    <button onClick={() => openEdit(tier)} className="h-8 w-8 rounded-lg bg-white dark:bg-[#0F172A] border border-border flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] dark:hover:text-indigo-400 hover:border-[#4F46E5]/30 shadow-sm transition-all">
+                    <button onClick={() => openEdit(tier)} className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:border-[#4F46E5]/30 shadow-sm transition-all">
                       <Edit3 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(tier.id)} className="h-8 w-8 rounded-lg bg-white dark:bg-[#0F172A] border border-border flex items-center justify-center text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 shadow-sm transition-all">
+                    <button onClick={() => handleDelete(tier.id)} className="h-8 w-8 rounded-lg bg-white border border-border flex items-center justify-center text-muted-foreground hover:text-red-600 hover:border-red-200 shadow-sm transition-all">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -160,24 +160,24 @@ export default function ManageRolesPage() {
                       <Crown className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-[17px] font-black text-[#0F172A] dark:text-slate-50 leading-tight mb-1">{tier.name}</h3>
+                      <h3 className="text-[17px] font-black text-[#0F172A] leading-tight mb-1">{tier.name}</h3>
                       <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                         Permanent Data
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-[13px] text-[#334155] dark:text-slate-300 leading-relaxed mb-6 h-10 overflow-hidden line-clamp-2 italic">
+                  <p className="text-[13px] text-[#334155] leading-relaxed mb-6 h-10 overflow-hidden line-clamp-2 italic">
                     "{tier.description}"
                   </p>
 
-                  <div className="bg-[#F8FAFC] dark:bg-[#020817] border border-border/50 rounded-xl p-4 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-white dark:bg-[#0F172A] border border-border flex items-center justify-center text-[#4F46E5] dark:text-indigo-400 shadow-sm">
+                  <div className="bg-[#F8FAFC] border border-border/50 rounded-xl p-4 flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-white border border-border flex items-center justify-center text-[#4F46E5] shadow-sm">
                       <Gem className="h-4 w-4" />
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Key Benefit</p>
-                      <p className="text-[13px] font-black text-[#0F172A] dark:text-slate-50 truncate">{tier.benefit}</p>
+                      <p className="text-[13px] font-black text-[#0F172A] truncate">{tier.benefit}</p>
                     </div>
                   </div>
                 </div>
@@ -187,11 +187,11 @@ export default function ManageRolesPage() {
 
           {/* Empty State */}
           {tiers.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#0F172A] rounded-3xl border-2 border-dashed border-border text-center px-6">
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-border text-center px-6">
                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-6">
                  <Shield className="h-10 w-10 text-muted-foreground/40" />
                </div>
-               <h3 className="text-[18px] font-bold text-[#0F172A] dark:text-slate-50 mb-2">No Customer Roles Defined</h3>
+               <h3 className="text-[18px] font-bold text-[#0F172A] mb-2">No Customer Roles Defined</h3>
                <p className="text-muted-foreground text-[14px] max-w-sm mb-8">Segment your customers to provide better service and track business value across different tiers.</p>
                <button 
                  onClick={() => { setEditingTier(null); setIsModalOpen(true); }}
@@ -207,11 +207,11 @@ export default function ManageRolesPage() {
       {/* Role Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-300 p-4">
-          <div className="bg-white dark:bg-[#0F172A] w-full max-w-[500px] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-border">
+          <div className="bg-white w-full max-w-[500px] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-border">
             <form onSubmit={handleSubmit}>
               <div className="flex items-center justify-between p-8 pb-4">
                 <div>
-                  <h2 className="text-[20px] font-black text-[#0F172A] dark:text-slate-50 tracking-tight">
+                  <h2 className="text-[20px] font-black text-[#0F172A] tracking-tight">
                     {editingTier ? "Edit Customer Role" : "Create New Role"}
                   </h2>
                   <p className="text-[12px] text-muted-foreground font-medium">Define segment properties and benefits.</p>
@@ -219,7 +219,7 @@ export default function ManageRolesPage() {
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
-                  className="h-10 w-10 rounded-xl bg-[#F1F5F9] dark:bg-slate-800 text-muted-foreground hover:text-[#0F172A] dark:hover:text-white transition-colors flex items-center justify-center"
+                  className="h-10 w-10 rounded-xl bg-[#F1F5F9] text-muted-foreground hover:text-[#0F172A] transition-colors flex items-center justify-center"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -227,31 +227,31 @@ export default function ManageRolesPage() {
 
               <div className="p-8 space-y-6">
                 <div>
-                  <label className="block text-[12px] font-bold text-[#0F172A] dark:text-slate-50 mb-2 uppercase tracking-widest">Role Name</label>
+                  <label className="block text-[12px] font-bold text-[#0F172A] mb-2 uppercase tracking-widest">Role Name</label>
                   <input 
                     required
                     type="text" 
                     placeholder="e.g. VIP Member"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full h-12 px-4 rounded-xl border border-border bg-[#F8FAFC] dark:bg-[#020817] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-bold text-[#0F172A] dark:text-slate-50 mb-2 uppercase tracking-widest">Description</label>
+                  <label className="block text-[12px] font-bold text-[#0F172A] mb-2 uppercase tracking-widest">Description</label>
                   <textarea 
                     required
                     rows={3}
                     placeholder="Describe who belongs in this segment..."
                     value={formData.description}
                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full p-4 rounded-xl border border-border bg-[#F8FAFC] dark:bg-[#020817] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all resize-none"
+                    className="w-full p-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-bold text-[#0F172A] dark:text-slate-50 mb-2 uppercase tracking-widest">Primary Benefit</label>
+                  <label className="block text-[12px] font-bold text-[#0F172A] mb-2 uppercase tracking-widest">Primary Benefit</label>
                   <div className="relative">
                     <input 
                       required
@@ -259,15 +259,15 @@ export default function ManageRolesPage() {
                       placeholder="e.g. 10% discount on all repairs"
                       value={formData.benefit}
                       onChange={e => setFormData({ ...formData, benefit: e.target.value })}
-                      className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-[#F8FAFC] dark:bg-[#020817] text-[14px] font-bold text-[#4F46E5] dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all"
+                      className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-[#F8FAFC] text-[14px] font-bold text-[#4F46E5] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all"
                     />
-                    <Gem className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4F46E5] dark:text-indigo-400" />
+                    <Gem className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4F46E5]" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-bold text-[#0F172A] dark:text-slate-50 mb-3 uppercase tracking-widest">Theme Color</label>
-                  <div className="flex items-center gap-4 bg-[#F8FAFC] dark:bg-[#020817] p-4 rounded-2xl border border-border">
+                  <label className="block text-[12px] font-bold text-[#0F172A] mb-3 uppercase tracking-widest">Theme Color</label>
+                  <div className="flex items-center gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-border">
                     {/* Native Picker Trigger */}
                     <div className="relative group">
                       <input 
@@ -291,7 +291,7 @@ export default function ManageRolesPage() {
                               setFormData({ ...formData, color: val });
                             }
                           }}
-                          className="w-full h-10 px-3 rounded-lg border border-border text-[13px] font-mono font-bold text-[#0F172A] dark:text-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/10"
+                          className="w-full h-10 px-3 rounded-lg border border-border text-[13px] font-mono font-bold text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/10"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: formData.color }} />
                       </div>
@@ -303,7 +303,7 @@ export default function ManageRolesPage() {
                           key={c.value}
                           type="button"
                           onClick={() => setFormData({ ...formData, color: c.value })}
-                          className={`h-8 w-8 rounded-lg border-2 transition-all ${formData.color.toLowerCase() === c.value.toLowerCase() ? 'border-[#0F172A] dark:border-white scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                          className={`h-8 w-8 rounded-lg border-2 transition-all ${formData.color.toLowerCase() === c.value.toLowerCase() ? 'border-[#0F172A] scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
                           style={{ backgroundColor: c.value }}
                         />
                       ))}
@@ -318,7 +318,7 @@ export default function ManageRolesPage() {
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 h-12 rounded-xl border border-border font-bold text-[#0F172A] dark:text-slate-50 hover:bg-muted dark:hover:bg-slate-800 transition-colors"
+                  className="flex-1 h-12 rounded-xl border border-border font-bold text-[#0F172A] hover:bg-muted transition-colors"
                 >
                   Cancel
                 </button>

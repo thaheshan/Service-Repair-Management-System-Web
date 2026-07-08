@@ -12,6 +12,7 @@ import { RepairsFilterSidebar, RepairFilters, DateRangePreset } from "@/componen
 import { RepairsTable, RepairRow, RepairStatus } from "@/components/admin/repairs/repairs-table"
 import { StatusUpdateModal } from "@/components/admin/repairs/status-update-modal"
 import { DeleteTaskModal } from "@/components/admin/repairs/delete-task-modal"
+import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 
 import { useGetRepairsQuery, useUpdateRepairStatusMutation, useDeleteRepairMutation } from "@/services/api/repairsApiSlice"
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
@@ -79,7 +80,11 @@ export default function RepairsPage() {
           ? (r.priority.toLowerCase() === 'urgent' ? 'Urgent' : r.priority.toLowerCase() === 'high' ? 'High' : r.priority.toLowerCase() === 'low' ? 'Low' : 'Medium')
           : "Medium",
         technician: tech,
-        amount: `Rs. ${displayStatus === 'Completed' ? (r.finalCost || r.estimatedCost || 0) : (r.estimatedCost || 0)}`,
+        amount: (() => {
+          const cost = displayStatus === 'Completed' ? (r.finalCost || r.estimatedCost || 0) : (r.estimatedCost || 0);
+          const adv = r.advancePayment || 0;
+          return adv > 0 ? `Rs. ${cost.toLocaleString()} (Adv: Rs. ${adv.toLocaleString()})` : `Rs. ${cost.toLocaleString()}`;
+        })(),
         dueDate: {
           text: r.estimatedCompletionDate
             ? new Date(r.estimatedCompletionDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -142,6 +147,8 @@ export default function RepairsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [activeTab, setActiveTab] = useState("all")
+  const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
+
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -222,6 +229,15 @@ export default function RepairsPage() {
   const { allFiltered, isActive } = useMemo(() => {
     let result = repairs
 
+    // Apply global date range first
+    if (globalDateRange) {
+      result = result.filter(r => {
+        if (!r.createdAt) return true;
+        const repairDate = new Date(r.createdAt);
+        return repairDate >= globalDateRange.from && repairDate <= globalDateRange.to;
+      });
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(r =>
@@ -271,12 +287,17 @@ export default function RepairsPage() {
         <DashboardHeader />
         <main className="flex-1 overflow-y-auto w-full flex flex-col custom-scrollbar">
           <div className="bg-background px-4 lg:px-8 pt-6 pb-4">
-            <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
-              <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title', 'Dashboard') : 'Dashboard'}</Link>
-              <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-              <span className="text-[#0F172A] dark:text-white">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold">
+                <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title', 'Dashboard') : 'Dashboard'}</Link>
+                <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                <span className="text-foreground">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <h1 className="text-[28px] font-black text-foreground tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
+                <DateRangePicker defaultDays={30} onChange={setGlobalDateRange} />
+              </div>
             </div>
-            <h1 className="dark:text-white text-[28px] font-black text-[#0F172A] tracking-tight leading-none">{mounted ? t('repairsPage.title', 'Repairs Management') : 'Repairs Management'}</h1>
           </div>
 
           <div className="flex-1 px-4 lg:px-8 pb-6 pt-0 m-0 flex flex-col">
@@ -308,6 +329,7 @@ export default function RepairsPage() {
                   <RepairsTable
                     repairs={paginatedRepairs}
                     allRepairs={repairs}
+                    rawRepairs={apiRepairs}
                     technicians={techOptions}
                     activeTab={activeTab}
                     onTabChange={(t) => { setActiveTab(t); setCurrentPage(1) }}

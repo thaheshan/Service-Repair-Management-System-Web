@@ -563,11 +563,18 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   doc.setTextColor(79, 70, 229);
   doc.text("BILLED TO:", 18, 48);
   doc.setTextColor(15, 23, 42);
-  doc.text(repair.customer || "Walk-in Customer", 18, 53);
+  const customerName = typeof repair.customer === 'string'
+    ? repair.customer
+    : (repair.customer?.name || "Walk-in Customer");
+  doc.text(customerName, 18, 53);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Device: ${repair.deviceType || "Device"} (${repair.brand || "Generic"} ${repair.model || "Model"})`, 18, 58);
+  // Retrieve device details dynamically if nested
+  const deviceBrand = repair.brand || repair.device?.brand || "Generic";
+  const deviceModel = repair.model || repair.device?.model || "Model";
+  const deviceTypeName = repair.deviceType || repair.device?.type || "Device";
+  doc.text(`Device: ${deviceTypeName} (${deviceBrand} ${deviceModel})`, 18, 58);
   doc.text("Customer Address Stored & Verified", 18, 63);
 
   // Right side info
@@ -576,24 +583,32 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   doc.text("JOB OVERVIEW:", 110, 48);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Invoice Ref: ${repair.invoiceRef || "N/A"}`, 110, 53);
-  doc.text(`Invoice Date: ${repair.invoiceDate || new Date().toLocaleDateString()}`, 110, 58);
-  doc.text(`Issue Category: ${repair.issueCategory || "Repair"}`, 110, 63);
+  doc.text(`Invoice Ref: ${repair.reference || repair.invoiceRef || "N/A"}`, 110, 53);
+  doc.text(`Invoice Date: ${repair.createdAt ? new Date(repair.createdAt).toLocaleDateString() : (repair.invoiceDate || new Date().toLocaleDateString())}`, 110, 58);
+  doc.text(`Issue Category: ${repair.issue || repair.issueCategory || "Repair"}`, 110, 63);
   doc.text(`Status: ${(repair.status || "Pending").toUpperCase()}`, 110, 68);
 
-  const labor = Number(repair.laborCost) || 0;
-  const parts = Number(repair.partsCost) || 0;
+  const total = Number(repair.finalCost || repair.estimatedCost || repair.pricingTotal) || 0;
+  const parts = Number(repair.partsCost) || (repair.repairPartsUsed || []).reduce((sum: number, p: any) => sum + (Number(p.unitPrice || p.totalPrice) * Number(p.quantityUsed || 1)), 0);
   const discount = Number(repair.discount) || 0;
-  const total = Number(repair.pricingTotal) || (labor + parts - discount);
+  const labor = Number(repair.laborCost) || Math.max(0, total - parts + discount);
+  const advance = Number(repair.advancePayment) || 0;
+  const remaining = Math.max(0, total - advance);
+
+  const tableBody = [
+    ["Labor / Diagnostic Fee", `Rs. ${labor.toLocaleString()}`],
+    ["Replacement Components / Parts Material Cost", `Rs. ${parts.toLocaleString()}`],
+    ["Promotional Discount", `- Rs. ${discount.toLocaleString()}`]
+  ];
+
+  if (advance > 0) {
+    tableBody.push(["Advance Payment / Deposit Stored", `- Rs. ${advance.toLocaleString()}`]);
+  }
 
   autoTable(doc, {
     startY: 80,
     head: [["Technical Service Details", "Rate (LKR)"]],
-    body: [
-      ["Labor / Diagnostic Fee", `Rs. ${labor.toLocaleString()}`],
-      ["Replacement Components / Parts Material Cost", `Rs. ${parts.toLocaleString()}`],
-      ["Promotional Discount", `- Rs. ${discount.toLocaleString()}`]
-    ],
+    body: tableBody,
     headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: "bold", fontSize: 8 },
     bodyStyles: { fontSize: 8, cellPadding: 4, textColor: [15, 23, 42] },
     alternateRowStyles: { fillColor: [248, 250, 252] }
@@ -601,15 +616,23 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
 
   const finalY = (doc as any).lastAutoTable.finalY + 8;
   doc.setFillColor(248, 250, 252);
-  doc.rect(120, finalY, 76, 20, "F");
+  doc.rect(120, finalY, 76, 25, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text("Total Payable (LKR):", 124, finalY + 7);
+  doc.text("Total Cost:", 124, finalY + 6);
+  doc.text(`Rs. ${total.toLocaleString()}`, 190, finalY + 6, { align: 'right' });
+
+  if (advance > 0) {
+    doc.text("Advance Payment:", 124, finalY + 12);
+    doc.text(`- Rs. ${advance.toLocaleString()}`, 190, finalY + 12, { align: 'right' });
+  }
+
   doc.setTextColor(79, 70, 229);
-  doc.setFontSize(10);
-  doc.text(`Rs. ${total.toLocaleString()}`, 124, finalY + 14);
+  doc.setFontSize(9);
+  doc.text(advance > 0 ? "Remaining Balance Due:" : "Total Payable (LKR):", 124, finalY + 19);
+  doc.text(`Rs. ${remaining.toLocaleString()}`, 190, finalY + 19, { align: 'right' });
 
   drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
   doc.save(`Invoice_${repair.invoiceRef || 'Draft'}.pdf`);

@@ -3,7 +3,7 @@ import { apiSlice } from './apiSlice';
 export const dashboardApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardAnalytics: builder.query({
-      query: (days: number = 7) => `/v1/dashboard/analytics?days=${days}`,
+      query: ({ days = 30 }: { days?: number } = {}) => `/v1/dashboard/analytics?days=${days}`,
       providesTags: ['Dashboard'],
     }),
     seedDashboard: builder.mutation({

@@ -7,15 +7,17 @@ import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 import { useTranslation } from "react-i18next"
 
 const fallbackData = [
-  { name: "Completed", value: 0, color: "#10B981" },
-  { name: "In Progress", value: 0, color: "#4F46E5" },
-  { name: "Pending", value: 0, color: "#F59E0B" },
+  { name: "NOT STARTED", value: 0, color: "#F59E0B" }, // Amber   — Pending
+  { name: "IN PROGRESS", value: 0, color: "#6366F1" }, // Indigo  — Active
+  { name: "READY TO TAKE", value: 0, color: "#3B82F6" }, // Blue  — Ready for pickup
+  { name: "DELIVERED",   value: 0, color: "#8B5CF6" }, // Violet  — Handed over
+  { name: "PAID",        value: 0, color: "#10B981" }, // Emerald — Closed & paid
 ]
 
-export function RepairStatusChart() {
+export function RepairStatusChart({ days = 30 }: { days?: number }) {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
-  const { data: response } = useGetDashboardAnalyticsQuery({});
+  const { data: response } = useGetDashboardAnalyticsQuery({ days });
 
   const data = response?.data?.statusData?.length > 0
     ? response.data.statusData

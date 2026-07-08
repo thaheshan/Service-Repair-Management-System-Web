@@ -43,10 +43,11 @@ import {
   Cell,
   Legend
 } from 'recharts'
-import { DashboardSidebar } from '@/components/admin/dashboard/sidebar'
-import { DashboardHeader } from '@/components/admin/dashboard/header'
+import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from '@/components/admin/dashboard/footer'
-import { useGetDashboardAnalyticsQuery } from '@/services/api/dashboardApiSlice'
+import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
+import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 
 // --- DYNAMIC MOCK DATA ORCHESTRATION ---
 const metricMaps: Record<string, any> = {
@@ -199,24 +200,18 @@ export default function ReportsPage() {
   useEffect(() => setMounted(true), []);
   const { user } = useSelector((state: any) => state.auth);
 
-  const [timeRange, setTimeRange] = useState('30d')
+  const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const hiddenReportRef = useRef<HTMLDivElement>(null)
 
-  const daysMap: Record<string, number> = {
-    '7d': 7,
-    '30d': 30,
-    'ytd': 365,
-    'all': 9999
-  };
-
-  const { data: dashResponse, refetch } = useGetDashboardAnalyticsQuery(daysMap[timeRange] || 30);
+  const { data: dashResponse, refetch } = useGetDashboardAnalyticsQuery(globalDateRange.days);
   const apiStats = dashResponse?.data?.stats;
 
   // Grab chart data based on selected filter (period-bucketed mock shapes)
-  const currentData = metricMaps[timeRange] || metricMaps['30d']
+  const fallbackKey = globalDateRange.days <= 7 ? '7d' : globalDateRange.days <= 30 ? '30d' : globalDateRange.days <= 365 ? 'ytd' : 'all';
+  const currentData = metricMaps[fallbackKey as keyof typeof metricMaps] || metricMaps['30d']
 
   // Override stats with live values when available
   const liveStats = useMemo(() => [
@@ -261,7 +256,7 @@ export default function ReportsPage() {
     const techs = dashResponse?.data?.topTechnicians || currentData.technicianPerformance;
 
     return {
-      timeRange: timeRange,
+      timeRange: `${globalDateRange.days} days`,
       ref: reportTimestamp.ref,
       datetime: reportTimestamp.datetime,
       stats: liveStats.map((s: any) => ({
@@ -302,7 +297,7 @@ export default function ReportsPage() {
       const techs = dashResponse?.data?.topTechnicians || currentData.technicianPerformance;
       const brands = dashResponse?.data?.brandData || currentData.brandDistribution;
 
-      let csv = `SRM Analytics Export - ${timeRange.toUpperCase()} - ${new Date().toLocaleDateString()}\n\n`;
+      let csv = `SRM Analytics Export - ${globalDateRange.label.toUpperCase()} - ${new Date().toLocaleDateString()}\n\n`;
 
       csv += `KEY METRICS\n`;
       liveStats.forEach((s: any) => { csv += `${s.label},${s.value}\n`; });
@@ -321,8 +316,7 @@ export default function ReportsPage() {
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url;
-      link.download = `SRM_Analytics_${timeRange.toUpperCase()}_${new Date().toISOString().slice(0,10)}.csv`;
+      link.download = `SRM_Analytics_${globalDateRange.days}d_${new Date().toISOString().slice(0,10)}.csv`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -378,19 +372,7 @@ export default function ReportsPage() {
               </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-card border border-border rounded-xl p-1 shadow-sm">
-                    {['7d', '30d', 'ytd', 'all'].map((range) => (
-                      <button
-                        key={range}
-                        onClick={() => setTimeRange(range)}
-                        className={`px-4 py-2 rounded-lg text-[12px] font-bold uppercase transition-all focus:outline-none ${
-                          timeRange === range ? 'bg-primary text-white shadow-md' : 'text-muted-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {mounted ? t(`reportsPage.range${range.charAt(0).toUpperCase() + range.slice(1)}`) : range}
-                      </button>
-                    ))}
-                  </div>
+                  <DateRangePicker defaultDays={30} onChange={setGlobalDateRange} />
                   <div className="flex items-center gap-3">
                    <button 
                      onClick={() => refetch()}
@@ -476,16 +458,9 @@ export default function ReportsPage() {
                         <span className="text-[11px] font-bold text-muted-foreground uppercase">{mounted ? t('reportsPage.legendRepairVolume') : 'Repair Volume'}</span>
                       </div>
                     </div>
-                    <select 
-                      value={timeRange} 
-                      onChange={(e) => setTimeRange(e.target.value)}
-                      className="h-9 px-3 rounded-lg bg-muted/30 border border-border text-[12px] font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-                    >
-                      <option value="7d">{mounted ? t('reportsPage.option7d') : 'Last 7 Days'}</option>
-                      <option value="30d">{mounted ? t('reportsPage.option30d') : 'Last 30 Days'}</option>
-                      <option value="ytd">{mounted ? t('reportsPage.optionYtd') : 'Year to Date / Monthly'}</option>
-                      <option value="all">{mounted ? t('reportsPage.optionAll') : 'Overall Trend / Yearly'}</option>
-                    </select>
+                    <span className="h-9 px-3 inline-flex items-center rounded-lg bg-muted/30 border border-border text-[12px] font-bold text-foreground">
+                      {fallbackKey === '7d' ? 'Last 7 Days' : fallbackKey === '30d' ? 'Last 30 Days' : fallbackKey === 'ytd' ? 'Year to Date' : 'All Time'}
+                    </span>
                   </div>
                 </div>
                 <div className="h-[350px] w-full mt-auto">
@@ -815,7 +790,7 @@ export default function ReportsPage() {
                        </div>
                        <div className="text-[12px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">
                           <p className="flex items-center gap-2 text-primary"><PieChartIcon className="h-4 w-4" /> Comprehensive Performance Audit</p>
-                          <p>Time Horizon: {timeRange.toUpperCase()} Analytics</p>
+                          <p>Time Horizon: {globalDateRange.label.toUpperCase()} Analytics</p>
                           <p>Reference Code: BI-{reportTimestamp.ref}</p>
                        </div>
                     </div>
@@ -839,7 +814,7 @@ export default function ReportsPage() {
 
                 {/* SERVICES BREAKDOWN TABLE */}
                 <div className="mb-12">
-                   <h3 className="text-[14px] font-black text-foreground uppercase tracking-widest mb-4 border-b-2 border-foreground pb-2">Top Performing Service Categories ({timeRange})</h3>
+                   <h3 className="text-[14px] font-black text-foreground uppercase tracking-widest mb-4 border-b-2 border-foreground pb-2">Top Performing Service Categories ({globalDateRange.label})</h3>
                    <table className="w-full text-left border-collapse">
                        <thead>
                            <tr className="bg-muted/30 border-b border-border">

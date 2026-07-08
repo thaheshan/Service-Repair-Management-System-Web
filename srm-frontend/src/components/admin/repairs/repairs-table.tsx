@@ -1,6 +1,7 @@
 "use client"
-import { Smartphone, Laptop, Tablet, AlertCircle, Calendar, Eye, Edit2, MoreVertical, ChevronDown, Check, Trash2, Clock, User, Wrench } from "lucide-react"
+import { Smartphone, Laptop, Tablet, AlertCircle, Calendar, Eye, Edit2, MoreVertical, ChevronDown, Check, Trash2, Clock, User, Wrench, Download } from "lucide-react"
 import Link from "next/link"
+import { generateRepairInvoicePDF } from "@/lib/pdf-generator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/ui-admin-dashboard/dropdown-menu"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
@@ -29,6 +30,7 @@ export interface RepairRow {
 interface RepairsTableProps {
   repairs: RepairRow[]
   allRepairs: RepairRow[]
+  rawRepairs?: any[]
   technicians: { id: string; name: string; initials: string; bg: string }[]
   activeTab: string
   onTabChange: (tab: string) => void
@@ -146,6 +148,16 @@ function RepairCard({
                   <span className="text-sm font-semibold">View Details</span>
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  const raw = rawRepairs?.find((item: any) => item.id === r.id);
+                  if (raw) generateRepairInvoicePDF(raw, user);
+                }}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                <Download className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold">Download Invoice</span>
+              </DropdownMenuItem>
               {userRole !== 'TECHNICIAN' && (
                 <DropdownMenuItem
                   onClick={() => onDeleteRequest?.(r.id, r.reference)}
@@ -233,7 +245,7 @@ function RepairCard({
   )
 }
 
-export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTabChange, onStatusChangeRequest, onTechnicianChange, onDeleteRequest, viewMode = "list", currentPage, perPage, totalFiltered, onPageChange, onPerPageChange }: RepairsTableProps) {
+export function RepairsTable({ repairs, allRepairs, rawRepairs, technicians, activeTab, onTabChange, onStatusChangeRequest, onTechnicianChange, onDeleteRequest, viewMode = "list", currentPage, perPage, totalFiltered, onPageChange, onPerPageChange }: RepairsTableProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user)
@@ -309,7 +321,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-center">{mounted ? t('common.status', 'Status') : 'Status'} <span className="text-[10px]">↕</span></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('repairs.form.priority', 'Priority') : 'Priority'} <span className="text-[10px]">↕</span></th>
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">{mounted ? t('schedule.technician', 'Technician') : 'Technician'} <span className="text-[10px]">↕</span></th>
-                {user?.role !== 'TECHNICIAN' && <th className="px-3 py-3 font-bold whitespace-nowrap text-right">{mounted ? t('invoicesPage.amount', 'Amount') : 'Amount'} <span className="text-[10px]">↕</span></th>}
+                {user?.role !== 'TECHNICIAN' && <th className="px-3 py-3 font-bold whitespace-nowrap text-right min-w-[180px]">{mounted ? t('invoicesPage.amount', 'Amount') : 'Amount'} <span className="text-[10px]">↕</span></th>}
                 <th className="px-3 py-3 font-bold whitespace-nowrap text-left">Due Date <span className="text-[10px]">↕</span></th>
                 <th className="px-5 py-3 font-bold text-right">{mounted ? t('devicesPage.actions', 'Actions') : 'Actions'}</th>
               </tr>
@@ -422,7 +434,7 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                       </DropdownMenu>
                     </td>
                     {user?.role !== 'TECHNICIAN' && (
-                      <td className="px-3 py-3 align-middle text-right">
+                      <td className="px-3 py-3 align-middle text-right min-w-[180px] whitespace-nowrap">
                         <span className="text-[12px] font-bold text-[#10B981]">{r.amount}</span>
                       </td>
                     )}
@@ -442,6 +454,16 @@ export function RepairsTable({ repairs, allRepairs, technicians, activeTab, onTa
                               <button className="rounded p-1.5 hover:bg-muted hover:text-foreground transition-colors focus:outline-none"><MoreVertical className="h-4 w-4" /></button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-[160px] z-50">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const raw = rawRepairs?.find((item: any) => item.id === r.id);
+                                  if (raw) generateRepairInvoicePDF(raw, user);
+                                }}
+                                className="cursor-pointer flex items-center gap-2"
+                              >
+                                <Download className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-semibold">Download Invoice</span>
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => onDeleteRequest?.(r.id, r.reference)}
                                 className="cursor-pointer flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
