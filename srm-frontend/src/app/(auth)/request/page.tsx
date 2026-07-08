@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { RequestPending } from '@/components/Request/request-pending'
 import { RequestSuccessful } from '@/components/Request/request-successful'
 import { RequestRejected } from '@/components/Request/request-rejected'
-import { useGetRegistrationStatusQuery } from '@/services/api/authApiSlice'
+import { useGetRegistrationStatusQuery, useCancelRegistrationMutation } from '@/services/api/authApiSlice'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -18,6 +18,22 @@ function RequestStatusContent() {
     skip: !requestId,
     pollingInterval: 10000, // Poll every 10 seconds
   })
+
+  const [cancelRegistration, { isLoading: isCancelling }] = useCancelRegistrationMutation()
+
+  const handleCancel = async () => {
+    if (!requestId) return;
+    if (!confirm('Are you sure you want to cancel your registration request?')) return;
+    
+    try {
+      await cancelRegistration(requestId).unwrap();
+      toast.success('Registration request cancelled successfully');
+      localStorage.removeItem('srm_pending_registration_id');
+      router.push('/');
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to cancel request');
+    }
+  }
 
   useEffect(() => {
     if (request?.status === 'COMPLETED') {
@@ -71,6 +87,8 @@ function RequestStatusContent() {
     <RequestPending
       onCheckStatus={() => refetch()}
       onGoHome={() => router.push('/')}
+      onCancelRequest={handleCancel}
+      isCancelling={isCancelling}
     />
   )
 }
