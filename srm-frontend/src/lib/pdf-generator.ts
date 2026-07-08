@@ -347,10 +347,24 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
   doc.text("Payable on Receipt", 144, 109);
 
   // Determine items list
-  const items = invoice.items || [
-    { description: "Advanced Technical Service Labor", qty: 1, price: totalVal * 0.4, amount: totalVal * 0.4 },
-    { description: "OEM Grade Replacement Component Parts", qty: 1, price: totalVal * 0.6, amount: totalVal * 0.6 }
-  ];
+  const extractCosts = (notes: string | undefined, totalAmount: number) => {
+    if (!notes) return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
+    const labourMatch = notes.match(/Labour:\s*Rs\.?(\d+(?:\.\d+)?)/i);
+    const partsMatch = notes.match(/Parts:\s*Rs\.?(\d+(?:\.\d+)?)/i);
+    let labour = labourMatch ? parseFloat(labourMatch[1]) : null;
+    let parts = partsMatch ? parseFloat(partsMatch[1]) : null;
+    if (labour !== null && parts !== null) return { labour, parts };
+    return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
+  };
+
+  const costs = extractCosts(invoice.notes, totalVal);
+
+  const items = invoice.items || (invoice.type === 'inventory_item' ? [
+    { description: "Component material & Bulk sales", qty: 1, price: totalVal, amount: totalVal }
+  ] : [
+    { description: "Advanced Technical Service Labor", qty: 1, price: costs.labour, amount: costs.labour },
+    { description: "OEM Grade Replacement Component Parts", qty: 1, price: costs.parts, amount: costs.parts }
+  ]);
 
   autoTable(doc, {
     startY: 120,

@@ -45,6 +45,16 @@ const STATUS_STYLE: Record<string, string> = {
    Overdue: "bg-red-50 text-red-600 border-red-200",
 }
 
+const extractCosts = (notes: string | undefined, totalAmount: number) => {
+   if (!notes) return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
+   const labourMatch = notes.match(/Labour:\s*Rs\.?(\d+(?:\.\d+)?)/i);
+   const partsMatch = notes.match(/Parts:\s*Rs\.?(\d+(?:\.\d+)?)/i);
+   let labour = labourMatch ? parseFloat(labourMatch[1]) : null;
+   let parts = partsMatch ? parseFloat(partsMatch[1]) : null;
+   if (labour !== null && parts !== null) return { labour, parts };
+   return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
+};
+
 export default function InvoicesManagementPage() {
    const { t } = useTranslation();
    const [mounted, setMounted] = useState(false);
@@ -1072,8 +1082,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).labour.toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).labour.toLocaleString()}</div>
                               </div>
 
                               <div className="grid grid-cols-12 items-center">
@@ -1082,8 +1092,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).parts.toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).parts.toLocaleString()}</div>
                               </div>
                            </div>
                         ) : (
@@ -1264,8 +1274,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).labour.toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).labour.toLocaleString()}</div>
                               </div>
 
                               <div className="grid grid-cols-12 items-center">
@@ -1274,8 +1284,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).parts.toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).parts.toLocaleString()}</div>
                               </div>
                            </div>
                         ) : (
