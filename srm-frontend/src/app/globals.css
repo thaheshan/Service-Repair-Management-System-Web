@@ -223,3 +223,14 @@ body {
   --sidebar-border: #E2E8F0;
   --sidebar-ring: #4F46E5;
 }
+
+/* Remove number input spinners/arrows globally */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

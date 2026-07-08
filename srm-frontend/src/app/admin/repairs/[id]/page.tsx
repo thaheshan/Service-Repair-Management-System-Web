@@ -35,6 +35,9 @@ function TaskDetailsPage() {
   const [addNote, { isLoading: isAddingNote }] = useAddRepairNoteMutation()
 
   const [taskNote, setTaskNote] = useState("")
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState("")
+  const [mentionIndex, setMentionIndex] = useState(-1)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [isReassignDropdownOpen, setIsReassignDropdownOpen] = useState(false)
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null)
@@ -112,7 +115,7 @@ function TaskDetailsPage() {
       <div className="flex-1 lg:ml-[200px] ml-0 flex flex-col min-w-0">
         <DashboardHeader />
 
-        <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-[#F8FAFC] dark:bg-slate-900">
+        <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-[#F8FAFC]">
           <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col">
 
             {/* Breadcrumbs */}
@@ -168,12 +171,12 @@ function TaskDetailsPage() {
                 <div className="relative">
                   <button 
                     onClick={() => setIsReassignDropdownOpen(!isReassignDropdownOpen)}
-                    className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#10B981] text-[#10B981] bg-white dark:bg-slate-800 dark:border-emerald-500 dark:text-emerald-500 text-[13px] font-bold hover:bg-[#D1FAE5] dark:hover:bg-emerald-950/30 transition-colors focus:outline-none shadow-sm"
+                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#10B981] text-[#10B981] bg-white text-[13px] font-bold hover:bg-[#D1FAE5] transition-colors focus:outline-none shadow-sm"
                   >
                     <User className="h-4 w-4" /> Reassign
                   </button>
                   {isReassignDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-border z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white shadow-xl border border-border z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
                       <p className="text-[11px] font-bold text-muted-foreground px-3 py-2 uppercase tracking-wider">Select Technician</p>
                       <div className="max-h-60 overflow-y-auto custom-scrollbar">
                         <button 
@@ -203,7 +206,7 @@ function TaskDetailsPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => setIsCancelModalOpen(true)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#EF4444] text-[#EF4444] bg-white dark:bg-slate-800 dark:border-red-500 dark:text-red-500 text-[13px] font-bold hover:bg-[#FEE2E2] dark:hover:bg-red-950/30 transition-colors focus:outline-none shadow-sm">
+                <button onClick={() => setIsCancelModalOpen(true)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#EF4444] text-[#EF4444] bg-white text-[13px] font-bold hover:bg-[#FEE2E2] transition-colors focus:outline-none shadow-sm">
                   <Trash2 className="h-4 w-4" /> Cancel Task
                 </button>
               </div>
@@ -211,14 +214,14 @@ function TaskDetailsPage() {
 
             {/* Active Status Banner */}
             {!isCompleted ? (
-              <div className="bg-[#FFFBEB] dark:bg-yellow-950/20 border border-[#FDE68A] dark:border-yellow-900/50 rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
+              <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-[#FEF3C7] dark:bg-yellow-900/40 flex items-center justify-center">
-                    <Wrench className="h-5 w-5 text-[#D97706] dark:text-yellow-500" />
+                  <div className="h-10 w-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
+                    <Wrench className="h-5 w-5 text-[#D97706]" />
                   </div>
                   <div>
-                    <h3 className="text-[14px] font-bold text-[#92400E] dark:text-yellow-400">Repair is currently {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
-                    <p className="text-[13px] text-[#B45309] dark:text-yellow-500/80 font-medium">Estimated cost: <span className="font-bold">Rs. {repair.estimatedCost?.toLocaleString() || '0'}</span></p>
+                    <h3 className="text-[14px] font-bold text-[#92400E]">Repair is currently {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
+                    <p className="text-[13px] text-[#B45309] font-medium">Estimated cost: <span className="font-bold">Rs. {repair.estimatedCost?.toLocaleString() || '0'}</span></p>
                   </div>
                 </div>
                 <button 
@@ -230,20 +233,20 @@ function TaskDetailsPage() {
                 </button>
               </div>
             ) : (
-              <div className="bg-[#ECFDF5] dark:bg-emerald-950/20 border border-[#A7F3D0] dark:border-emerald-900/50 rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
+              <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-[#D1FAE5] dark:bg-emerald-900/40 flex items-center justify-center">
-                    <CheckCircle className="h-5 w-5 text-[#059669] dark:text-emerald-500" />
+                  <div className="h-10 w-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-[#059669]" />
                   </div>
                   <div>
-                    <h3 className="text-[14px] font-bold text-[#065F46] dark:text-emerald-400">Repair {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
-                    <p className="text-[13px] text-[#065F46] dark:text-emerald-500/80 font-medium">Final cost: <span className="font-bold">Rs. {repair.finalCost?.toLocaleString() || repair.estimatedCost?.toLocaleString() || '0'}</span></p>
+                    <h3 className="text-[14px] font-bold text-[#065F46]">Repair {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
+                    <p className="text-[13px] text-[#065F46] font-medium">Final cost: <span className="font-bold">Rs. {repair.finalCost?.toLocaleString() || repair.estimatedCost?.toLocaleString() || '0'}</span></p>
                   </div>
                 </div>
                 <button 
                   disabled={isUpdating}
                   onClick={handleToggleComplete} 
-                  className={`h-9 px-5 rounded-lg border border-[#10B981] text-[#10B981] bg-white dark:bg-slate-800 dark:border-emerald-500 dark:text-emerald-500 text-[13px] font-bold hover:bg-[#D1FAE5] dark:hover:bg-emerald-950/30 shadow-sm transition-colors focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`h-9 px-5 rounded-lg border border-[#10B981] text-[#10B981] bg-white text-[13px] font-bold hover:bg-[#D1FAE5] shadow-sm transition-colors focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isUpdating ? "Updating..." : "Reopen Task"}
                 </button>
@@ -257,7 +260,7 @@ function TaskDetailsPage() {
               <div className="flex flex-col gap-6">
 
                 {/* Timeline */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-border dark:border-slate-700 p-7">
+                <section className="bg-white rounded-xl shadow-sm border border-border p-7">
                   <h2 className="text-[15px] font-bold text-foreground mb-8 flex items-center gap-2">
                     <Clock className="h-[18px] w-[18px] text-[#4F46E5]" /> Task Timeline
                   </h2>
@@ -290,7 +293,7 @@ function TaskDetailsPage() {
                 </section>
 
                 {/* Notes */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-border dark:border-slate-700 p-7">
+                <section className="bg-white rounded-xl shadow-sm border border-border p-7">
                   <h2 className="text-[15px] font-bold text-foreground mb-6 flex items-center gap-2">
                     <PenTool className="h-[18px] w-[18px] text-[#4F46E5]" /> Technician Notes
                   </h2>
@@ -306,7 +309,7 @@ function TaskDetailsPage() {
                               <p className="text-[14px] font-bold text-foreground">{note.user?.fullName || "System User"}</p>
                               <p className="text-[12px] text-muted-foreground">{format(new Date(note.createdAt), 'h:mm a')}</p>
                             </div>
-                            <p className="text-[13.5px] text-foreground dark:text-slate-300 leading-relaxed">{note.text}</p>
+                            <p className="text-[13.5px] text-foreground leading-relaxed">{note.text}</p>
                           </div>
                         </div>
                       ))
@@ -316,13 +319,62 @@ function TaskDetailsPage() {
                       </div>
                     )}
                   </div>
-                  <textarea 
-                    rows={3}
-                    placeholder="Add a note..."
-                    value={taskNote}
-                    onChange={(e) => setTaskNote(e.target.value)}
-                    className="w-full p-4 text-[13px] border border-border dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] outline-none bg-transparent"
-                  />
+                  <div className="relative">
+                    <textarea 
+                      rows={3}
+                      placeholder="Add a note (use @ to mention staff)..."
+                      value={taskNote}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setTaskNote(value);
+                        
+                        // Check if typing @
+                        const lastChar = value.slice(-1);
+                        const lastAtPos = value.lastIndexOf("@");
+                        if (lastAtPos !== -1 && lastAtPos >= value.lastIndexOf(" ")) {
+                          const query = value.slice(lastAtPos + 1);
+                          setMentionQuery(query);
+                          setMentionIndex(lastAtPos);
+                          setShowMentionDropdown(true);
+                        } else {
+                          setShowMentionDropdown(false);
+                        }
+                      }}
+                      className="w-full p-4 text-[13px] border border-border rounded-xl focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] outline-none bg-transparent"
+                    />
+                    
+                    {showMentionDropdown && (
+                      <div className="absolute left-0 bottom-full mb-2 w-64 rounded-xl bg-white border border-border shadow-xl z-50 p-2 max-h-48 overflow-y-auto custom-scrollbar">
+                        <p className="text-[10px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">Mention Staff / Owner</p>
+                        {technicians
+                          .filter((t: any) => (t.name || t.fullName || "").toLowerCase().includes(mentionQuery.toLowerCase()))
+                          .map((tech: any) => {
+                            const name = tech.name || tech.fullName || "Staff Member";
+                            return (
+                              <button
+                                key={tech.id}
+                                type="button"
+                                onClick={() => {
+                                  const before = taskNote.slice(0, mentionIndex);
+                                  const updated = before + `@${name} `;
+                                  setTaskNote(updated);
+                                  setShowMentionDropdown(false);
+                                }}
+                                className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-[13px] font-medium flex items-center gap-2 transition-colors"
+                              >
+                                <div className="h-6 w-6 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] text-[10px] font-bold">
+                                  {name.charAt(0)}
+                                </div>
+                                <span className="text-foreground">{name}</span>
+                              </button>
+                            );
+                          })}
+                        {technicians.filter((t: any) => (t.name || t.fullName || "").toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 && (
+                          <p className="text-xs text-muted-foreground italic px-2 py-2">No matching staff found</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex justify-end mt-3">
                     <button 
                       disabled={isAddingNote || !taskNote.trim()}
@@ -337,7 +389,7 @@ function TaskDetailsPage() {
                 {/* Device Photos */}
                 <section className="bg-white rounded-xl shadow-sm border border-border p-7">
                   <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-[15px] font-bold text-[#0F172A] flex items-center gap-2">
+                    <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2">
                       <ImageIcon className="h-[18px] w-[18px] text-[#4F46E5]" /> Device Photos
                       {repair.photos?.length > 0 && (
                         <span className="ml-2 text-[12px] font-medium text-muted-foreground">{repair.photos.length} photo{repair.photos.length > 1 ? 's' : ''}</span>
@@ -387,7 +439,7 @@ function TaskDetailsPage() {
 
               {/* Right Column */}
               <div className="flex flex-col gap-6">
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-border dark:border-slate-700 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-border p-6">
                   <h3 className="text-[14px] font-bold text-foreground mb-5">Technician</h3>
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -400,7 +452,7 @@ function TaskDetailsPage() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-border dark:border-slate-700 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-border p-6">
                   <h3 className="text-[14px] font-bold text-foreground mb-5">Customer</h3>
                   <p className="font-bold text-[#4F46E5]">{repair.customer?.name}</p>
                   <p className="text-[13px] text-muted-foreground">{repair.customer?.phone}</p>
@@ -408,7 +460,7 @@ function TaskDetailsPage() {
                 </div>
 
                 {repair.repairPartsUsed?.length > 0 && (
-                  <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-border dark:border-slate-700 p-6">
+                  <div className="bg-white rounded-xl shadow-sm border border-border p-6">
                     <h3 className="text-[14px] font-bold text-foreground mb-5">Parts Used</h3>
                     <div className="space-y-3">
                       {repair.repairPartsUsed.map((item: any) => (
@@ -436,7 +488,7 @@ function TaskDetailsPage() {
       {/* Modals outside the flow */}
       {isCancelModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-slate-800 p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold mb-2">Cancel Task?</h2>
             <p className="text-sm text-muted-foreground mb-6">Are you sure you want to cancel this repair? This action will record a cancellation event in the timeline.</p>
             <div className="flex gap-4">

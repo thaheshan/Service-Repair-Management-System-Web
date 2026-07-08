@@ -10,6 +10,7 @@ import { generateInventoryAssetPDF, generateInventoryAssetsPDF, generatePOInvoic
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { useSearchParams } from "next/navigation"
+import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 
 import {
   Search,
@@ -163,10 +164,12 @@ export default function InventoryManagementPage() {
       costPrice: item.unitCost || 0,
       supplier: item.supplierName || item.supplier || "Main Supplier",
       location: item.location || "Store",
-      status: (item.quantityInStock ?? item.stockQuantity ?? 0) === 0 ? "Out of Stock" : (item.quantityInStock ?? item.stockQuantity ?? 0) <= (item.minimumStockLevel || 5) ? "Low Stock" : "In Stock"
+      status: (item.quantityInStock ?? item.stockQuantity ?? 0) === 0 ? "Out of Stock" : (item.quantityInStock ?? item.stockQuantity ?? 0) <= (item.minimumStockLevel || 5) ? "Low Stock" : "In Stock",
+      rawCreatedAt: item.createdAt,
     }));
   }, [response]);
 
+  const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState(mounted ? t('inventoryPage.categories.all') : "All Categories")
   const [filterStatus, setFilterStatus] = useState(mounted ? t('inventoryPage.statuses.all') : "All Status")
@@ -490,7 +493,18 @@ export default function InventoryManagementPage() {
   };
 
   const filteredData = useMemo(() => {
-    return inventoryState.filter((item) => {
+    let result = inventoryState;
+
+    if (globalDateRange) {
+      result = result.filter(item => {
+        if (!item.rawCreatedAt) return true;
+        const createdAt = new Date(item.rawCreatedAt);
+        createdAt.setHours(0, 0, 0, 0);
+        return createdAt >= globalDateRange.from && createdAt <= globalDateRange.to;
+      });
+    }
+
+    return result.filter((item) => {
       const searchLower = searchTerm.toLowerCase()
       const matchesSearch =
         item.name.toLowerCase().includes(searchLower) ||
@@ -503,7 +517,7 @@ export default function InventoryManagementPage() {
 
       return matchesSearch && matchesStatus && matchesSupplier && matchesCategory
     })
-  }, [inventoryState, searchTerm, filterStatus, filterSupplier, filterCategory, mounted, t])
+  }, [inventoryState, globalDateRange, searchTerm, filterStatus, filterSupplier, filterCategory, mounted, t])
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage
@@ -554,9 +568,12 @@ export default function InventoryManagementPage() {
             </div>
 
             <div className="flex flex-col gap-6 mb-8">
-              <div>
-                <h1 className="text-[28px] font-black text-foreground tracking-tight">{mounted ? t('inventoryPage.title') : 'Inventory Management'}</h1>
-                <p className="text-sm text-muted-foreground font-medium">{mounted ? t('inventoryPage.subtitle') : 'Manage your spare parts and supplies'}</p>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-[28px] font-black text-foreground tracking-tight">{mounted ? t('inventoryPage.title') : 'Inventory Management'}</h1>
+                  <p className="text-sm text-muted-foreground font-medium">{mounted ? t('inventoryPage.subtitle') : 'Manage your spare parts and supplies'}</p>
+                </div>
+                <DateRangePicker defaultDays={30} onChange={setGlobalDateRange} />
               </div>
 
               <div className="flex flex-wrap items-center gap-3">

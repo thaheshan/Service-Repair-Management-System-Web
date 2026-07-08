@@ -5,12 +5,12 @@ import { useState, useEffect } from "react"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 
-export function StatCards() {
+export function StatCards({ days = 30 }: { days?: number }) {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
-  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({});
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({ days });
   const analyticsData = response?.data;
   const user = useSelector((state: RootState) => state.auth.user)
 

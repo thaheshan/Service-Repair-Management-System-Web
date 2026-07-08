@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight, UserPlus } from "lucide-react"
 
 import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, DEVICE_MODELS_BY_BRAND, BRANDS } from "@/app/admin/devices/device-data"
+import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
 import { useGetDevicesQuery, useCreateDeviceMutation, useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/services/api/devicesApiSlice"
 import { Autocomplete } from "@/components/ui/autocomplete"
@@ -135,6 +136,7 @@ export default function DevicesManagementPage() {
         registered: d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—",
         status: d.status || "AVAILABLE",
         price: d.price || 0,
+        rawCreatedAt: d.createdAt,
         rawImei: d.imei || "",
         rawSerialNo: d.serialNo || "",
         rawCustomerId: d.customerId || "",
@@ -143,6 +145,7 @@ export default function DevicesManagementPage() {
     });
   }, [response]);
 
+  const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("newest")
@@ -221,6 +224,14 @@ export default function DevicesManagementPage() {
 
   const filtered = useMemo(() => {
     let r = devices
+    if (globalDateRange) {
+      r = r.filter(d => {
+        if (!d.rawCreatedAt) return true;
+        const createdAt = new Date(d.rawCreatedAt);
+        createdAt.setHours(0, 0, 0, 0);
+        return createdAt >= globalDateRange.from && createdAt <= globalDateRange.to;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase()
       r = r.filter(d => d.name.toLowerCase().includes(q) || d.brand.toLowerCase().includes(q) || d.imei.toLowerCase().includes(q) || d.owner.name.toLowerCase().includes(q))
@@ -337,12 +348,13 @@ export default function DevicesManagementPage() {
               <span className="text-foreground">{mounted ? t('devicesPage.title') : 'Devices Management'}</span>
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <h1 className="text-[26px] font-black text-foreground tracking-tight">{mounted ? t('devicesPage.title') : 'Devices Management'}</h1>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold">{filtered.length} {mounted ? t('devicesPage.total') : 'Devices'}</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit">{filtered.length} {mounted ? t('devicesPage.total') : 'Devices'}</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <DateRangePicker defaultDays={30} onChange={setGlobalDateRange} />
                 <div className="relative">
                   <button onClick={() => { setShowExportMenu(p => !p); setShowSortMenu(false) }} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-card text-[13px] font-semibold text-foreground hover:bg-muted shadow-sm focus:outline-none">
                     {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4 text-muted-foreground" />} {mounted ? t('devicesPage.export') : 'Export'} <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
