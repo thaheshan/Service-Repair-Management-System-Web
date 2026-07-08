@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 interface RequestPendingProps {
   onCheckStatus: () => void
   onGoHome: () => void
+  onCancelRequest?: () => void
+  isCancelling?: boolean
 }
 
 interface PendingDetail {
@@ -39,7 +41,7 @@ const timelineSteps: TimelineStep[] = [
   { number: 4, title: 'Account Fully Activated', description: 'Ready to accept payment', completed: false, inProgress: false },
 ]
 
-export function RequestPending({ onCheckStatus, onGoHome }: RequestPendingProps) {
+export function RequestPending({ onCheckStatus, onGoHome, onCancelRequest, isCancelling }: RequestPendingProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg max-w-2xl w-full">
@@ -144,9 +146,21 @@ export function RequestPending({ onCheckStatus, onGoHome }: RequestPendingProps)
           <Button onClick={onCheckStatus} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-base rounded-lg">
             Check Status
           </Button>
-          <Button onClick={onGoHome} variant="outline" className="w-full text-blue-600 border-blue-600 hover:bg-blue-50 py-6 text-base rounded-lg">
-            Go to Home
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={onGoHome} variant="outline" className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-50 py-6 text-base rounded-lg">
+              Go to Home
+            </Button>
+            {onCancelRequest && (
+              <Button 
+                onClick={onCancelRequest} 
+                variant="outline" 
+                disabled={isCancelling}
+                className="flex-1 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700 py-6 text-base rounded-lg"
+              >
+                {isCancelling ? 'Cancelling...' : 'Cancel Request'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
