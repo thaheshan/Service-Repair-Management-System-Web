@@ -206,7 +206,7 @@ export default function ReportsPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const hiddenReportRef = useRef<HTMLDivElement>(null)
 
-  const { data: dashResponse, refetch } = useGetDashboardAnalyticsQuery(globalDateRange.days);
+  const { data: dashResponse, refetch } = useGetDashboardAnalyticsQuery({ days: globalDateRange.days });
   const apiStats = dashResponse?.data?.stats;
 
   // Grab chart data based on selected filter (period-bucketed mock shapes)
@@ -238,6 +238,14 @@ export default function ReportsPage() {
       value: apiStats ? String(apiStats.activeTechnicians ?? 0) : currentData.stats[3].value,
       change: mounted ? t('reportsPage.currentlyAssigned') : 'Currently assigned',
       isUp: true, icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50'
+    },
+    {
+      label: 'Net Profit',
+      value: apiStats ? `Rs. ${(apiStats.netProfit ?? 0).toLocaleString()}` : 'Rs. 0',
+      change: apiStats && apiStats.totalRevenue > 0 
+        ? `${Math.round((apiStats.netProfit / apiStats.totalRevenue) * 100)}% margin` 
+        : '100% margin',
+      isUp: true, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50'
     },
   ], [apiStats, currentData, mounted, t]);
 
@@ -420,7 +428,7 @@ export default function ReportsPage() {
             </div>
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
               {liveStats.map((stat: any, idx: number) => (
                 <div key={idx} className="bg-card p-6 rounded-[24px] border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                   <div className="flex justify-between items-start mb-4">
@@ -501,9 +509,15 @@ export default function ReportsPage() {
                         tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
                       />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '16px', border: '1px solid hsl(var(--border))', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', padding: '12px' }}
-                        itemStyle={{ color: 'hsl(var(--foreground))', fontSize: '12px', fontWeight: 'bold' }}
-                        labelStyle={{ color: 'hsl(var(--muted-foreground))', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}
+                        contentStyle={{ 
+                          backgroundColor: '#ffffff',
+                          borderRadius: '14px', 
+                          border: '1px solid #e2e8f0', 
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)', 
+                          padding: '12px 16px'
+                        }}
+                        itemStyle={{ color: '#0f172a', fontSize: '13px', fontWeight: '700' }}
+                        labelStyle={{ color: '#64748b', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}
                       />
                       <Area 
                         yAxisId="left"
@@ -553,8 +567,15 @@ export default function ReportsPage() {
                           ))}
                         </Pie>
                         <Tooltip 
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
-                          itemStyle={{ color: 'hsl(var(--foreground))' }}
+                          contentStyle={{ 
+                            backgroundColor: '#ffffff',
+                            borderRadius: '12px', 
+                            border: '1px solid #e2e8f0', 
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                            padding: '10px 14px'
+                          }}
+                          itemStyle={{ color: '#0f172a', fontSize: '13px', fontWeight: '700' }}
+                          labelStyle={{ display: 'none' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -696,9 +717,19 @@ export default function ReportsPage() {
                         width={100}
                       />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))', padding: '8px' }}
-                        cursor={{ fill: 'hsl(var(--muted))', radius: 8 }}
-                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        contentStyle={{ 
+                          backgroundColor: 'white',
+                          borderRadius: '12px', 
+                          border: '1px solid #e2e8f0', 
+                          padding: '10px 14px',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                          color: '#0f172a',
+                          fontSize: '13px',
+                          fontWeight: '600'
+                        }}
+                        labelStyle={{ color: '#0f172a', fontWeight: '700', marginBottom: 4 }}
+                        itemStyle={{ color: '#6366F1', fontWeight: '700' }}
+                        cursor={{ fill: 'rgba(99,102,241,0.08)', radius: 8 }}
                       />
                       <Bar 
                         dataKey={dashResponse?.data?.topTechnicians ? "jobsCompleted" : "completed"} 
@@ -802,7 +833,7 @@ export default function ReportsPage() {
                 </div>
 
                 {/* KPI HIGHLIGHTS */}
-                <div className="grid grid-cols-4 gap-6 mb-12">
+                <div className="grid grid-cols-5 gap-4 mb-12">
                    {liveStats.map((s: any, i: number) => (
                       <div key={i} className="p-6 rounded-2xl border border-border bg-muted/30 flex flex-col">
                          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-2">{s.label}</p>

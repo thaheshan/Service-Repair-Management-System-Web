@@ -163,6 +163,7 @@ export default function CreateRepairPage() {
         discount: applyDiscount ? parseFloat(discount || "0") : 0,
         advancePayment: parseFloat(advancePayment || "0"),
         pricingTotal,
+        photos: uploadedPhotos,
         repairPartsUsed: partsRequired.map(p => ({
           partId: p.partId,
           partName: p.partName,

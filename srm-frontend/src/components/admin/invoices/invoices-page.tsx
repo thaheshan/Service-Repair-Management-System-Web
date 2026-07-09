@@ -1049,8 +1049,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.laborCost !== undefined ? viewDocumentTarget.laborCost : (viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(viewDocumentTarget.laborCost !== undefined ? viewDocumentTarget.laborCost : (viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
                               </div>
 
                               <div className="grid grid-cols-12 items-center">
@@ -1059,8 +1059,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.partsCost !== undefined ? viewDocumentTarget.partsCost : (viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(viewDocumentTarget.partsCost !== undefined ? viewDocumentTarget.partsCost : (viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
                               </div>
                            </div>
                         ) : (
@@ -1084,10 +1084,16 @@ export default function InvoicesManagementPage() {
                                  <span>Subtotal</span>
                                  <span className="text-[#0F172A]">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</span>
                               </div>
+                              {Number(viewDocumentTarget.advancePayment) > 0 && (
+                                 <div className="flex justify-between items-center text-[13px] font-bold text-slate-500 pb-5 border-b border-slate-100">
+                                    <span>Advance Payment</span>
+                                    <span className="text-red-500">- Rs. {Number(viewDocumentTarget.advancePayment).toLocaleString()}</span>
+                                 </div>
+                              )}
                               <div className="flex justify-between items-center pt-2">
                                  <span className="text-[16px] font-black text-[#0F172A] uppercase tracking-tighter">Grand Total Billed</span>
                                  <div className="text-right">
-                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</p>
+                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {Math.max(0, (viewDocumentTarget.amount ?? 0) - (Number(viewDocumentTarget.advancePayment) || 0)).toLocaleString()}</p>
                                     <p className="text-[9px] text-slate-400 font-black uppercase mt-1">Authorized for Transaction</p>
                                  </div>
                               </div>
@@ -1229,8 +1235,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.laborCost !== undefined ? hiddenInvoiceTarget.laborCost : (hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.laborCost !== undefined ? hiddenInvoiceTarget.laborCost : (hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
                               </div>
 
                               <div className="grid grid-cols-12 items-center">
@@ -1239,8 +1245,8 @@ export default function InvoicesManagementPage() {
                                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
                                  </div>
                                  <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {((hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
+                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.partsCost !== undefined ? hiddenInvoiceTarget.partsCost : (hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
+                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.partsCost !== undefined ? hiddenInvoiceTarget.partsCost : (hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
                               </div>
                            </div>
                         ) : (
@@ -1264,10 +1270,16 @@ export default function InvoicesManagementPage() {
                                  <span>Subtotal</span>
                                  <span className="text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</span>
                               </div>
+                              {Number(hiddenInvoiceTarget.advancePayment) > 0 && (
+                                 <div className="flex justify-between items-center text-[13px] font-bold text-slate-500 pb-5 border-b border-slate-100">
+                                    <span>Advance Payment</span>
+                                    <span className="text-red-500">- Rs. {Number(hiddenInvoiceTarget.advancePayment).toLocaleString()}</span>
+                                 </div>
+                              )}
                               <div className="flex justify-between items-center pt-2">
                                  <span className="text-[16px] font-black text-[#0F172A] uppercase tracking-tighter">Grand Total Billed</span>
                                  <div className="text-right">
-                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</p>
+                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {Math.max(0, (hiddenInvoiceTarget.amount ?? 0) - (Number(hiddenInvoiceTarget.advancePayment) || 0)).toLocaleString()}</p>
                                     <p className="text-[9px] text-slate-400 font-black uppercase mt-1">Authorized for Transaction</p>
                                  </div>
                               </div>

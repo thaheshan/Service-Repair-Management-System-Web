@@ -24,12 +24,24 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
   const { data: staffData } = useGetStaffListQuery({})
   const { data: repairsData } = useGetRepairsQuery({})
 
-  const unassignedRepairs = (repairsData?.data || []).filter((r: any) => r.status === 'NOT_STARTED')
+  const selectableRepairs = (repairsData?.data || []).filter(
+    (r: any) => r.status === 'NOT_STARTED' || r.status === 'IN_PROGRESS'
+  )
   
   const defaultDateStr = currentWeekStart ? currentWeekStart.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
   const [date, setDate] = useState(defaultDateStr)
   const [time, setTime] = useState("10:00")
   const [duration, setDuration] = useState("1")
+
+  const handleTaskChange = (taskId: string) => {
+    setTask(taskId)
+    const selectedRepair = (repairsData?.data || []).find((r: any) => r.id === taskId)
+    if (selectedRepair && selectedRepair.technicianId) {
+      setTechnician(selectedRepair.technicianId)
+    } else {
+      setTechnician("")
+    }
+  }
 
   const handleApply = () => {
     if (!task || !technician) {
@@ -75,16 +87,16 @@ export function ScheduleAddModal({ onAddAppointment, currentWeekStart }: { onAdd
             <div className="p-6 flex flex-col gap-5">
               
               <div>
-                <label className="block text-[13px] font-bold text-foreground mb-1.5">{mounted ? t('schedule.unassignedRepair') : 'Unassigned Repair Task'} <span className="text-red-500">*</span></label>
+                <label className="block text-[13px] font-bold text-foreground mb-1.5">{mounted ? t('schedule.unassignedRepair') : 'Repair Task'} <span className="text-red-500">*</span></label>
                 <select 
                   value={task}
-                  onChange={(e) => setTask(e.target.value)}
+                  onChange={(e) => handleTaskChange(e.target.value)}
                   className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4F46E5] font-medium"
                 >
-                  <option value="" disabled>{mounted ? t('schedule.selectPendingRepair') : 'Select a pending repair...'}</option>
-                  {unassignedRepairs.map((t: any) => (
+                  <option value="" disabled>Select a pending or in-progress repair...</option>
+                  {selectableRepairs.map((t: any) => (
                     <option key={t.id} value={t.id}>
-                      {t.reference} - {t.device?.brand} {t.device?.model} ({t.customer?.name})
+                      {t.reference} - {t.device?.brand} {t.device?.model} ({t.customer?.name}) [{t.status === 'IN_PROGRESS' ? 'In Progress' : 'Pending'}]
                     </option>
                   ))}
                 </select>
