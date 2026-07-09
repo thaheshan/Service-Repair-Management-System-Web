@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
-import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight, UserPlus } from "lucide-react"
+import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight, UserPlus, Camera } from "lucide-react"
+import { PhotoUploadModal } from "@/components/shared/modals/PhotoUploadModal"
 
 import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, DEVICE_MODELS_BY_BRAND, BRANDS } from "@/app/admin/devices/device-data"
 import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
@@ -89,7 +90,8 @@ export default function DevicesManagementPage() {
 
   const devices = useMemo(() => {
     const apiDevices = (response as any)?.data || response?.devices || [];
-    return apiDevices.map((d: any) => {
+    const standaloneDevices = apiDevices.filter((d: any) => d.price !== null && d.price !== undefined);
+    return standaloneDevices.map((d: any) => {
       const created = d.createdAt ? new Date(d.createdAt) : new Date();
       const now = new Date();
       const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
@@ -175,6 +177,8 @@ export default function DevicesManagementPage() {
   const [addCustomerSearch, setAddCustomerSearch] = useState("")
   const [addSelectedCustomer, setAddSelectedCustomer] = useState<{ id: string, name: string, phone: string } | null>(null)
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
+  const [devicePhotoUrl, setDevicePhotoUrl] = useState<string>("")
+  const [showDevicePhotoModal, setShowDevicePhotoModal] = useState(false)
 
   const allCustomers = useMemo(() => {
     return (customersResponse as any)?.customers || (customersResponse as any)?.data || [];
@@ -264,6 +268,7 @@ export default function DevicesManagementPage() {
         price: form.price ? Number(form.price) : 0,
         ...(form.imei ? { imei: form.imei } : {}),
         ...(form.serialNo ? { serialNo: form.serialNo } : {}),
+        ...(devicePhotoUrl ? { photoUrl: devicePhotoUrl } : {}),
       }).unwrap();
       toast.success("Device Registered Successfully!");
       setShowAddModal(false);
@@ -272,6 +277,7 @@ export default function DevicesManagementPage() {
       setAddCustomerSearch("");
       setCustomBrand("");
       setCustomModel("");
+      setDevicePhotoUrl("");
     } catch (e: any) {
       toast.error(e.data?.message || "Registration failed");
     }
@@ -674,6 +680,35 @@ export default function DevicesManagementPage() {
                   </div>
                 )}
               </div>
+              {/* Photo Upload Section */}
+              <div>
+                <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Device Photo <span className="font-normal text-muted-foreground/60">(Optional)</span></label>
+                {devicePhotoUrl ? (
+                  <div className="relative w-full h-36 rounded-xl overflow-hidden border border-border group">
+                    <img src={devicePhotoUrl} alt="Device Photo" className="w-full h-full object-cover" />
+                    <button
+                      onClick={(e) => { e.preventDefault(); setDevicePhotoUrl(""); }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Photo Added ✓</div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => { e.preventDefault(); setShowDevicePhotoModal(true); }}
+                    className="w-full h-24 border-2 border-dashed border-border rounded-xl bg-muted/30 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 hover:border-[#4F46E5]/50 transition-all group"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] group-hover:scale-110 transition-transform">
+                      <Camera className="h-4 w-4" />
+                    </div>
+                    <div className="text-center">
+                      <span className="text-[12px] font-bold text-[#4F46E5]">Add Device Photo</span>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Camera or file upload</p>
+                    </div>
+                  </button>
+                )}
+              </div>
               <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-border">
                 <button onClick={() => setShowAddModal(false)} className="flex-1 h-12 rounded-xl border border-border bg-card text-foreground font-bold hover:bg-muted transition-colors">Cancel</button>
                 <button onClick={handleAdd} disabled={isCreating || !form.model || !addSelectedCustomer} className="flex-1 h-12 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-lg shadow-[#4F46E5]/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
@@ -967,6 +1002,11 @@ export default function DevicesManagementPage() {
         pendingStatus={pendingStatusUpdate?.status || null}
       />
 
+      <PhotoUploadModal
+        isOpen={showDevicePhotoModal}
+        onClose={() => setShowDevicePhotoModal(false)}
+        onUploadSuccess={(url) => { setDevicePhotoUrl(url); setShowDevicePhotoModal(false); toast.success("Photo uploaded!"); }}
+      />
       <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
         {viewDevice && (
             <div 

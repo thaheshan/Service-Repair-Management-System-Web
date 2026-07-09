@@ -193,6 +193,39 @@ export async function generateDeviceInvoicePDF(device: any, user: any) {
   doc.setFontSize(10);
   doc.text(`Rs. ${(device.price || 0).toLocaleString()}`, 124, finalY + 14);
 
+
+  // Device Proof Photo Section
+  if (device.photoUrl) {
+    try {
+      const photoYStart = finalY + 28;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(79, 70, 229);
+      doc.text("DEVICE PROOF PHOTO:", 14, photoYStart);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(14, photoYStart + 2, 196, photoYStart + 2);
+
+      const imgRes = await fetch(device.photoUrl);
+      const imgBlob = await imgRes.blob();
+      const imgBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(imgBlob);
+      });
+      const ext = device.photoUrl.split('.').pop()?.toLowerCase() || 'jpeg';
+      const imgFormat = ext === 'png' ? 'PNG' : 'JPEG';
+      doc.addImage(imgBase64, imgFormat, 14, photoYStart + 6, 60, 45);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Device Photo — ${device.name || 'Asset'}`, 14, photoYStart + 55);
+    } catch (e) {
+      console.error("Could not embed device photo in PDF:", e);
+    }
+  }
+
   drawFooter(doc, `Thank you for choosing ${shop.name} for your technical audits.`, 'portrait');
   doc.save(`SRM_Device_Invoice_${(device.name || "device").replace(/\s+/g, '_')}.pdf`);
 }
@@ -261,9 +294,15 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
 
   // Determine items list
   const totalVal = invoice.amount || invoice.total || 0;
+  const advance = Number(invoice.advancePayment) || 0;
+  const remaining = Math.max(0, totalVal - advance);
+
+  const laborVal = invoice.laborCost !== undefined ? invoice.laborCost : totalVal * 0.4;
+  const partsVal = invoice.partsCost !== undefined ? invoice.partsCost : totalVal * 0.6;
+
   const items = invoice.items || [
-    { description: "Advanced Technical Service Labor", qty: 1, price: totalVal * 0.4, amount: totalVal * 0.4 },
-    { description: "OEM Grade Replacement Component Parts", qty: 1, price: totalVal * 0.6, amount: totalVal * 0.6 }
+    { description: "Advanced Technical Service Labor", qty: 1, price: laborVal, amount: laborVal },
+    { description: "OEM Grade Replacement Component Parts", qty: 1, price: partsVal, amount: partsVal }
   ];
 
   autoTable(doc, {
@@ -282,22 +321,40 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
 
   const finalY = (doc as any).lastAutoTable.finalY + 8;
   doc.setFillColor(248, 250, 252);
-  doc.rect(120, finalY, 76, 26, "F");
+  doc.rect(120, finalY, 76, advance > 0 ? 32 : 26, "F");
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
   doc.text("Subtotal Net:", 124, finalY + 7);
   doc.text("Tax Valuation (VAT 0.0%):", 124, finalY + 13);
-  doc.setFont("helvetica", "bold");
-  doc.text("Total Payable (LKR):", 124, finalY + 20);
+  
+  if (advance > 0) {
+    doc.text("Advance Payment:", 124, finalY + 19);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Payable (LKR):", 124, finalY + 26);
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Payable (LKR):", 124, finalY + 20);
+  }
 
   doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "normal");
   doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 7, { align: 'right' });
   doc.text("Rs. 0", 188, finalY + 13, { align: 'right' });
-  doc.setTextColor(79, 70, 229);
-  doc.setFontSize(9);
-  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 20, { align: 'right' });
+  
+  if (advance > 0) {
+    doc.text(`- Rs. ${advance.toLocaleString()}`, 188, finalY + 19, { align: 'right' });
+    doc.setTextColor(79, 70, 229);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(`Rs. ${remaining.toLocaleString()}`, 188, finalY + 26, { align: 'right' });
+  } else {
+    doc.setTextColor(79, 70, 229);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 20, { align: 'right' });
+  }
 
   drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
   doc.save(`SRM_Invoice_${invoice.invoiceId || invoice.orderNumber || "receipt"}.pdf`);
@@ -633,6 +690,46 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   doc.setFontSize(9);
   doc.text(advance > 0 ? "Remaining Balance Due:" : "Total Payable (LKR):", 124, finalY + 19);
   doc.text(`Rs. ${remaining.toLocaleString()}`, 190, finalY + 19, { align: 'right' });
+
+  // Proof Photos Section - handle both raw URL strings and API photo objects {url: string}
+  const rawPhotos = repair.photos || repair.uploadedPhotos || [];
+  const proofPhotos: string[] = rawPhotos.map((p: any) => (typeof p === 'string' ? p : p.url)).filter(Boolean);
+  if (proofPhotos.length > 0) {
+    const photosY = finalY + 34;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(79, 70, 229);
+    doc.text("DEVICE PROOF PHOTOS:", 14, photosY);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(14, photosY + 2, 196, photosY + 2);
+
+    let photoX = 14;
+    const photoWidth = 55;
+    const photoHeight = 42;
+    const photoGap = 6;
+    let addedCount = 0;
+    for (const url of proofPhotos.slice(0, 3)) {
+      try {
+        const imgRes = await fetch(url);
+        const imgBlob = await imgRes.blob();
+        const imgBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(imgBlob);
+        });
+        const ext = url.split('.').pop()?.toLowerCase() || 'jpeg';
+        const imgFormat = ext === 'png' ? 'PNG' : 'JPEG';
+        doc.addImage(imgBase64, imgFormat, photoX, photosY + 6, photoWidth, photoHeight);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Photo ${addedCount + 1}`, photoX, photosY + photoHeight + 10);
+        photoX += photoWidth + photoGap;
+        addedCount++;
+      } catch(e) { console.error("Could not embed proof photo:", e); }
+    }
+  }
 
   drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
   doc.save(`Invoice_${repair.invoiceRef || 'Draft'}.pdf`);

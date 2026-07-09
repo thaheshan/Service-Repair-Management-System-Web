@@ -239,6 +239,29 @@ export default function InventoryManagementPage() {
     }
   }, [isAdjustStockOpen, inventoryState, adjustStockForm.itemCode]);
 
+  useEffect(() => {
+    if (isAddItemOpen) {
+      let nextNum = 1;
+      const skuNumbers = inventoryState
+        .map(i => {
+          const match = (i.code || "").match(/SKU-(\d+)/i);
+          return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((n): n is number => n !== null);
+
+      if (skuNumbers.length > 0) {
+        nextNum = Math.max(...skuNumbers) + 1;
+      } else {
+        nextNum = inventoryState.length + 1;
+      }
+
+      setAddItemForm(p => ({
+        ...p,
+        sku: `SKU-${nextNum}`
+      }));
+    }
+  }, [isAddItemOpen, inventoryState]);
+
   const handleAddItem = async () => {
     if (!addItemForm.name) {
       toast.error("Item name is required.");

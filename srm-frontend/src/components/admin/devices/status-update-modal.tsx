@@ -5,14 +5,19 @@ import { DeviceStatus } from "@/app/admin/devices/device-data"
 interface DeviceStatusUpdateModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: (autoUpdateCustomer: boolean, newStatus: DeviceStatus) => void
+  onConfirm: (autoUpdateCustomer: boolean, newStatus: DeviceStatus, pricing?: { costPrice?: number, soldPrice?: number }) => void
   pendingStatus: DeviceStatus | null
 }
 
 export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }: DeviceStatusUpdateModalProps) {
   const [autoUpdate, setAutoUpdate] = useState(true)
+  const [costPrice, setCostPrice] = useState<string>("")
+  const [soldPrice, setSoldPrice] = useState<string>("")
 
   if (!isOpen || !pendingStatus) return null
+
+  const showPricing = pendingStatus === "COLLECTED" || pendingStatus === "SOLD"
+  const netProfit = (Number(soldPrice) || 0) - (Number(costPrice) || 0)
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -58,6 +63,31 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
             </span>
           </label>
 
+          {showPricing && (
+            <div className="w-full bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100 text-left space-y-4">
+              <div>
+                <label className="block text-[12px] font-bold text-slate-500 mb-1">Customer Given Price (Cost)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[13px]">Rs.</span>
+                  <input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} className="w-full pl-9 h-10 rounded-lg border border-slate-200 text-[14px] font-bold text-slate-900 focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5]" placeholder="0" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-bold text-slate-500 mb-1">Sold / Released Price</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[13px]">Rs.</span>
+                  <input type="number" value={soldPrice} onChange={(e) => setSoldPrice(e.target.value)} className="w-full pl-9 h-10 rounded-lg border border-slate-200 text-[14px] font-bold text-slate-900 focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5]" placeholder="0" />
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200 border-dashed">
+                <span className="text-[13px] font-bold text-slate-600">Net Profit Calculated:</span>
+                <span className={`text-[15px] font-black ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {netProfit >= 0 ? '+' : '-'} Rs. {Math.abs(netProfit).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex w-full gap-4 pt-2">
             <button 
@@ -68,8 +98,13 @@ export function DeviceStatusUpdateModal({ isOpen, onClose, onConfirm, pendingSta
             </button>
             <button 
               onClick={() => {
-                onConfirm(autoUpdate, pendingStatus)
+                onConfirm(autoUpdate, pendingStatus, showPricing ? { 
+                  costPrice: costPrice ? Number(costPrice) : undefined, 
+                  soldPrice: soldPrice ? Number(soldPrice) : undefined 
+                } : undefined)
                 setAutoUpdate(true) // Reset to default (notify) for next time
+                setCostPrice("")
+                setSoldPrice("")
               }}
               className="flex-1 h-12 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-[0_4px_12px_rgba(79,70,229,0.25)] transition-all focus:outline-none"
             >
