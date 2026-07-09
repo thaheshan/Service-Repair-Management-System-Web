@@ -114,7 +114,7 @@ export default function CustomerManagementPage() {
 
   const clearFilters = () => {
     setFilterTypes([]); setFilterRepairsMax(50); setFilterSpentMax(100)
-    setFilterLastVisit(null); setFilterRegFrom(""); setFilterRegTo(""); setCurrentPage(1)
+    setFilterLastVisit(null); setGlobalDateRange(makeRange(30)); setCurrentPage(1)
   }
 
   const filtered = useMemo(() => {
@@ -288,7 +288,7 @@ export default function CustomerManagementPage() {
               {/* Filter button */}
               <button onClick={() => setIsFiltersOpen(p => !p)} className={`flex items-center gap-2 h-10 px-5 rounded-lg border font-bold text-[13px] focus:outline-none shadow-sm transition-colors ${isFiltersOpen ? "bg-primary/10 text-primary border-[#4F46E5]/30" : "bg-card text-foreground border-border hover:bg-muted"}`}>
                 <Filter className={`h-4 w-4 ${isFiltersOpen ? "text-[#4F46E5]" : "text-muted-foreground"}`} /> {mounted ? t('customers.filters') : 'Filters'}
-                {(filterTypes.length || filterLastVisit || filterRegFrom || filterRegTo || filterRepairsMax < 50 || filterSpentMax < 100) ? <span className="h-5 w-5 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold flex items-center justify-center">!</span> : null}
+                {(filterTypes.length || filterLastVisit || filterRepairsMax < 50 || filterSpentMax < 100) ? <span className="h-5 w-5 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold flex items-center justify-center">!</span> : null}
               </button>
 
               {/* View toggle */}
@@ -345,8 +345,8 @@ export default function CustomerManagementPage() {
                   <div>
                     <p className="text-[12px] font-bold text-foreground mb-3">Registration Date</p>
                     <div className="space-y-2">
-                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">From</label><input type="date" value={filterRegFrom} onChange={e => { setFilterRegFrom(e.target.value); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
-                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">To</label><input type="date" value={filterRegTo} onChange={e => { setFilterRegTo(e.target.value); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
+                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">From</label><input type="date" value={globalDateRange.from.toISOString().slice(0,10)} onChange={e => { setGlobalDateRange(r => ({ ...r, from: new Date(e.target.value) })); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
+                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">To</label><input type="date" value={globalDateRange.to.toISOString().slice(0,10)} onChange={e => { setGlobalDateRange(r => ({ ...r, to: new Date(e.target.value) })); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
                     </div>
                     <button onClick={() => setIsFiltersOpen(false)} className="mt-3 w-full h-9 bg-[#4F46E5] text-white rounded-lg text-[13px] font-bold hover:bg-[#4338CA] transition-colors focus:outline-none">Apply Filters</button>
                   </div>
