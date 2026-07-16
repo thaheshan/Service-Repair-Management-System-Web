@@ -44,7 +44,10 @@ const authSlice = createSlice({
       action: PayloadAction<{ user: User; accessToken: string }>
     ) => {
       console.log("Redux: Setting Credentials", action.payload);
-      state.user = action.payload.user;
+      state.user = {
+        ...action.payload.user,
+        role: action.payload.user.role?.toUpperCase() as User['role']
+      };
       state.token = action.payload.accessToken;
       state.isAuthenticated = true;
       if (typeof window !== 'undefined') {
