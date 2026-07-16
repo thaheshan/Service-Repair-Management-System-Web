@@ -6,7 +6,7 @@ import Link from "next/link"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
-import { Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Plus, X, Shield, Star, Trash2, Edit2, Check, FileDown, Loader2, UserPlus, Calendar as CalendarIcon, Grid, List as ListIcon } from "lucide-react"
+import { Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Plus, X, Shield, Star, Trash2, Edit2, Check, FileDown, Loader2, UserPlus, Calendar as CalendarIcon, Grid, List as ListIcon, Eye, EyeOff } from "lucide-react"
 import { INITIAL_STAFF, StaffMember, StaffRole, StaffStatus, Specialty, ROLES, SPECIALTIES, STATUSES, BRANCHES, ROLE_COLOR, STATUS_DOT, STATUS_BADGE, getInitials, getAvatarBg, UNASSIGNED_REPAIRS } from "@/app/admin/staff/staff-data"
 
 type SortKey = "name-az" | "name-za" | "rating-desc" | "rating-asc" | "jobs-desc" | "jobs-asc" | "newest" | "oldest"
@@ -122,6 +122,7 @@ export default function StaffManagementPage() {
 
   // Add form
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "Technician" as StaffRole, branch: "Main Branch", specialties: [] as Specialty[], status: "Available" as StaffStatus })
+  const [showPassword, setShowPassword] = useState(false)
 
   const toggle = <T extends string>(val: T, arr: T[], set: (f: (p: T[]) => T[]) => void) =>
     set(p => p.includes(val) ? p.filter(x => x !== val) : [...p, val])
@@ -174,6 +175,7 @@ export default function StaffManagementPage() {
         specialties: form.specialties
       }).unwrap()
       setShowAddModal(false)
+      setShowPassword(false)
       setForm({ name: "", email: "", phone: "", password: "", role: "Technician", branch: "Main Branch", specialties: [], status: "Available" })
       toast.success("Staff member added successfully!");
     } catch (err) {
@@ -192,7 +194,7 @@ export default function StaffManagementPage() {
   const handleExportPDF = async () => {
     setIsExporting(true)
     try {
-      const { default: jsPDF } = await import("jspdf"); const { default: autoTable } = await import("jspdf-autotable")
+      const { jsPDF } = await import("jspdf"); const { default: autoTable } = await import("jspdf-autotable")
       const doc = new jsPDF({ orientation: "landscape" })
       doc.setFillColor(79, 70, 229); doc.rect(0, 0, 297, 16, "F")
       doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Staff Report", 14, 11)
@@ -256,7 +258,7 @@ export default function StaffManagementPage() {
 
               {/* Sort */}
               <div className="relative">
-                <button onClick={e => { e.stopPropagation(); setShowSortMenu(p => !p); setShowExportMenu(false) }} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-white text-[12px] font-medium text-muted-foreground hover:bg-muted shadow-sm focus:outline-none">
+                <button onClick={e => { e.stopPropagation(); setShowSortMenu(p => !p); setShowExportMenu(false) }} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-card text-[12px] font-medium text-muted-foreground hover:bg-muted shadow-sm focus:outline-none">
                   Sort: {SORT_OPTIONS.find(s => s.value === sortKey)?.label} <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {showSortMenu && (
@@ -301,7 +303,7 @@ export default function StaffManagementPage() {
                     ))}
                   </div>
                   <div>
-                    <p className="text-[12px] font-bold text-[#0F172A] mb-3">Status</p>
+                    <p className="text-[12px] font-bold text-foreground mb-3">Status</p>
                     {STATUSES.map(s => (
                       <label key={s} onClick={e => { e.preventDefault(); toggle(s, filterStatuses, setFilterStatuses as any); setCurrentPage(1) }} className="flex items-center gap-2 mb-2 cursor-pointer">
                         <div className={`h-4 w-4 rounded-[4px] border flex items-center justify-center transition-colors ${filterStatuses.includes(s) ? "bg-[#4F46E5] border-[#4F46E5]" : "border-border hover:border-[#4F46E5]"}`}>{filterStatuses.includes(s) && <Check className="h-3 w-3 text-white" strokeWidth={3} />}</div>
@@ -310,7 +312,7 @@ export default function StaffManagementPage() {
                     ))}
                   </div>
                   <div>
-                    <p className="text-[12px] font-bold text-[#0F172A] mb-3">Specialty</p>
+                    <p className="text-[12px] font-bold text-foreground mb-3">Specialty</p>
                     {SPECIALTIES.map(sp => (
                       <label key={sp} onClick={e => { e.preventDefault(); toggle(sp, filterSpecialties, setFilterSpecialties as any); setCurrentPage(1) }} className="flex items-center gap-2 mb-2 cursor-pointer">
                         <div className={`h-4 w-4 rounded-[4px] border flex items-center justify-center transition-colors ${filterSpecialties.includes(sp) ? "bg-[#4F46E5] border-[#4F46E5]" : "border-border hover:border-[#4F46E5]"}`}>{filterSpecialties.includes(sp) && <Check className="h-3 w-3 text-white" strokeWidth={3} />}</div>
@@ -319,14 +321,14 @@ export default function StaffManagementPage() {
                     ))}
                   </div>
                   <div>
-                    <p className="text-[12px] font-bold text-[#0F172A] mb-3">Branch</p>
-                    <select value={filterBranch} onChange={e => { setFilterBranch(e.target.value); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-white">
+                    <p className="text-[12px] font-bold text-foreground mb-3">Branch</p>
+                    <select value={filterBranch} onChange={e => { setFilterBranch(e.target.value); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-card">
                       <option value="">All Branches</option>
                       {BRANCHES.map(b => <option key={b}>{b}</option>)}
                     </select>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between mb-3"><p className="text-[12px] font-bold text-[#0F172A]">Min Rating</p><span className="text-[12px] text-[#4F46E5] font-bold">≥ {filterMinRating === 0 ? "Any" : filterMinRating.toFixed(1)}</span></div>
+                    <div className="flex items-center justify-between mb-3"><p className="text-[12px] font-bold text-foreground">Min Rating</p><span className="text-[12px] text-[#4F46E5] font-bold">≥ {filterMinRating === 0 ? "Any" : filterMinRating.toFixed(1)}</span></div>
                     <input type="range" min={0} max={5} step={0.1} value={filterMinRating} onChange={e => { setFilterMinRating(+e.target.value); setCurrentPage(1) }} className="w-full h-1.5 bg-[#E2E8F0] rounded-full accent-[#4F46E5] cursor-pointer" />
                     <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-1"><span>Any</span><span>5.0</span></div>
                     <button onClick={() => setIsFiltersOpen(false)} className="mt-4 w-full h-9 bg-[#4F46E5] text-white rounded-lg text-[13px] font-bold hover:bg-[#4338CA] focus:outline-none">Apply Filters</button>
@@ -383,7 +385,7 @@ export default function StaffManagementPage() {
                     <div className="flex gap-2 mt-auto">
                       <button onClick={() => setEditStaff({ ...s })} className="flex-1 h-9 rounded-lg border border-border bg-card text-[12px] font-bold text-foreground hover:bg-muted focus:outline-none transition-colors">Edit</button>
                       <button onClick={() => setAssignStaff(s)} className="flex-[1.5] h-9 rounded-lg bg-primary text-[12px] font-bold text-white hover:bg-primary/90 focus:outline-none">Assign Repair</button>
-                      <button onClick={() => setDeleteStaff(s)} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 focus:outline-none transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDeleteStaff(s)} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </div>
                 ))}
@@ -425,7 +427,7 @@ export default function StaffManagementPage() {
                         <td className="px-6 py-4 text-center"><div className="flex items-center justify-center gap-1.5">
                           <button onClick={() => setAssignStaff(s)} className="px-3 py-1.5 rounded-lg bg-primary text-[11px] font-bold text-white hover:bg-primary/90 focus:outline-none">Assign</button>
                           <button onClick={() => setEditStaff({ ...s })} className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted focus:outline-none"><Edit2 className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => setDeleteStaff(s)} className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setDeleteStaff(s)} className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div></td>
                       </tr>
                     ))}
@@ -456,32 +458,47 @@ export default function StaffManagementPage() {
       {/* ADD STAFF MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[560px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]" />{mounted ? t('staffPage.addStaffMember') : 'Add Staff Member'}</h2>
+          <div className="bg-card w-full max-w-[560px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-border bg-muted/50">
+              <h2 className="text-[18px] font-black text-foreground flex items-center gap-2"><UserPlus className="h-5 w-5 text-[#4F46E5]" />{mounted ? t('staffPage.addStaffMember') : 'Add Staff Member'}</h2>
               <button onClick={() => setShowAddModal(false)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <div>
-                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.fullName') : 'Full Name *'}</label>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="John Doe" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" />
+                <label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.fullName') : 'Full Name *'}</label>
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="John Doe" className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.email') : 'Email *'}</label><input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.phone') : 'Phone'}</label><input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
+                <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.email') : 'Email *'}</label><input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
+                <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.phone') : 'Phone'}</label><input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
               </div>
-              <div>
+      <div>
                 <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.password') : 'Password *'}</label>
-                <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} type="password" placeholder="Min 8 characters" className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" />
+                <div className="relative">
+                  <input 
+                    value={form.password} 
+                    onChange={e => setForm(p => ({ ...p, password: e.target.value }))} 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="Min 8 characters" 
+                    className="w-full h-10 rounded-lg border border-border pl-3 pr-10 text-[13px] focus:outline-none focus:border-[#4F46E5]" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.role') : 'Role'}</label>
-                  <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as StaffRole }))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
+                <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.role') : 'Role'}</label>
+                  <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as StaffRole }))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card">
                     {roles.map(r => <option key={r.id || r.name} value={r.name}>{r.name}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">{mounted ? t('staffPage.branch') : 'Branch'}</label>
-                  <select value={form.branch} onChange={e => setForm(p => ({ ...p, branch: e.target.value }))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
+                <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.branch') : 'Branch'}</label>
+                  <select value={form.branch} onChange={e => setForm(p => ({ ...p, branch: e.target.value }))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card">
                     {BRANCHES.map(b => <option key={b}>{b}</option>)}
                   </select>
                 </div>
@@ -489,21 +506,21 @@ export default function StaffManagementPage() {
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.specialties') : 'Specialties'}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SPECIALTIES.map(sp => (
-                    <label key={sp} onClick={e => { e.preventDefault(); setForm(p => ({ ...p, specialties: p.specialties.includes(sp) ? p.specialties.filter(x => x !== sp) : [...p.specialties, sp] })) }} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-[12px] font-medium transition-colors ${form.specialties.includes(sp) ? "bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                    <label key={sp} onClick={e => { e.preventDefault(); setForm(p => ({ ...p, specialties: p.specialties.includes(sp) ? p.specialties.filter(x => x !== sp) : [...p.specialties, sp] })) }} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-[12px] font-medium transition-colors ${form.specialties.includes(sp) ? "bg-primary/10 border-primary text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
                       {form.specialties.includes(sp) && <Check className="h-3 w-3 shrink-0" />}{sp}
                     </label>
                   ))}
                 </div>
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.initialStatus') : 'Initial Status'}</label>
+              <div><label className="block text-[12px] font-bold text-foreground mb-2">{mounted ? t('staffPage.initialStatus') : 'Initial Status'}</label>
                 <div className="flex gap-2 flex-wrap">{STATUSES.map(s => (
-                  <label key={s} onClick={e => { e.preventDefault(); setForm(p => ({ ...p, status: s })) }} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer text-[12px] font-semibold transition-colors ${form.status === s ? "bg-[#EEF2FF] border-[#4F46E5] text-[#4F46E5]" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                  <label key={s} onClick={e => { e.preventDefault(); setForm(p => ({ ...p, status: s })) }} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer text-[12px] font-semibold transition-colors ${form.status === s ? "bg-[#4F46E5]/10 border-[#4F46E5] text-[#4F46E5]" : "border-border text-muted-foreground hover:bg-muted"}`}>
                     <span className={`h-2 w-2 rounded-full ${STATUS_DOT[s]}`} />{s}
                   </label>
                 ))}</div>
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
-                <button onClick={() => setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">{mounted ? t('staffPage.cancel') : 'Cancel'}</button>
+                <button onClick={() => setShowAddModal(false)} className="flex-1 h-11 rounded-xl border border-border bg-card text-foreground font-bold hover:bg-muted focus:outline-none">{mounted ? t('staffPage.cancel') : 'Cancel'}</button>
                 <button onClick={handleAdd} disabled={!form.name || !form.email || !form.password} className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-bold hover:bg-[#4338CA] shadow-md focus:outline-none disabled:opacity-50">{mounted ? t('staffPage.saveStaffMember') : 'Save Staff Member'}</button>
               </div>
             </div>
@@ -514,40 +531,40 @@ export default function StaffManagementPage() {
       {/* EDIT STAFF MODAL */}
       {editStaff && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[480px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><Edit2 className="h-5 w-5 text-[#4F46E5]" />Edit Staff Member</h2>
+          <div className="bg-card w-full max-w-[480px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-border bg-muted/50">
+              <h2 className="text-[18px] font-black text-foreground flex items-center gap-2"><Edit2 className="h-5 w-5 text-[#4F46E5]" />Edit Staff Member</h2>
               <button onClick={() => setEditStaff(null)} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Full Name</label>
+                <label className="block text-[12px] font-bold text-foreground mb-1.5">Full Name</label>
                 <input value={editStaff.firstName + (editStaff.lastName ? " " + editStaff.lastName : "")} onChange={e => {
                   const val = e.target.value;
                   const parts = val.split(' ');
                   setEditStaff(p => p ? { ...p, firstName: parts[0], lastName: parts.slice(1).join(' ') } : p);
                 }} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" />
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Email</label><input value={editStaff.email} onChange={e => setEditStaff(p => p ? { ...p, email: e.target.value } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
+              <div><label className="block text-[12px] font-bold text-foreground mb-1.5">Email</label><input value={editStaff.email} onChange={e => setEditStaff(p => p ? { ...p, email: e.target.value } : p)} className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Role</label>
-                  <select value={editStaff.role} onChange={e => setEditStaff(p => p ? { ...p, role: e.target.value as StaffRole } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
+                <div><label className="block text-[12px] font-bold text-foreground mb-1.5">Role</label>
+                  <select value={editStaff.role} onChange={e => setEditStaff(p => p ? { ...p, role: e.target.value as StaffRole } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card">
                     {roles.map(r => <option key={r.id || r.name} value={r.name}>{r.name}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Status</label>
-                  <select value={editStaff.status} onChange={e => setEditStaff(p => p ? { ...p, status: e.target.value as StaffStatus } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
+                <div><label className="block text-[12px] font-bold text-foreground mb-1.5">Status</label>
+                  <select value={editStaff.status} onChange={e => setEditStaff(p => p ? { ...p, status: e.target.value as StaffStatus } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card">
                     {STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
-              <div><label className="block text-[12px] font-bold text-[#0F172A] mb-1.5">Branch</label>
-                <select value={editStaff.branch} onChange={e => setEditStaff(p => p ? { ...p, branch: e.target.value } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-white">
+              <div><label className="block text-[12px] font-bold text-foreground mb-1.5">Branch</label>
+                <select value={editStaff.branch} onChange={e => setEditStaff(p => p ? { ...p, branch: e.target.value } : p)} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card">
                   {BRANCHES.map(b => <option key={b}>{b}</option>)}
                 </select>
               </div>
               <div className="flex gap-3 pt-2 border-t border-border">
-                <button onClick={() => setEditStaff(null)} className="flex-1 h-11 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
+                <button onClick={() => setEditStaff(null)} className="flex-1 h-11 rounded-xl border border-border bg-card text-foreground font-bold hover:bg-muted focus:outline-none">Cancel</button>
                 <button onClick={async () => {
                   const roleMap: Record<string, string> = {
                     "Lead Technician": "ADMIN",
@@ -583,8 +600,8 @@ export default function StaffManagementPage() {
       {/* ASSIGN REPAIR MODAL */}
       {assignStaff && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[420px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center bg-[#F8FAFC] p-6 border-b border-border">
+          <div className="bg-card w-full max-w-[420px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center bg-muted/50 p-6 border-b border-border">
               {assignStaff.avatar ? (
                 <img
                   src={assignStaff.avatar}
@@ -596,13 +613,13 @@ export default function StaffManagementPage() {
                   {getInitials(assignStaff.firstName, assignStaff.lastName)}
                 </div>
               )}
-              <h2 className="text-[16px] font-black text-[#0F172A]">{assignStaff.firstName} {assignStaff.lastName}</h2>
+              <h2 className="text-[16px] font-black text-foreground">{assignStaff.firstName} {assignStaff.lastName}</h2>
               <p className={`text-[12px] font-bold ${ROLE_COLOR[assignStaff.role]} mt-0.5`}>{assignStaff.role}</p>
             </div>
             <div className="p-6">
-              <label className="block text-[13px] font-bold text-[#0F172A] mb-2">Select Repair Task</label>
+              <label className="block text-[13px] font-bold text-foreground mb-2">Select Repair Task</label>
               <div className="relative mb-6">
-                <select value={assignRepairId} onChange={e => setAssignRepairId(e.target.value)} className="w-full h-11 rounded-xl border border-border bg-white px-4 text-[13px] font-semibold focus:outline-none focus:border-[#4F46E5] appearance-none">
+                <select value={assignRepairId} onChange={e => setAssignRepairId(e.target.value)} className="w-full h-11 rounded-xl border border-border bg-card px-4 text-[13px] font-semibold focus:outline-none focus:border-[#4F46E5] appearance-none">
                   <option value="">Select a repair...</option>
                   {unassignedRepairs.map((r: any) => (
                     <option key={r.id} value={r.id}>
@@ -613,7 +630,7 @@ export default function StaffManagementPage() {
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setAssignStaff(null)} className="flex-1 h-10 rounded-lg border border-border text-[#0F172A] font-bold text-[13px] hover:bg-muted focus:outline-none">Cancel</button>
+                <button onClick={() => setAssignStaff(null)} className="flex-1 h-10 rounded-lg border border-border text-foreground font-bold text-[13px] hover:bg-muted focus:outline-none">Cancel</button>
                 <button 
                   onClick={async () => {
                     if (!assignRepairId) {
@@ -646,13 +663,13 @@ export default function StaffManagementPage() {
       {/* DELETE CONFIRM */}
       {deleteStaff && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[400px] rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full max-w-[400px] rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center shrink-0"><Trash2 className="h-6 w-6 text-red-500" /></div>
-              <div><h2 className="text-[17px] font-black text-[#0F172A]">Remove Staff Member?</h2><p className="text-[13px] text-muted-foreground">This will remove <strong>{deleteStaff.firstName} {deleteStaff.lastName}</strong> from the system.</p></div>
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center shrink-0"><Trash2 className="h-6 w-6 text-destructive" /></div>
+              <div><h2 className="text-[17px] font-black text-foreground">Remove Staff Member?</h2><p className="text-[13px] text-muted-foreground">This will remove <strong>{deleteStaff.firstName} {deleteStaff.lastName}</strong> from the system.</p></div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteStaff(null)} className="flex-1 h-10 rounded-xl border border-border bg-white text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
+              <button onClick={() => setDeleteStaff(null)} className="flex-1 h-10 rounded-xl border border-border bg-card text-foreground font-bold hover:bg-muted focus:outline-none">Cancel</button>
               <button onClick={async () => {
                 try {
                   await deleteStaffMutation(deleteStaff!.id).unwrap();
@@ -667,14 +684,14 @@ export default function StaffManagementPage() {
       {/* MANAGE ROLES MODAL */}
       {showRolesModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[500px] rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-border bg-[#F8FAFC]">
-              <h2 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2"><Shield className="h-5 w-5 text-[#4F46E5]" />{mounted ? t('staffPage.manageRoles') : 'Manage Staff Roles'}</h2>
+          <div className="bg-card w-full max-w-[500px] rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-border bg-muted/50">
+              <h2 className="text-[18px] font-black text-foreground flex items-center gap-2"><Shield className="h-5 w-5 text-[#4F46E5]" />{mounted ? t('staffPage.manageRoles') : 'Manage Staff Roles'}</h2>
               <button onClick={() => { setShowRolesModal(false); setEditingRole(null); setNewRoleModal(false) }} className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-muted focus:outline-none"><X className="h-4 w-4" /></button>
             </div>
             <div className="divide-y divide-border">
               {roles.map(role => editingRole?.id === role.id ? (
-                <div key={role.id} className="p-5 bg-[#F8FAFC] space-y-3">
+                <div key={role.id} className="p-5 bg-muted/50 space-y-3">
                   <input value={editingRole.name} onChange={e => setEditingRole(p => p ? { ...p, name: e.target.value } : p)} className="w-full h-9 rounded-lg border border-[#4F46E5] px-3 text-[13px] font-bold focus:outline-none" />
                   <input value={editingRole.desc} onChange={e => setEditingRole(p => p ? { ...p, desc: e.target.value } : p)} className="w-full h-9 rounded-lg border border-border px-3 text-[13px] focus:outline-none" />
                   <div className="flex items-center gap-2"><span className="text-[12px] font-bold text-muted-foreground">Color:</span><input type="color" value={editingRole.color} onChange={e => setEditingRole(p => p ? { ...p, color: e.target.value } : p)} className="h-8 w-12 rounded cursor-pointer border border-border" /></div>
@@ -702,31 +719,31 @@ export default function StaffManagementPage() {
                         await deleteRole(role.id).unwrap();
                         toast.success("Role deleted!");
                       } catch (e) { toast.error("Failed to delete role") }
-                    }} className="h-8 w-8 rounded border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                    }} className="h-8 w-8 rounded border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="p-5 border-t border-border bg-[#F8FAFC]">
+            <div className="p-5 border-t border-border bg-muted/30">
               {newRoleModal ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5">Role Name *</label>
-                    <input type="text" value={newRole.name} onChange={e=>setNewRole({...newRole,name:e.target.value})} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] focus:outline-none focus:border-[#4F46E5]" placeholder="e.g. Senior Technician"/>
+                    <label className="block text-[13px] font-bold text-foreground mb-1.5">Role Name *</label>
+                    <input type="text" value={newRole.name} onChange={e=>setNewRole({...newRole,name:e.target.value})} className="w-full h-11 rounded-xl border border-border bg-card px-4 text-[13px] focus:outline-none focus:border-[#4F46E5]" placeholder="e.g. Senior Technician"/>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5">Role Description</label>
-                    <textarea value={newRole.description} onChange={e=>setNewRole({...newRole,description:e.target.value})} className="w-full h-24 rounded-xl border border-border p-4 text-[13px] focus:outline-none focus:border-[#4F46E5] resize-none" placeholder="What can this role do?"/>
+                    <label className="block text-[13px] font-bold text-foreground mb-1.5">Role Description</label>
+                    <textarea value={newRole.description} onChange={e=>setNewRole({...newRole,description:e.target.value})} className="w-full h-24 rounded-xl border border-border bg-card p-4 text-[13px] focus:outline-none focus:border-[#4F46E5] resize-none" placeholder="What can this role do?"/>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5">Theme Color</label>
+                    <label className="block text-[13px] font-bold text-foreground mb-1.5">Theme Color</label>
                     <div className="flex gap-3">
-                      <input type="color" value={newRole.color} onChange={e=>setNewRole({...newRole,color:e.target.value})} className="h-11 w-11 rounded-lg border border-border p-1 bg-white cursor-pointer"/>
+                      <input type="color" value={newRole.color} onChange={e=>setNewRole({...newRole,color:e.target.value})} className="h-11 w-11 rounded-lg border border-border p-1 bg-card cursor-pointer"/>
                       <input type="text" value={newRole.color} onChange={e=>setNewRole({...newRole,color:e.target.value})} className="flex-1 h-11 rounded-xl border border-border px-4 text-[13px] font-mono"/>
                     </div>
                   </div>
                   <div className="flex gap-3 mt-8">
-                    <button onClick={()=>setNewRoleModal(false)} className="flex-1 h-11 rounded-xl border border-border text-[#0F172A] font-bold hover:bg-muted focus:outline-none">Cancel</button>
+                    <button onClick={()=>setNewRoleModal(false)} className="flex-1 h-11 rounded-xl border border-border text-foreground font-bold hover:bg-muted focus:outline-none">Cancel</button>
                     <button 
                       onClick={async ()=>{
                         if (!newRole.name) return;

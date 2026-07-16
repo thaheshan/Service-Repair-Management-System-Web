@@ -6,12 +6,15 @@ import { useRouter, useParams } from "next/navigation"
 import { Calendar, ChevronDown, X, Search, Check, Camera, Plus, Download } from "lucide-react"
 import "@/app/globals.css"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
+import { PhotoUploadModal } from "@/components/shared/modals/PhotoUploadModal"
 import { useGetRepairByIdQuery, useUpdateRepairStatusMutation } from "@/services/api/repairsApiSlice"
 import { useGetStaffListQuery } from "@/services/api/staffApiSlice"
 import { toast } from "sonner"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { useUpdateDeviceMutation } from "@/services/api/devicesApiSlice"
+import { sanitizeCloneForPDF } from "@/lib/pdf-canvas-utils"
+import { generateRepairInvoicePDF } from "@/lib/pdf-generator"
 
 const PhoneIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
 const TabletIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -50,6 +53,7 @@ export default function EditRepairPage() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [currentRef, setCurrentRef] = useState("")
   
   const { user } = useSelector((state: RootState) => state.auth)
@@ -138,80 +142,28 @@ export default function EditRepairPage() {
   }, [repair])
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) return
     setIsGeneratingPDF(true)
-
-    const tempStyle = document.createElement('style')
-    tempStyle.id = '__pdf_color_fix'
-    tempStyle.textContent = `
-      :root, * {
-        --background: #ffffff !important;
-        --foreground: #111111 !important;
-        --muted: #f3f4f6 !important;
-        --muted-foreground: #6b7280 !important;
-        --border: #e5e7eb !important;
-        --card: #ffffff !important;
-        --card-foreground: #111111 !important;
-        --primary: #4F46E5 !important;
-        --primary-foreground: #ffffff !important;
-        color: inherit !important;
-        background-color: transparent;
-      }
-      body, html { background-color: #ffffff !important; }
-    `
-    document.head.appendChild(tempStyle)
-
+    toast.loading("Generating invoice...", { id: "pdf-gen" })
     try {
-      const html2canvas = (await import('html2canvas')).default
-      const jsPDF = (await import('jspdf')).default
-      
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: (clonedDoc) => {
-          const styles = clonedDoc.getElementsByTagName("style");
-          for (let i = styles.length - 1; i >= 0; i--) {
-            if (styles[i].id !== '__pdf_color_fix') {
-              styles[i].remove();
-            }
-          }
-          const links = clonedDoc.getElementsByTagName("link");
-          for (let i = links.length - 1; i >= 0; i--) {
-            if (links[i].rel === "stylesheet") {
-              links[i].remove();
-            }
-          }
-          const elements = clonedDoc.getElementsByTagName("*");
-          for (let i = 0; i < elements.length; i++) {
-            const el = elements[i] as HTMLElement;
-            el.style.color = "#000000";
-            if (el.classList.contains("bg-[#4F46E5]")) {
-              el.style.backgroundColor = "#4F46E5";
-              el.style.color = "#ffffff";
-            }
-          }
-        }
-      })
-      
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      })
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`Invoice_${currentRef || 'Draft'}.pdf`)
+      generateRepairInvoicePDF({
+        customer,
+        deviceType,
+        brand,
+        model,
+        invoiceRef: currentRef,
+        invoiceDate: new Date().toLocaleDateString(),
+        issueCategory,
+        status,
+        laborCost: parseFloat(laborCost || "0"),
+        partsCost: parseFloat(partsCost || "0"),
+        discount: applyDiscount ? parseFloat(discount || "0") : 0,
+        pricingTotal
+      }, user)
+      toast.success("Invoice generated successfully!", { id: "pdf-gen" })
     } catch (err) {
       console.error("Failed to generate PDF", err)
-      toast.error("Failed to generate PDF. Make sure html2canvas and jspdf are installed.");
+      toast.error("Failed to generate PDF.", { id: "pdf-gen" })
     } finally {
-      document.getElementById('__pdf_color_fix')?.remove()
       setIsGeneratingPDF(false)
     }
   }
@@ -424,6 +376,37 @@ export default function EditRepairPage() {
                     </div>
                   ))}
                 </div>
+                
+                {/* Device Photos Section */}
+                <div className="mt-8 border-t border-border pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-foreground">Device Photos</h3>
+                    <button
+                      onClick={(e) => { e.preventDefault(); setIsUploadModalOpen(true); }}
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[12px] font-bold hover:bg-[#E0E7FF] transition-colors"
+                    >
+                      <Camera className="h-3.5 w-3.5" /> Add Photo
+                    </button>
+                  </div>
+                  
+                  {repair?.photos && repair.photos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {repair.photos.map((photo: any, i: number) => (
+                        <div key={photo.id || i} className="relative aspect-square rounded-xl overflow-hidden border border-border group bg-muted">
+                          <img
+                            src={photo.url}
+                            alt={`Device photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center text-[13px] text-muted-foreground border-2 border-dashed border-border rounded-xl">
+                      No photos uploaded yet.
+                    </div>
+                  )}
+               </div>
               </section>
 
             {/* 3. Issue & Pricing */}
@@ -604,13 +587,13 @@ export default function EditRepairPage() {
                  <div className="flex justify-between items-start mb-16">
                      <div>
                         <div className="flex items-center gap-2 mb-2">
-                           <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
-                           <h2 className="text-[24px] font-black text-[#0F172A] tracking-tighter uppercase">{user?.shopName || "SRM Solutions"}</h2>
+                           <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                           <h2 className="text-[24px] font-black text-[#0F172A] tracking-tighter uppercase">{user?.shopName || "All Fix Private Limited"}</h2>
                         </div>
                         <div className="text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">
-                           <p>Shop ID: {user?.shopCode || "N/A"}</p>
-                           <p>{user?.email || "hello@servicepro.com"}</p>
-                           <p>+94 11 234 5678</p>
+                           <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                           <p>{user?.email || "Info@allfix.space"}</p>
+                           <p>{user?.phone || "+94 075 664 5486"}</p>
                         </div>
                      </div>
                      <div className="text-right text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">
@@ -660,6 +643,15 @@ export default function EditRepairPage() {
              </div>
           </div>
         )}
+
+        <PhotoUploadModal 
+          isOpen={isUploadModalOpen} 
+          onClose={() => setIsUploadModalOpen(false)} 
+          onUploadSuccess={(url) => {
+            repairResponse.refetch?.();
+          }}
+          repairId={id}
+        />
 
       </div>
     </div>

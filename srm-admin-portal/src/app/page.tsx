@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   Bell,
   Mail,
-  User as UserIcon
+  User as UserIcon,
+  Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -57,9 +58,11 @@ export default function SuperAdminDashboard() {
     todayInquiries: 0
   });
   
+  const [leads, setLeads] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('PENDING');
-  const [view, setView] = useState<'dashboard' | 'shops'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'shops' | 'leads' | 'bookings'>('dashboard');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,15 +83,19 @@ export default function SuperAdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [requestsRes, statsRes, shopsRes] = await Promise.all([
+      const [requestsRes, statsRes, shopsRes, leadsRes, bookingsRes] = await Promise.all([
         axios.get(`${process.env.NEXT_PUBLIC_API_URL}/onboarding/requests?status=${filter}`),
         axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`),
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/shops`)
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/shops`),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/contact`),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/bookings`)
       ]);
 
       if (requestsRes.data.success) setRequests(requestsRes.data.data);
       if (statsRes.data.success) setStats(statsRes.data.data);
       if (shopsRes.data.success) setShops(shopsRes.data.data);
+      if (leadsRes.data.success) setLeads(leadsRes.data.data);
+      if (bookingsRes.data.success) setBookings(bookingsRes.data.bookings);
     } catch (error) {
       console.error('Fetch error:', error);
       toast.error('Failed to load live data');
@@ -199,6 +206,20 @@ export default function SuperAdminDashboard() {
             <ShoppingBag className="w-5 h-5" />
             Manage Shops
           </button>
+          <button 
+            onClick={() => setView('leads')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${view === 'leads' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Mail className="w-5 h-5" />
+            Hot Leads
+          </button>
+          <button 
+            onClick={() => setView('bookings')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${view === 'bookings' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Calendar className="w-5 h-5" />
+            Demo Bookings
+          </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
             <Users className="w-5 h-5" />
             Active Users
@@ -223,7 +244,7 @@ export default function SuperAdminDashboard() {
       <main className="flex-1 flex flex-col">
         {/* Header */}
         <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
-          <h1 className="text-2xl font-bold text-slate-900">{view === 'dashboard' ? 'Request Management' : 'Shop Management'}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{view === 'dashboard' ? 'Request Management' : view === 'shops' ? 'Shop Management' : 'Hot Leads'}</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pr-4 border-r border-slate-200">
               <div className="text-right hidden sm:block">
@@ -387,7 +408,7 @@ export default function SuperAdminDashboard() {
                 </table>
               </div>
             </div>
-          ) : (
+          ) : view === 'shops' ? (
             /* Shops List */
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-100">
@@ -430,6 +451,175 @@ export default function SuperAdminDashboard() {
                           </td>
                           <td className="px-6 py-4 text-right">
                              <button className="text-indigo-600 font-bold hover:underline">Manage</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : view === 'leads' ? (
+            /* Leads List */
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-900">Contact Submissions (Hot Leads)</h2>
+                <p className="text-sm text-slate-500">Monitor and respond to inquiries from the marketing site</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                      <th className="px-6 py-4">Contact</th>
+                      <th className="px-6 py-4">Subject</th>
+                      <th className="px-6 py-4">Message</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loading ? (
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">Loading...</td></tr>
+                    ) : leads.length === 0 ? (
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">No leads found.</td></tr>
+                    ) : (
+                      leads.map((lead) => (
+                        <tr key={lead.id} className={`hover:bg-slate-50 transition-colors text-sm ${!lead.isRead ? 'bg-blue-50/30' : ''}`}>
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-slate-900">{lead.name}</p>
+                            <p className="text-xs text-slate-500">{lead.email}</p>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-black">{lead.subject || '—'}</td>
+                          <td className="px-6 py-4">
+                            <p className="truncate max-w-[200px] text-xs text-slate-600" title={lead.message}>{lead.message}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                              lead.isRead ? 'bg-slate-100 text-slate-600' : 'bg-rose-100 text-rose-700'
+                            }`}>
+                              {lead.isRead ? 'Read' : 'New'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-slate-500 text-xs">
+                            {format(new Date(lead.createdAt), 'MMM dd, yyyy')}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                             {!lead.isRead && (
+                               <button 
+                                 onClick={async () => {
+                                   try {
+                                     await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/contact/${lead.id}/read`);
+                                     toast.success('Marked as read');
+                                     fetchData();
+                                   } catch (e) { toast.error('Failed to update'); }
+                                 }}
+                                 className="text-indigo-600 font-bold hover:underline text-xs"
+                               >
+                                 Mark Read
+                               </button>
+                             )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* Bookings List */
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-900">Demo Bookings</h2>
+                <p className="text-sm text-slate-500">Manage scheduled product demos and discovery calls</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                      <th className="px-6 py-4">Prospect</th>
+                      <th className="px-6 py-4">Contact</th>
+                      <th className="px-6 py-4">Date & Time</th>
+                      <th className="px-6 py-4">Notes</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loading ? (
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">Loading...</td></tr>
+                    ) : bookings.length === 0 ? (
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">No bookings found.</td></tr>
+                    ) : (
+                      bookings.map((booking) => (
+                        <tr key={booking.id} className="hover:bg-slate-50 transition-colors text-sm">
+                          <td className="px-6 py-4 font-bold text-slate-900">{booking.name}</td>
+                          <td className="px-6 py-4">
+                            <a href={`mailto:${booking.email}`} className="text-xs text-indigo-600 hover:underline block">{booking.email}</a>
+                            {booking.phone && <a href={`tel:${booking.phone}`} className="text-xs text-slate-500 hover:underline">{booking.phone}</a>}
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="font-medium text-slate-900">{format(new Date(booking.date), 'MMM dd, yyyy')}</p>
+                            <p className="text-xs text-slate-500">{booking.time}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="truncate max-w-[200px] text-xs text-slate-600" title={booking.notes || ''}>{booking.notes || '—'}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                              booking.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' : 
+                              booking.status === 'SCHEDULED' ? 'bg-blue-50 text-blue-700' :
+                              booking.status === 'CANCELLED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
+                            }`}>
+                              {booking.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right space-x-2">
+                             {booking.status === 'PENDING' && (
+                               <>
+                                 <button 
+                                   onClick={async () => {
+                                     try {
+                                       await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/status`, { status: 'SCHEDULED' });
+                                       toast.success('Booking scheduled');
+                                       fetchData();
+                                     } catch (e) { toast.error('Failed to update status'); }
+                                   }}
+                                   className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg"
+                                 >
+                                   Accept
+                                 </button>
+                                 <button 
+                                   onClick={async () => {
+                                     if (confirm('Are you sure you want to decline this booking?')) {
+                                       try {
+                                         await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/status`, { status: 'CANCELLED' });
+                                         toast.success('Booking declined');
+                                         fetchData();
+                                       } catch (e) { toast.error('Failed to update status'); }
+                                     }
+                                   }}
+                                   className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold rounded-lg"
+                                 >
+                                   Decline
+                                 </button>
+                               </>
+                             )}
+                             {booking.status === 'SCHEDULED' && (
+                               <button 
+                                 onClick={async () => {
+                                   try {
+                                     await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/status`, { status: 'COMPLETED' });
+                                     toast.success('Marked as completed');
+                                     fetchData();
+                                   } catch (e) { toast.error('Failed to update status'); }
+                                 }}
+                                 className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold rounded-lg"
+                               >
+                                 Complete
+                               </button>
+                             )}
                           </td>
                         </tr>
                       ))

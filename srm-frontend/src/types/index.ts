@@ -1,4 +1,4 @@
-﻿export interface User {
+export interface User {
   id: string;
   email: string;
   role: 'admin' | 'manager' | 'technician' | 'customer';
@@ -47,3 +47,4 @@ export interface Photo {
   type: 'intake' | 'progress' | 'completed';
   createdAt: string;
 }
+export interface Invoice { invoiceId: number; invoiceNumber: string; shopName: string; shopLogoUrl?: string | null; [key: string]: any; }

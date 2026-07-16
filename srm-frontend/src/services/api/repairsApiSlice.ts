@@ -45,6 +45,13 @@ export const repairsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Repairs', id }],
     }),
+    deleteRepairPhoto: builder.mutation({
+      query: ({ repairId, photoId }) => ({
+        url: `/v1/uploads/image/${photoId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { repairId }) => [{ type: 'Repairs', id: repairId }],
+    }),
   }),
 });
 
@@ -55,4 +62,5 @@ export const {
   useUpdateRepairStatusMutation,
   useDeleteRepairMutation,
   useAddRepairNoteMutation,
+  useDeleteRepairPhotoMutation,
 } = repairsApiSlice;

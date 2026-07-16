@@ -29,12 +29,14 @@ import {
   CheckCircle2,
   User,
 } from "lucide-react"
-import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/services/api/settingsApiSlice"
+import { useGetSettingsQuery, useUpdateSettingsMutation, useRenewSubscriptionMutation } from "@/services/api/settingsApiSlice"
 import { useGetStaffListQuery, useCreateStaffMutation, useUpdateStaffMutation, useDeleteStaffMutation, useGetStaffContextQuery } from "@/services/api/staffApiSlice"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 
-type SettingsTab = "profile" | "general" | "business" | "notifications" | "security" | "team"
+import { useSearchParams } from "next/navigation"
+
+type SettingsTab = "profile" | "general" | "business" | "notifications" | "security" | "team" | "billing"
 
 export default function SettingsView() {
   const { data: apiSettings, isLoading: settingsLoading } = useGetSettingsQuery({});
@@ -43,7 +45,13 @@ export default function SettingsView() {
   const { data: staffResponse } = useGetStaffListQuery({}, { skip: user?.role === 'TECHNICIAN' });
   const { data: myProfile } = useGetStaffContextQuery({});
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>(user?.role === 'TECHNICIAN' ? 'profile' : "general")
+  const [renewSubscription] = useRenewSubscriptionMutation();
+  const [isRenewing, setIsRenewing] = useState(false);
+
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") as SettingsTab || (user?.role === 'TECHNICIAN' ? 'profile' : "general");
+  
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab)
   const [isSaving, setIsSaving] = useState(false)
 
   // API Mutations
@@ -311,6 +319,18 @@ export default function SettingsView() {
     }
   }
 
+  const handleRenewSubscription = async (plan: string) => {
+    setIsRenewing(true);
+    try {
+      await renewSubscription({ plan }).unwrap();
+      alert(`Subscription successfully upgraded to ${plan} Plan!`);
+    } catch (err: any) {
+      alert(err.data?.message || "Failed to process payment/renewal.");
+    } finally {
+      setIsRenewing(false);
+    }
+  }
+
   return (
     <div className="flex bg-background h-screen overflow-hidden">
       <DashboardSidebar />
@@ -397,14 +417,20 @@ export default function SettingsView() {
                       >
                         <Users className="h-4 w-4" /> {mounted ? t('settings.team') : 'Team Management'}
                       </button>
+                      <button 
+                        onClick={() => setActiveTab("billing")}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'billing' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                      >
+                        <CreditCard className="h-4 w-4" /> Billing & Subscriptions
+                      </button>
                     </>
                   )}
                 </nav>
 
-                <div className="mt-8 p-6 rounded-2xl bg-indigo-50 border border-indigo-100 hidden lg:block">
-                  <h4 className="text-[13px] font-black text-indigo-900 mb-2">{mounted ? t('settings.needAssistance') : 'Need Assistance?'}</h4>
-                  <p className="text-[12px] text-indigo-700/80 leading-relaxed mb-4 font-medium">{mounted ? t('settings.assistanceDesc') : 'Check our technical documentation for advanced configuration options.'}</p>
-                  <button className="text-[12px] font-bold text-indigo-600 hover:underline">{mounted ? t('settings.viewDocs') : 'View Documentation'}</button>
+                <div className="mt-8 p-6 rounded-2xl bg-primary/10 border border-primary/20 hidden lg:block">
+                  <h4 className="text-[13px] font-black text-foreground mb-2">{mounted ? t('settings.needAssistance') : 'Need Assistance?'}</h4>
+                  <p className="text-[12px] text-muted-foreground leading-relaxed mb-4 font-medium">{mounted ? t('settings.assistanceDesc') : 'Check our technical documentation for advanced configuration options.'}</p>
+                  <button className="text-[12px] font-bold text-primary hover:underline">{mounted ? t('settings.viewDocs') : 'View Documentation'}</button>
                 </div>
               </aside>
 
@@ -894,8 +920,8 @@ export default function SettingsView() {
                                  "Enforce password rotation every 90 days"
                                ].map((req, idx) => (
                                  <div key={idx} className="flex items-center gap-3">
-                                    <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
-                                       <Check className="h-3 w-3 text-emerald-600 stroke-[3px]" />
+                                    <div className="h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                       <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 stroke-[3px]" />
                                     </div>
                                     <span className="text-[13px] font-medium text-muted-foreground">{req}</span>
                                  </div>
@@ -903,12 +929,12 @@ export default function SettingsView() {
                             </div>
                          </section>
 
-                         <section className="bg-red-50 p-8 rounded-[24px] border border-red-100">
-                            <h4 className="text-[14px] font-black text-red-900 uppercase tracking-widest mb-2 flex items-center gap-2">
+                         <section className="bg-destructive/10 p-8 rounded-[24px] border border-destructive/20">
+                            <h4 className="text-[14px] font-black text-destructive uppercase tracking-widest mb-2 flex items-center gap-2">
                                <Building className="h-5 w-5" /> {mounted ? t('settings.deactivation') : 'Account Deactivation'}
                             </h4>
-                            <p className="text-[13px] text-red-700/80 mb-6 font-medium leading-relaxed">Permanently delete your business profile and all associated data. This action cannot be undone and will erase all repair history and customer records.</p>
-                            <button className="h-11 px-8 rounded-xl bg-red-600 text-white text-[13px] font-black uppercase tracking-tight hover:bg-red-700 shadow-lg shadow-red-200 transition-all">{mounted ? t('settings.requestDeletion') : 'Request Deletion'}</button>
+                            <p className="text-[13px] text-destructive/80 mb-6 font-medium leading-relaxed">Permanently delete your business profile and all associated data. This action cannot be undone and will erase all repair history and customer records.</p>
+                            <button className="h-11 px-8 rounded-xl bg-destructive text-destructive-foreground text-[13px] font-black uppercase tracking-tight hover:bg-destructive/90 shadow-lg transition-all">{mounted ? t('settings.requestDeletion') : 'Request Deletion'}</button>
                          </section>
                       </div>
                     </div>
@@ -938,7 +964,7 @@ export default function SettingsView() {
                                  </div>
                               </div>
                               
-                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 sm:gap-8 bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none">
+                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 sm:gap-8 bg-muted/30 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none">
                                  <div className="flex flex-col items-start sm:items-end">
                                     <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase mb-0.5 sm:mb-1">{mounted ? t('settings.systemRole') : 'System Role'}</span>
                                     <span className="text-[12px] sm:text-[13px] font-bold text-primary">{member.role}</span>
@@ -953,19 +979,111 @@ export default function SettingsView() {
                                  >
                                     <Settings className="h-4 w-4" />
                                  </button>
-                                 <button onClick={() => handleDeleteMember(member.id)} className="h-9 w-9 rounded-lg border border-red-100 bg-red-50 sm:bg-transparent flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors focus:outline-none shadow-sm sm:shadow-none">
-                                    <Trash2 className="h-4 w-4" />
-                                 </button>
+                                 {member.role !== 'OWNER' && (
+                                   <button onClick={() => handleDeleteMember(member.id)} className="h-9 w-9 rounded-lg border border-red-100 bg-red-50 sm:bg-transparent flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors focus:outline-none shadow-sm sm:shadow-none">
+                                      <Trash2 className="h-4 w-4" />
+                                   </button>
+                                 )}
                               </div>
                            </div>
                          ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Billing & Subscriptions */}
+                  {activeTab === "billing" && (
+                    <div className="p-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                      <div className="mb-8 border-b border-border pb-6">
+                        <h3 className="text-xl font-black text-foreground mb-1">Billing & Subscriptions</h3>
+                        <p className="text-sm text-muted-foreground font-medium">Manage your plan, payments, and invoices</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Current Plan Overview */}
+                        <div className="md:col-span-2 space-y-8">
+                          <div className="p-6 rounded-2xl border border-border bg-card shadow-sm flex flex-col md:flex-row gap-6 justify-between">
+                            <div className="space-y-4">
+                              <h4 className="text-[12px] font-black text-primary uppercase tracking-widest">Current Plan</h4>
+                              <div>
+                                <h2 className="text-3xl font-black text-foreground">
+                                  {apiSettings?.subscription?.plan === 'ENTERPRISE' ? 'Enterprise' : 
+                                   apiSettings?.subscription?.plan === 'PRO' ? 'Professional' : 'Standard'} Plan
+                                </h2>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {apiSettings?.subscription?.plan === 'ENTERPRISE' ? 'Unlimited everything, priority support.' : 
+                                   apiSettings?.subscription?.plan === 'PRO' ? 'Advanced features for growing businesses.' : 'Perfect for small repair shops.'}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-4 text-[13px] font-bold">
+                                <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg ${apiSettings?.subscription?.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                  <div className={`h-2 w-2 rounded-full ${apiSettings?.subscription?.status === 'ACTIVE' ? 'bg-emerald-600' : 'bg-rose-600'}`} />
+                                  {apiSettings?.subscription?.status || 'UNKNOWN'}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  Renews on {apiSettings?.subscription?.endDate ? new Date(apiSettings.subscription.endDate).toLocaleDateString() : 'N/A'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-start md:items-end justify-center gap-3">
+                              <span className="text-4xl font-black text-foreground">
+                                {apiSettings?.subscription?.plan === 'ENTERPRISE' ? '$99' : 
+                                 apiSettings?.subscription?.plan === 'PRO' ? '$49' : '$29'}
+                                <span className="text-lg text-muted-foreground font-medium">/mo</span>
+                              </span>
+                              <button 
+                                onClick={() => handleRenewSubscription('PRO')}
+                                disabled={isRenewing}
+                                className={`h-10 px-6 rounded-xl bg-primary text-primary-foreground font-bold shadow-md hover:shadow-primary/20 transition-all ${isRenewing ? 'opacity-70' : ''}`}
+                              >
+                                {isRenewing ? 'Processing...' : 'Upgrade/Renew Plan'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Payment Methods */}
+                          <div>
+                            <h4 className="text-[12px] font-black text-foreground uppercase tracking-widest mb-4">Payment Methods</h4>
+                            <div className="p-5 rounded-2xl border border-border bg-muted/30 flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="h-12 w-16 bg-card rounded shadow-sm border border-border flex items-center justify-center">
+                                  <span className="font-black text-[14px] text-blue-600 italic">VISA</span>
+                                </div>
+                                <div>
+                                  <p className="text-[14px] font-bold text-foreground">Visa ending in 4242</p>
+                                  <p className="text-[12px] text-muted-foreground">Expires 12/26</p>
+                                </div>
+                              </div>
+                              <button className="text-[12px] font-bold text-primary hover:underline">Edit</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Invoices List */}
+                        <div className="space-y-4">
+                          <h4 className="text-[12px] font-black text-foreground uppercase tracking-widest">Recent Invoices</h4>
+                          <div className="flex flex-col gap-3">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="p-4 rounded-xl border border-border bg-card flex justify-between items-center group hover:border-primary/30 transition-all cursor-pointer">
+                                <div>
+                                  <p className="text-[13px] font-bold text-foreground">INV-{2024000 + i}</p>
+                                  <p className="text-[11px] text-muted-foreground">May {i}, 2024</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[13px] font-bold text-foreground">$49.00</span>
+                                  <span className="text-primary group-hover:translate-x-1 transition-transform">→</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>
-
           </div>
           <div className="h-12" /> {/* Layout Spacer */}
           <DashboardFooter />
@@ -1061,8 +1179,8 @@ export default function SettingsView() {
                </div>
                
                {activeEditMember.status === 'Suspended' && (
-                  <div className="bg-red-50 p-4 rounded-xl border border-red-200 mt-2">
-                    <p className="text-[12px] text-red-600 font-bold leading-tight">This user is currently suspended. They cannot log in, assign repairs, or view the CRM layer.</p>
+                  <div className="bg-destructive/10 p-4 rounded-xl border border-destructive/20 mt-2">
+                    <p className="text-[12px] text-destructive font-bold leading-tight">This user is currently suspended. They cannot log in, assign repairs, or view the CRM layer.</p>
                   </div>
                )}
 

@@ -10,13 +10,13 @@ interface StatusUpdateModalProps {
 }
 
 export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }: StatusUpdateModalProps) {
-  const [autoUpdate, setAutoUpdate] = useState(false)
+  const [autoUpdate, setAutoUpdate] = useState(true)
 
   if (!isOpen || !pendingStatus) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Close Button */}
         <button 
@@ -32,7 +32,7 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
             Are You Sure to Update this <br/> Repair Task?
           </h2>
           <p className="text-sm text-muted-foreground mb-8">
-            Once Your Updated and it will <br/> notify to the cusotmer
+            "Updating this task will automatically notify the customer via SMS" (When updating the task status)
           </p>
 
           <label className="flex items-center gap-3 self-start mb-8 cursor-pointer group">
@@ -54,14 +54,14 @@ export function StatusUpdateModal({ isOpen, onClose, onConfirm, pendingStatus }:
           <div className="flex w-full gap-4">
             <button 
               onClick={onClose}
-              className="flex-1 h-11 rounded-xl border border-[#4F46E5] text-[#4F46E5] font-semibold hover:bg-[#EEF2FF] transition-colors focus:outline-none"
+              className="flex-1 h-11 rounded-xl border border-[#4F46E5] text-[#4F46E5] font-semibold hover:bg-primary/10 transition-colors focus:outline-none"
             >
               Cancel
             </button>
             <button 
               onClick={() => {
                 onConfirm(autoUpdate, pendingStatus)
-                setAutoUpdate(false) // Reset for next time
+                setAutoUpdate(true) // Reset for next time
               }}
               className="flex-1 h-11 rounded-xl bg-[#4F46E5] text-white font-semibold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none"
             >

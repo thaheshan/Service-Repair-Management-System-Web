@@ -1,4 +1,4 @@
-import { Wrench, Clock, DollarSign, Star } from "lucide-react"
+import { Wrench, Clock, DollarSign, Star, TrendingUp } from "lucide-react"
 import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 import { useTranslation } from "react-i18next"
 import { useState, useEffect } from "react"
@@ -46,6 +46,22 @@ export function StatCards() {
       borderColor: "border-l-[#10B981]",
     },
     {
+      title: "netProfit",
+      value: isLoading ? "..." : `LKR ${(analyticsData?.stats?.netProfit ?? 0).toLocaleString()}`,
+      change: isLoading ? "..." : (() => {
+        const profit = analyticsData?.stats?.netProfit ?? 0;
+        const revenue = analyticsData?.stats?.totalRevenue ?? 0;
+        if (revenue === 0) return "0%";
+        const margin = Math.round((profit / revenue) * 100);
+        return `${margin}% margin`;
+      })(),
+      changeDirection: (analyticsData?.stats?.netProfit ?? 0) >= 0 ? "up" as const : "down" as const,
+      icon: TrendingUp,
+      iconBg: "bg-[#F3E8FF]",
+      iconColor: "text-[#9333EA]",
+      borderColor: "border-l-[#9333EA]",
+    },
+    {
       title: "activeTechnicians",
       value: isLoading ? "..." : analyticsData?.stats?.activeTechnicians?.toString() || "0",
       change: mounted ? t('dashboard.stats.currentlyAssigned') : "Currently assigned",
@@ -58,11 +74,11 @@ export function StatCards() {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 lg:gap-6">
       {stats
         .filter(stat => {
           if (user?.role === 'TECHNICIAN') {
-            return stat.title !== 'revenue'
+            return stat.title !== 'revenue' && stat.title !== 'netProfit'
           }
           return true
         })

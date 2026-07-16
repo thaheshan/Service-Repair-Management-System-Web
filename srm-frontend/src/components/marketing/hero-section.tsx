@@ -13,9 +13,7 @@ export default function HeroSection() {
       </div>
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-8">
-          <span className="text-yellow-300">★</span> Trusted In 20+ Countries
-        </div>
+
         
         <h1 className="text-5xl md:text-6xl lg:text-[64px] font-extrabold mb-6 leading-[1.1] tracking-tight text-white max-w-4xl mx-auto">
           Complete Service Repair<br className="hidden md:block"/> Management System
@@ -25,27 +23,21 @@ export default function HeroSection() {
           Streamline your shop, track repairs, and delight customers with the all-in-one platform built for the modern repair business.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
           <Link
             href="/signup"
             className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-[#5865F2] px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
           >
             Get Started Free
           </Link>
-          <Link
-            href="#demo"
+          <a
+            href="https://www.youtube.com/watch?v=P7QHU6uJr74"
+            target="_blank"
+            rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center border-2 border-white/30 hover:border-white/60 bg-white/5 hover:bg-white/10 text-white px-8 py-3.5 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all duration-200"
           >
             <Play className="w-5 h-5 mr-2 fill-current" /> Watch Demo
-          </Link>
-        </div>
-
-        <div className="text-indigo-100/80 text-sm font-medium mb-16 flex items-center justify-center gap-3 flex-wrap">
-          <span>No credit card required</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-white/30 hidden sm:block"></span>
-          <span>14-day free trial</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-white/30 hidden sm:block"></span>
-          <span>Cancel anytime</span>
+          </a>
         </div>
 
         {/* Dashboard Preview Overlay */}

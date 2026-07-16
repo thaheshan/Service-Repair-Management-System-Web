@@ -173,7 +173,6 @@ export default function CustomerManagementPage() {
         name: newCustomer.name || form.name,
         email: newCustomer.email || form.email
       })
-
     } catch (err) {
       console.error("Failed to add customer:", err);
     }
@@ -190,7 +189,7 @@ export default function CustomerManagementPage() {
   const handleExportPDF = async () => {
     setIsExporting(true)
     try {
-      const { default: jsPDF } = await import("jspdf")
+      const { jsPDF } = await import("jspdf")
       const { default: autoTable } = await import("jspdf-autotable")
       const doc = new jsPDF({ orientation: "landscape" })
       doc.setFillColor(79, 70, 229); doc.rect(0, 0, 297, 16, "F")
@@ -366,8 +365,8 @@ export default function CustomerManagementPage() {
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                 {paginated.map(c => (
-                  <div key={c.id} className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md hover:border-[#4F46E5]/30 transition-all group flex flex-col items-center text-center">
-                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[#000] text-[20px] font-black mb-4 shadow-sm ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
+                  <div key={c.id} className="bg-card rounded-2xl border border-border dark:border-white p-6 shadow-sm hover:shadow-md hover:border-[#4F46E5]/30 dark:hover:border-[#4F46E5]/50 transition-all group flex flex-col items-center text-center">
+                    <div className={`h-16 w-16 rounded-full flex items-center justify-center text-[20px] font-black mb-4 shadow-sm text-slate-900 dark:text-white dark:ring-2 dark:ring-white/20 ${getAvatarColor(c.id)}`}>{getInitials(c.name)}</div>
                     <div className="flex flex-wrap items-center justify-center gap-1.5 mb-1">
                       <h2 className="text-[15px] font-bold text-foreground">{c.name}</h2>
                       {c.type === "VIP" && <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 text-[10px] font-bold rounded-full border border-amber-500/20">VIP</span>}
@@ -427,9 +426,9 @@ export default function CustomerManagementPage() {
                         <td className="px-6 py-4"><div className="text-[12px] text-muted-foreground font-medium space-y-0.5"><div className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{c.email}</div><div className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{c.phone}</div></div></td>
                         <td className="px-6 py-4 text-center">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${c.type === "VIP" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                              c.type === "Corporate" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" :
-                                c.type === "New" ? "bg-green-500/10 text-green-500 border-green-500/20" :
-                                  "bg-muted text-muted-foreground border-border"
+                            c.type === "Corporate" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" :
+                              c.type === "New" ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                                "bg-muted text-muted-foreground border-border"
                             }`}>{c.type}</span>
 
                         </td>
@@ -450,13 +449,13 @@ export default function CustomerManagementPage() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-t border-border">
               <span className="text-[13px] text-muted-foreground font-medium">{mounted ? t('customers.showing') : 'Showing'} <span className="font-bold text-foreground">{filtered.length === 0 ? 0 : (currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, filtered.length)}</span> {mounted ? t('customers.of') : 'of'} <span className="font-bold text-foreground">{filtered.length}</span> {mounted ? t('customers.total') : 'customers'}</span>
               <div className="flex items-center gap-1">
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center h-8 px-3 text-[13px] font-semibold text-muted-foreground hover:bg-muted rounded disabled:opacity-40 focus:outline-none"><ChevronLeft className="h-4 w-4 mr-1" />Previous</button>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center h-8 px-3 text-[13px] font-semibold text-muted-foreground dark:text-white hover:bg-muted rounded disabled:opacity-40 focus:outline-none"><ChevronLeft className="h-4 w-4 mr-1" />Previous</button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1).reduce((acc, p, i, arr) => {
                   if (i > 0 && arr[i - 1] !== p - 1) acc.push(-1); acc.push(p); return acc
                 }, [] as number[]).map((p, i) => p === -1 ? <span key={`e${i}`} className="px-1 text-muted-foreground font-bold text-[13px]">…</span> : (
                   <button key={p} onClick={() => setCurrentPage(p)} className={`h-8 w-8 rounded text-[13px] font-semibold flex items-center justify-center focus:outline-none transition-colors ${currentPage === p ? "bg-[#4F46E5] text-white shadow-sm" : "text-foreground hover:bg-muted border border-border bg-card"}`}>{p}</button>
                 ))}
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center h-8 px-3 text-[13px] font-semibold text-foreground hover:bg-muted rounded border border-border bg-card disabled:opacity-40 focus:outline-none">Next<ChevronRight className="h-4 w-4 ml-1" /></button>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center h-8 px-3 text-[13px] font-semibold text-foreground hover:bg-muted rounded border border-border bg-card dark:text-white disabled:opacity-40 focus:outline-none">Next<ChevronRight className="h-4 w-4 ml-1" /></button>
               </div>
               <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
                 Show: <select value={perPage} onChange={e => { setPerPage(+e.target.value); setCurrentPage(1) }} className="h-8 px-2 rounded border border-border bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-[#4F46E5]"><option value={6}>6</option><option value={12}>12</option><option value={24}>24</option></select> per page
@@ -548,4 +547,3 @@ export default function CustomerManagementPage() {
     </div>
   )
 }
-

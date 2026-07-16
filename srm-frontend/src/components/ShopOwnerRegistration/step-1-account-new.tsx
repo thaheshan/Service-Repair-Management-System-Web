@@ -6,6 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep1 } from "./side-panel-step1"
 import { PasswordStrength } from "@/components/common/inputs/password-strength"
+import { TermsConditionsModal } from "@/components/shared/modals/TermsConditionsModal"
+import { PrivacyPolicyModal } from "@/components/shared/modals/PrivacyPolicyModal"
 
 
 interface StepAccountProps {
@@ -60,6 +62,8 @@ export function StepAccount({ onNext }: StepAccountProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
 
   const handleChange = (field: keyof AccountData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -322,17 +326,17 @@ export function StepAccount({ onNext }: StepAccountProps) {
                       checked={formData.agreeTerms}
                       onCheckedChange={(checked) => handleChange("agreeTerms", checked === true)}
                       id="terms-step1"
-                      className={`rounded-[4px] ${errors.agreeTerms ? "border-[#EF4444] data-[state=checked]:bg-[#EF4444]" : ""}`}
+                      className={`rounded-[4px] ${errors.agreeTerms ? "border-destructive data-[state=checked]:bg-destructive" : ""}`}
                     />
                   </div>
-                  <label htmlFor="terms-step1" className={`text-sm leading-relaxed ${errors.agreeTerms ? "text-[#EF4444]" : "text-[#374151]"}`}>
+                  <label htmlFor="terms-step1" className={`text-sm leading-relaxed ${errors.agreeTerms ? "text-destructive" : "text-muted-foreground"}`}>
                     I agree to the{" "}
-                    <a href="#" className="font-medium text-[#4F46E5] hover:underline">Terms of Service</a>
+                    <button type="button" onClick={() => setIsTermsModalOpen(true)} className="font-medium text-primary hover:underline focus:outline-none">Terms of Service</button>
                     {" "}and{" "}
-                    <a href="#" className="font-medium text-[#4F46E5] hover:underline">Privacy Policy</a>
+                    <button type="button" onClick={() => setIsPrivacyModalOpen(true)} className="font-medium text-primary hover:underline focus:outline-none">Privacy Policy</button>
                   </label>
                 </div>
-                {errors.agreeTerms && <p className="mt-1 text-xs text-[#EF4444] font-medium">{errors.agreeTerms}</p>}
+                {errors.agreeTerms && <p className="mt-1 text-xs text-destructive font-medium">{errors.agreeTerms}</p>}
               </div>
 
               {/* Submit Button */}
@@ -354,6 +358,16 @@ export function StepAccount({ onNext }: StepAccountProps) {
           </div>
         </div>
       </div>
+      
+      <TermsConditionsModal 
+        isOpen={isTermsModalOpen} 
+        onClose={() => setIsTermsModalOpen(false)} 
+      />
+      
+      <PrivacyPolicyModal 
+        isOpen={isPrivacyModalOpen} 
+        onClose={() => setIsPrivacyModalOpen(false)} 
+      />
     </div>
   )
 }

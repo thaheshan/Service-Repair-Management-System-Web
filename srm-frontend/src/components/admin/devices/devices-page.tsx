@@ -2,19 +2,19 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
-import html2canvas from "html2canvas"
-import jsPDF from "jspdf"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { Search, Filter, Plus, FileDown, ChevronDown, ChevronLeft, ChevronRight, Smartphone, Tablet, Laptop, Cpu, MoreVertical, Edit2, Trash2, Eye, Check, X, Loader2, CheckCircle2, Clock, Archive, Wrench, ShieldCheck, ShieldAlert, ShieldOff, Shield, Tag, PackageCheck, AlertCircle, ShoppingCart, ArrowUpRight, UserPlus } from "lucide-react"
 
-import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE } from "@/app/admin/devices/device-data"
+import { Device, DeviceType, DeviceStatus, WarrantyStatus, DEVICE_ICON_COLOR, WARRANTY_STYLE, STATUS_STYLE, DEVICE_MODELS_BY_BRAND, BRANDS } from "@/app/admin/devices/device-data"
 import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
 import { useGetDevicesQuery, useCreateDeviceMutation, useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/services/api/devicesApiSlice"
+import { Autocomplete } from "@/components/ui/autocomplete"
 import { useGetCustomersQuery } from "@/services/api/customersApiSlice"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { toast } from "sonner"
+import { generateDeviceInvoicePDF, generateDevicesInventoryPDF } from "@/lib/pdf-generator"
 
 type SortKey = "price_desc" | "price_asc" | "repairs_desc" | "newest" | "oldest"
 
@@ -65,8 +65,16 @@ export default function DevicesManagementPage() {
     { label: mounted ? t('devicesPage.types.mobile') : "Mobile Phone", value: "Mobile Phone" },
     { label: mounted ? t('devicesPage.types.tablet') : "Tablet", value: "Tablet" },
     { label: mounted ? t('devicesPage.types.laptop') : "Laptop", value: "Laptop" },
-    { label: mounted ? t('devicesPage.types.console') : "Console", value: "Console" },
+    { label: "Desktop Computer", value: "Desktop Computer" },
     { label: mounted ? t('devicesPage.types.smartwatch') : "Smartwatch", value: "Smartwatch" },
+    { label: mounted ? t('devicesPage.types.console') : "Gaming Console", value: "Gaming Console" },
+    { label: "Audio / Headphones", value: "Audio/Headphones" },
+    { label: "Camera", value: "Camera" },
+    { label: "Drone", value: "Drone" },
+    { label: "E-Reader", value: "E-Reader" },
+    { label: "Monitor / Display", value: "Monitor/Display" },
+    { label: "Printer / Scanner", value: "Printer/Scanner" },
+    { label: "Smart Home Device", value: "Smart Home Device" },
     { label: mounted ? t('devicesPage.types.other') : "Other", value: "Other" },
   ]
   const STATUSES = [
@@ -183,86 +191,8 @@ export default function DevicesManagementPage() {
     if (!deviceDetailRef.current || !viewDevice) return;
     setIsExportingDevice(true);
     toast.loading("Generating professional invoice...", { id: "pdf-gen" });
-    
-    await new Promise(r => setTimeout(r, 300));
-
     try {
-      const elements = Array.from(deviceDetailRef.current.getElementsByTagName("*"));
-      const computedStyles = elements.map(el => {
-        const style = window.getComputedStyle(el);
-        return {
-          cssText: style.cssText,
-          color: style.color,
-          backgroundColor: style.backgroundColor,
-          borderColor: style.borderColor,
-          borderWidth: style.borderWidth,
-          borderStyle: style.borderStyle,
-          padding: style.padding,
-          margin: style.margin,
-          display: style.display,
-          flexDirection: style.flexDirection,
-          alignItems: style.alignItems,
-          justifyContent: style.justifyContent,
-          fontSize: style.fontSize,
-          fontWeight: style.fontWeight,
-          fontFamily: style.fontFamily,
-          gap: style.gap,
-          width: style.width,
-          height: style.height,
-          boxShadow: style.boxShadow.includes('lab') || style.boxShadow.includes('oklch') ? 'none' : style.boxShadow
-        };
-      });
-
-      const canvas = await html2canvas(deviceDetailRef.current, { 
-        scale: 3, 
-        logging: false, 
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        onclone: (clonedDoc) => {
-          const clonedElements = Array.from(clonedDoc.getElementsByTagName("*"));
-          clonedElements.forEach((el, i) => {
-             const cel = el as HTMLElement;
-             const s = computedStyles[i];
-             if (!s) return;
-             
-             cel.style.color = s.color.includes('lab') || s.color.includes('oklch') ? '#000000' : s.color;
-             cel.style.backgroundColor = s.backgroundColor.includes('lab') || s.backgroundColor.includes('oklch') ? '#ffffff' : s.backgroundColor;
-             cel.style.borderColor = s.borderColor;
-             cel.style.borderWidth = s.borderWidth;
-             cel.style.borderStyle = s.borderStyle;
-             cel.style.padding = s.padding;
-             cel.style.display = s.display;
-             cel.style.fontSize = s.fontSize;
-             cel.style.fontWeight = s.fontWeight;
-             cel.style.fontFamily = "Arial, sans-serif";
-             cel.style.width = s.width;
-             cel.style.height = s.height;
-             cel.style.boxShadow = s.boxShadow;
-             
-             if (s.display === 'flex') {
-                cel.style.flexDirection = s.flexDirection;
-                cel.style.alignItems = s.alignItems;
-                cel.style.justifyContent = s.justifyContent;
-                cel.style.gap = s.gap;
-             }
-          });
-
-          const heads = clonedDoc.getElementsByTagName("head");
-          if (heads[0]) {
-             while(heads[0].firstChild) heads[0].removeChild(heads[0].firstChild);
-          }
-          const bodyStyles = clonedDoc.querySelectorAll('style');
-          bodyStyles.forEach(s => s.remove());
-        }
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`SRM_Device_Invoice_${viewDevice.name.replace(/\s+/g, '_')}.pdf`);
+      await generateDeviceInvoicePDF(viewDevice, user);
       toast.success("Invoice generated successfully!", { id: "pdf-gen" });
     } catch (err) {
       console.error("PDF GEN ERR:", err);
@@ -275,81 +205,8 @@ export default function DevicesManagementPage() {
   const handleDownloadInventoryPdf = async () => {
     setIsExporting(true)
     try {
-      const element = hiddenDevicesReportRef.current
-      if (!element) return
-
-      const elements = Array.from(element.getElementsByTagName("*"));
-      const computedStyles = elements.map(el => {
-        const style = window.getComputedStyle(el);
-        return {
-          color: style.color,
-          backgroundColor: style.backgroundColor,
-          borderColor: style.borderColor,
-          borderWidth: style.borderWidth,
-          borderStyle: style.borderStyle,
-          padding: style.padding,
-          display: style.display,
-          flexDirection: style.flexDirection,
-          alignItems: style.alignItems,
-          justifyContent: style.justifyContent,
-          fontSize: style.fontSize,
-          fontWeight: style.fontWeight,
-          gap: style.gap,
-          width: style.width,
-          height: style.height,
-          boxShadow: style.boxShadow.includes('lab') || style.boxShadow.includes('oklch') ? 'none' : style.boxShadow
-        };
-      });
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        onclone: (clonedDoc) => {
-          const clonedElements = Array.from(clonedDoc.getElementsByTagName("*"));
-          clonedElements.forEach((el, i) => {
-             const cel = el as HTMLElement;
-             const s = computedStyles[i];
-             if (!s) return;
-             
-             cel.style.color = s.color.includes('lab') || s.color.includes('oklch') ? '#000000' : s.color;
-             cel.style.backgroundColor = s.backgroundColor.includes('lab') || s.backgroundColor.includes('oklch') ? '#ffffff' : s.backgroundColor;
-             cel.style.borderColor = s.borderColor;
-             cel.style.borderWidth = s.borderWidth;
-             cel.style.borderStyle = s.borderStyle;
-             cel.style.padding = s.padding;
-             cel.style.display = s.display;
-             cel.style.fontSize = s.fontSize;
-             cel.style.fontWeight = s.fontWeight;
-             cel.style.fontFamily = "Arial, sans-serif";
-             cel.style.width = s.width;
-             cel.style.height = s.height;
-             cel.style.boxShadow = s.boxShadow;
-             
-             if (s.display === 'flex') {
-                cel.style.flexDirection = s.flexDirection;
-                cel.style.alignItems = s.alignItems;
-                cel.style.justifyContent = s.justifyContent;
-                cel.style.gap = s.gap;
-             }
-          });
-
-          const heads = clonedDoc.getElementsByTagName("head");
-          if (heads[0]) {
-             while(heads[0].firstChild) heads[0].removeChild(heads[0].firstChild);
-          }
-        }
-      })
-
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const imgProps = pdf.getImageProperties(imgData)
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`Devices_Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`)
+      await generateDevicesInventoryPDF(filtered, user);
+      toast.success("Inventory report generated successfully!");
     } catch (err) {
       console.error("PDF generation failed:", err)
       alert("Error: Could not generate PDF. Please try again.")
@@ -403,6 +260,7 @@ export default function DevicesManagementPage() {
       setAddSelectedCustomer(null);
       setAddCustomerSearch("");
       setCustomBrand("");
+      setCustomModel("");
     } catch (e: any) {
       toast.error(e.data?.message || "Registration failed");
     }
@@ -413,7 +271,8 @@ export default function DevicesManagementPage() {
     try {
       await updateDevice({
         id: pendingStatusUpdate.id,
-        status: newStatus
+        status: newStatus,
+        autoUpdateCustomer: autoNotify
       }).unwrap();
       setPendingStatusUpdate(null)
       setIsStatusModalOpen(false)
@@ -423,12 +282,14 @@ export default function DevicesManagementPage() {
     }
   }
 
+  const [customModel, setCustomModel] = useState("")
+
   const handleSaveEdit = async () => {
     if (!editDevice) return;
     try {
       const payload: Record<string, any> = {};
       if (editForm.model) payload.model = editForm.model;
-      if (editForm.brand) payload.brand = editForm.brand === "Other" ? (customBrand || "Other") : editForm.brand;
+      if (editForm.brand) payload.brand = editForm.brand;
       if (editForm.type) payload.type = editForm.type;
       if (editForm.imei) payload.imei = editForm.imei;
       if (editForm.serialNo) payload.serialNo = editForm.serialNo;
@@ -675,7 +536,7 @@ export default function DevicesManagementPage() {
                           <button onClick={() => setViewDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Eye className="h-3.5 w-3.5" /></button>
                           <button onClick={() => { setEditDevice({ ...d }); setEditForm({ model: d.name, brand: d.brand, type: d.type as DeviceType, imei: (d as any).rawImei || '', serialNo: (d as any).rawSerialNo || '', price: d.price || "" }) }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Edit2 className="h-3.5 w-3.5" /></button>
                           {user?.role !== 'TECHNICIAN' && (
-                            <button onClick={() => setDeleteDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => setDeleteDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors focus:outline-none"><Trash2 className="h-3.5 w-3.5" /></button>
                           )}
                         </div></td>
                       </tr>
@@ -711,23 +572,27 @@ export default function DevicesManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Device Model / Name *</label>
-                  <input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} placeholder="e.g. iPhone 14 Pro" className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/5 transition-all bg-background text-foreground" />
+                  <Autocomplete
+                    options={(DEVICE_MODELS_BY_BRAND[form.brand] || []).map(m => ({ value: m, label: m }))}
+                    value={form.model}
+                    onChange={v => setForm(p => ({ ...p, model: v }))}
+                    placeholder="Search or type model..."
+                    className="h-11 rounded-xl border-border"
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Brand *</label>
-                  <select value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground appearance-none outline-none">
-                    <option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Huawei">Huawei</option>
-                    <option value="Xiaomi">Xiaomi</option><option value="Oppo">Oppo</option><option value="Vivo">Vivo</option>
-                    <option value="Sony">Sony</option><option value="Nokia">Nokia</option><option value="Google">Google</option><option value="Other">Other</option>
-                  </select>
+                  <Autocomplete 
+                    options={BRANDS.map(b => ({ value: b, label: b }))}
+                    value={form.brand}
+                    onChange={v => {
+                      setForm(p => ({ ...p, brand: v, model: "" })); 
+                    }}
+                    placeholder="Search or type brand..."
+                    className="h-11 rounded-xl border-border"
+                  />
                 </div>
               </div>
-              {form.brand === "Other" && (
-                <div className="animate-in slide-in-from-top-2 duration-200">
-                  <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Custom Brand Name</label>
-                  <input value={customBrand} onChange={e => setCustomBrand(e.target.value)} placeholder="Type brand name..." className="w-full h-11 rounded-xl border border-primary bg-indigo-50/20 px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] text-foreground bg-background" />
-                </div>
-              )}
               {/* Row 2: Type */}
               <div>
                 <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Device Type</label>
@@ -822,15 +687,25 @@ export default function DevicesManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Device Model / Name</label>
-                  <input value={editForm.model} onChange={e => setEditForm(p => ({ ...p, model: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" />
+                  <Autocomplete
+                    options={(DEVICE_MODELS_BY_BRAND[editForm.brand] || []).map(m => ({ value: m, label: m }))}
+                    value={editForm.model}
+                    onChange={v => setEditForm(p => ({ ...p, model: v }))}
+                    placeholder="Search or type model..."
+                    className="h-11 rounded-xl border-border"
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Brand</label>
-                  <select value={editForm.brand} onChange={e => setEditForm(p => ({ ...p, brand: e.target.value }))} className="w-full h-11 rounded-xl border border-border px-4 text-[13px] font-bold focus:outline-none focus:border-[#4F46E5] bg-background text-foreground appearance-none">
-                    <option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Huawei">Huawei</option>
-                    <option value="Xiaomi">Xiaomi</option><option value="Oppo">Oppo</option><option value="Vivo">Vivo</option>
-                    <option value="Sony">Sony</option><option value="Nokia">Nokia</option><option value="Google">Google</option><option value="Other">Other</option>
-                  </select>
+                  <Autocomplete 
+                    options={BRANDS.map(b => ({ value: b, label: b }))}
+                    value={editForm.brand}
+                    onChange={v => {
+                      setEditForm(p => ({ ...p, brand: v, model: "" }));
+                    }}
+                    placeholder="Search or type brand..."
+                    className="h-11 rounded-xl border-border"
+                  />
                 </div>
               </div>
               <div>
@@ -901,9 +776,7 @@ export default function DevicesManagementPage() {
                     <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                             <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
-                               {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                             </div>
+                             <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                                {user?.shopName || "All Fix Private Limited"}
                              </h2>
@@ -1082,7 +955,7 @@ export default function DevicesManagementPage() {
         pendingStatus={pendingStatusUpdate?.status || null}
       />
 
-      <div className="fixed -left-[4000px] pointer-events-none opacity-0 select-none overflow-hidden h-0 w-0">
+      <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
         {viewDevice && (
             <div 
               ref={deviceDetailRef}
@@ -1092,9 +965,7 @@ export default function DevicesManagementPage() {
               <div className="flex justify-between items-start mb-20">
                   <div>
                      <div className="flex items-center gap-2.5 mb-2">
-                       <div className="h-10 w-10 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-xl">
-                         {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                       </div>
+                       <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
                        <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                          {user?.shopName || "All Fix Private Limited"}
                        </h2>
@@ -1251,9 +1122,7 @@ export default function DevicesManagementPage() {
           <div className="flex justify-between items-start mb-16">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-12 w-12 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white font-black text-2xl">
-                  {(user?.shopName || "All Fix Private Limited").charAt(0).toUpperCase()}
-                </div>
+                <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-12 w-auto object-contain" />
                 <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">
                   {user?.shopName || "All Fix Private Limited"}
                 </h2>
