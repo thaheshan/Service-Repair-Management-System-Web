@@ -51,7 +51,7 @@ export function RecentActivity() {
   useEffect(() => { setMounted(true) }, [])
 
   const user = useSelector((state: RootState) => state.auth.user);
-  const { data: response, isLoading, isError } = useGetDashboardAnalyticsQuery(7);
+  const { data: response, isLoading, isError } = useGetDashboardAnalyticsQuery({ days: 7 });
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filterType, setFilterType] = useState("All")
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")

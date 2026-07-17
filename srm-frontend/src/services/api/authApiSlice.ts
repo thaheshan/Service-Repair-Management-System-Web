@@ -27,6 +27,13 @@ export const authApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    cancelRegistration: builder.mutation({
+      query: (id) => ({
+        url: `/v1/onboarding/request/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Registration'],
+    }),
     getRegistrationStatus: builder.query({
       query: (id) => `/v1/onboarding/status/${id}`,
       providesTags: ['Registration'],
@@ -82,6 +89,7 @@ export const {
   useGetMeQuery,
   useListRegistrationsQuery,
   useRequestRegistrationMutation,
+  useCancelRegistrationMutation,
   useGetRegistrationStatusQuery,
   useApproveRegistrationMutation,
   useFinalizeRegistrationMutation,

@@ -84,7 +84,7 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess, repairId }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">

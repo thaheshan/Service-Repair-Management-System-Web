@@ -11,6 +11,7 @@ import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { Search, Filter, ChevronDown, UserPlus, FileDown, Grid, List as ListIcon, MapPin, Mail, Phone, MessageSquare, X, ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Check, Loader2, Shield } from "lucide-react"
 import { INITIAL_CUSTOMERS, Customer, CustomerType, getInitials, getAvatarColor, formatSpent } from "./customer-data"
+import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 
 type SortKey = "name-az" | "name-za" | "repairs-desc" | "repairs-asc" | "spent-desc" | "spent-asc" | "latest-visit" | "oldest-visit"
 type LastVisitFilter = "today" | "this-week" | "this-month" | "last-6-months" | "inactive" | null
@@ -97,8 +98,7 @@ export default function CustomerManagementPage() {
   const [filterRepairsMax, setFilterRepairsMax] = useState(50)
   const [filterSpentMax, setFilterSpentMax] = useState(100)
   const [filterLastVisit, setFilterLastVisit] = useState<LastVisitFilter>(null)
-  const [filterRegFrom, setFilterRegFrom] = useState("")
-  const [filterRegTo, setFilterRegTo] = useState("")
+  const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -118,7 +118,7 @@ export default function CustomerManagementPage() {
 
   const clearFilters = () => {
     setFilterTypes([]); setFilterRepairsMax(50); setFilterSpentMax(100)
-    setFilterLastVisit(null); setFilterRegFrom(""); setFilterRegTo(""); setCurrentPage(1)
+    setFilterLastVisit(null); setGlobalDateRange(makeRange(30)); setCurrentPage(1)
   }
 
   const filtered = useMemo(() => {
@@ -134,8 +134,16 @@ export default function CustomerManagementPage() {
     if (filterLastVisit === "this-month") r = r.filter((c: any) => c.lastVisitDays <= 30)
     if (filterLastVisit === "last-6-months") r = r.filter((c: any) => c.lastVisitDays <= 180)
     if (filterLastVisit === "inactive") r = r.filter((c: any) => c.lastVisitDays > 180)
-    if (filterRegFrom) r = r.filter((c: any) => c.registeredAt >= filterRegFrom)
-    if (filterRegTo) r = r.filter((c: any) => c.registeredAt <= filterRegTo)
+    
+    // Apply global date range to registeredAt
+    if (globalDateRange) {
+      r = r.filter((c: any) => {
+        const regDate = new Date(c.registeredAt);
+        regDate.setHours(0, 0, 0, 0);
+        return regDate >= globalDateRange.from && regDate <= globalDateRange.to;
+      });
+    }
+
     r = [...r].sort((a, b) => {
       if (sortKey === "name-az") return a.name.localeCompare(b.name)
       if (sortKey === "name-za") return b.name.localeCompare(a.name)
@@ -148,7 +156,7 @@ export default function CustomerManagementPage() {
       return 0
     })
     return r
-  }, [customers, search, filterTypes, filterRepairsMax, filterSpentMax, filterLastVisit, filterRegFrom, filterRegTo, sortKey])
+  }, [customers, search, filterTypes, filterRepairsMax, filterSpentMax, filterLastVisit, globalDateRange, sortKey])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage)
@@ -221,30 +229,32 @@ export default function CustomerManagementPage() {
           <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col flex-1">
 
             {/* Breadcrumb */}
-            <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
-              <Link href="/admin/dashboard" className="text-[#4F46E5] hover:underline">Dashboard</Link>
-              <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-              <span className="text-foreground">Customer Management</span>
-            </div>
-
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <h1 className="text-[26px] font-black text-foreground tracking-tight">{mounted ? t('customers.title') : 'Customer Management'}</h1>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold">{filtered.length} {mounted ? t('customers.total') : 'Customers'}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/admin/customers/tiers"
-                  className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-card text-[13px] font-bold text-foreground hover:bg-muted shadow-sm transition-colors focus:outline-none"
-                >
-                  <Shield className="h-4 w-4 text-[#4F46E5]" /> {mounted ? t('customers.manageRoles') : 'Manage Roles'}
-                </Link>
-                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm transition-colors focus:outline-none">
-                  <Plus className="h-4 w-4" /> {mounted ? t('customers.add') : 'Add Customer'}
-                </button>
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold">
+                <Link href="/admin/dashboard" className="text-[#4F46E5] hover:underline">Dashboard</Link>
+                <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                <span className="text-foreground">Customer Management</span>
               </div>
 
+              {/* Header */}
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <h1 className="text-[26px] font-black text-foreground tracking-tight">{mounted ? t('customers.title') : 'Customer Management'}</h1>
+                  <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit">{filtered.length} {mounted ? t('customers.total') : 'Customers'}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <DateRangePicker defaultDays={30} onChange={setGlobalDateRange} />
+                  <Link
+                    href="/admin/customers/tiers"
+                    className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-card text-[13px] font-bold text-foreground hover:bg-muted shadow-sm transition-colors focus:outline-none"
+                  >
+                    <Shield className="h-4 w-4 text-[#4F46E5]" /> {mounted ? t('customers.manageRoles') : 'Manage Roles'}
+                  </Link>
+                  <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white hover:bg-[#4338CA] shadow-sm transition-colors focus:outline-none">
+                    <Plus className="h-4 w-4" /> {mounted ? t('customers.add') : 'Add Customer'}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Toolbar */}
@@ -289,7 +299,7 @@ export default function CustomerManagementPage() {
               {/* Filter button */}
               <button onClick={() => setIsFiltersOpen(p => !p)} className={`flex items-center gap-2 h-10 px-5 rounded-lg border font-bold text-[13px] focus:outline-none shadow-sm transition-colors ${isFiltersOpen ? "bg-primary/10 text-primary border-[#4F46E5]/30" : "bg-card text-foreground border-border hover:bg-muted"}`}>
                 <Filter className={`h-4 w-4 ${isFiltersOpen ? "text-[#4F46E5]" : "text-muted-foreground"}`} /> {mounted ? t('customers.filters') : 'Filters'}
-                {(filterTypes.length || filterLastVisit || filterRegFrom || filterRegTo || filterRepairsMax < 50 || filterSpentMax < 100) ? <span className="h-5 w-5 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold flex items-center justify-center">!</span> : null}
+                {(filterTypes.length || filterLastVisit || filterRepairsMax < 50 || filterSpentMax < 100) ? <span className="h-5 w-5 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold flex items-center justify-center">!</span> : null}
               </button>
 
               {/* View toggle */}
@@ -346,8 +356,8 @@ export default function CustomerManagementPage() {
                   <div>
                     <p className="text-[12px] font-bold text-foreground mb-3">Registration Date</p>
                     <div className="space-y-2">
-                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">From</label><input type="date" value={filterRegFrom} onChange={e => { setFilterRegFrom(e.target.value); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
-                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">To</label><input type="date" value={filterRegTo} onChange={e => { setFilterRegTo(e.target.value); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
+                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">From</label><input type="date" value={globalDateRange.from.toISOString().slice(0,10)} onChange={e => { setGlobalDateRange(r => ({ ...r, from: new Date(e.target.value) })); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
+                      <div><label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">To</label><input type="date" value={globalDateRange.to.toISOString().slice(0,10)} onChange={e => { setGlobalDateRange(r => ({ ...r, to: new Date(e.target.value) })); setCurrentPage(1) }} className="w-full h-9 rounded-lg border border-border px-2 text-[12px] focus:outline-none focus:border-[#4F46E5] bg-background text-foreground" /></div>
                     </div>
                     <button onClick={() => setIsFiltersOpen(false)} className="mt-3 w-full h-9 bg-[#4F46E5] text-white rounded-lg text-[13px] font-bold hover:bg-[#4338CA] transition-colors focus:outline-none">Apply Filters</button>
                   </div>

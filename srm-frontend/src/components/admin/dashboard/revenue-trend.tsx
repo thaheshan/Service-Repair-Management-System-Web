@@ -51,7 +51,7 @@ import { useGetDashboardAnalyticsQuery } from "@/services/api/dashboardApiSlice"
 
 const rangeOptions = ["Last 7 days", "Last 14 days", "Last 30 days"]
 
-export function RevenueTrend() {
+export function RevenueTrend({ days = 30 }: { days?: number }) {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState("Last 7 days")
@@ -62,7 +62,10 @@ export function RevenueTrend() {
     "Last 30 days": 30
   };
 
-  const { data: response, isLoading } = useGetDashboardAnalyticsQuery(daysMap[selectedRange] || 7);
+  // Use external days prop if provided and meaningful, otherwise fall back to local picker
+  const effectiveDays = days !== 30 ? days : (daysMap[selectedRange] || 7);
+
+  const { data: response, isLoading } = useGetDashboardAnalyticsQuery({ days: effectiveDays });
   const data = response?.data?.revenueData || [];
 
   useEffect(() => {

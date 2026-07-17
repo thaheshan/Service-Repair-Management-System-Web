@@ -52,7 +52,7 @@ export function DashboardHeader() {
   useEffect(() => { setMounted(true) }, [])
 
   const router = useRouter()
-  const { data: response } = useGetDashboardAnalyticsQuery(7);
+  const { data: response } = useGetDashboardAnalyticsQuery({ days: 7 });
   const { data: settingsResponse } = useGetSettingsQuery({})
   const [markRead] = useMarkReadMutation()
   const [clearNotifications] = useClearNotificationsMutation()

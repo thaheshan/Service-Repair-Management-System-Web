@@ -217,6 +217,39 @@ export async function generateDeviceInvoicePDF(device: any, user: any) {
   doc.setFontSize(10);
   doc.text(`Rs. ${(device.price || 0).toLocaleString()}`, 124, finalY + 14);
 
+
+  // Device Proof Photo Section
+  if (device.photoUrl) {
+    try {
+      const photoYStart = finalY + 28;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(79, 70, 229);
+      doc.text("DEVICE PROOF PHOTO:", 14, photoYStart);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(14, photoYStart + 2, 196, photoYStart + 2);
+
+      const imgRes = await fetch(device.photoUrl);
+      const imgBlob = await imgRes.blob();
+      const imgBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(imgBlob);
+      });
+      const ext = device.photoUrl.split('.').pop()?.toLowerCase() || 'jpeg';
+      const imgFormat = ext === 'png' ? 'PNG' : 'JPEG';
+      doc.addImage(imgBase64, imgFormat, 14, photoYStart + 6, 60, 45);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Device Photo — ${device.name || 'Asset'}`, 14, photoYStart + 55);
+    } catch (e) {
+      console.error("Could not embed device photo in PDF:", e);
+    }
+  }
+
   drawFooter(doc, `Thank you for choosing ${shop.name} for your technical audits.`, 'portrait');
   doc.save(`SRM_Device_Invoice_${(device.name || "device").replace(/\s+/g, '_')}.pdf`);
 }
@@ -257,6 +290,8 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
   await drawHeader(doc, "Client Tax Invoice", user, 'portrait', invoice);
 
   const totalVal = invoice.amount || invoice.total || 0;
+  const advance = Number(invoice.advancePayment) || 0;
+  const remaining = Math.max(0, totalVal - advance);
 
   // Metadata block - matching "Logistics & Meta Grid"
   doc.setFillColor(248, 250, 252);
@@ -346,24 +381,28 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
   doc.setTextColor(79, 70, 229); // indigo-600
   doc.text("Payable on Receipt", 144, 109);
 
-  // Determine items list
+  // Determine items list. Prefer explicit line items, then split labour/parts
+  // using explicit cost fields, falling back to figures embedded in notes,
+  // and finally an even 40/60 split as a last resort.
   const extractCosts = (notes: string | undefined, totalAmount: number) => {
     if (!notes) return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
     const labourMatch = notes.match(/Labour:\s*Rs\.?(\d+(?:\.\d+)?)/i);
     const partsMatch = notes.match(/Parts:\s*Rs\.?(\d+(?:\.\d+)?)/i);
-    let labour = labourMatch ? parseFloat(labourMatch[1]) : null;
-    let parts = partsMatch ? parseFloat(partsMatch[1]) : null;
+    const labour = labourMatch ? parseFloat(labourMatch[1]) : null;
+    const parts = partsMatch ? parseFloat(partsMatch[1]) : null;
     if (labour !== null && parts !== null) return { labour, parts };
     return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
   };
 
-  const costs = extractCosts(invoice.notes, totalVal);
+  const fallbackCosts = extractCosts(invoice.notes, totalVal);
+  const laborVal = invoice.laborCost !== undefined ? invoice.laborCost : fallbackCosts.labour;
+  const partsVal = invoice.partsCost !== undefined ? invoice.partsCost : fallbackCosts.parts;
 
   const items = invoice.items || (invoice.type === 'inventory_item' ? [
     { description: "Component material & Bulk sales", qty: 1, price: totalVal, amount: totalVal }
   ] : [
-    { description: "Advanced Technical Service Labor", qty: 1, price: costs.labour, amount: costs.labour },
-    { description: "OEM Grade Replacement Component Parts", qty: 1, price: costs.parts, amount: costs.parts }
+    { description: "Advanced Technical Service Labor", qty: 1, price: laborVal, amount: laborVal },
+    { description: "OEM Grade Replacement Component Parts", qty: 1, price: partsVal, amount: partsVal }
   ]);
 
   autoTable(doc, {
@@ -380,34 +419,44 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
     alternateRowStyles: { fillColor: [248, 250, 252] }
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY + 12;
+  // Financial Totals block, including advance payment when applicable
+  const finalY = (doc as any).lastAutoTable.finalY + 8;
+  doc.setFillColor(248, 250, 252);
+  doc.rect(120, finalY, 76, advance > 0 ? 32 : 26, "F");
 
-  // Financial Totals block (mimicking the frontend)
-  // Subtotal line
-  doc.setFont("helvetica", "bold");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Subtotal Net:", 124, finalY + 7);
+  doc.text("Tax Valuation (VAT 0.0%):", 124, finalY + 13);
+
+  if (advance > 0) {
+    doc.text("Advance Payment:", 124, finalY + 19);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Payable (LKR):", 124, finalY + 26);
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Payable (LKR):", 124, finalY + 20);
+  }
+
   doc.setFontSize(9);
-  doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("Subtotal", 130, finalY);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY, { align: 'right' });
+  doc.setFont("helvetica", "normal");
+  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 7, { align: 'right' });
+  doc.text("Rs. 0", 188, finalY + 13, { align: 'right' });
 
-  // Border bottom for subtotal
-  doc.setDrawColor(241, 245, 249);
-  doc.setLineWidth(0.5);
-  doc.line(130, finalY + 4, 188, finalY + 4);
-
-  // Grand total line
-  doc.setFontSize(9);
-  doc.setTextColor(15, 23, 42);
-  doc.text("GRAND TOTAL BILLED", 130, finalY + 10);
-
-  doc.setFontSize(11);
-  doc.setTextColor(79, 70, 229);
-  doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 10, { align: 'right' });
-
-  doc.setFontSize(6);
-  doc.setTextColor(148, 163, 184);
-  doc.text("AUTHORIZED FOR TRANSACTION", 188, finalY + 15, { align: 'right' });
+  if (advance > 0) {
+    doc.text(`- Rs. ${advance.toLocaleString()}`, 188, finalY + 19, { align: 'right' });
+    doc.setTextColor(79, 70, 229);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(`Rs. ${remaining.toLocaleString()}`, 188, finalY + 26, { align: 'right' });
+  } else {
+    doc.setTextColor(79, 70, 229);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 20, { align: 'right' });
+  }
 
   drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
   doc.save(`SRM_Invoice_${invoice.invoiceId || invoice.orderNumber || "receipt"}.pdf`);
@@ -673,11 +722,18 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   doc.setTextColor(79, 70, 229);
   doc.text("BILLED TO:", 18, 88);
   doc.setTextColor(15, 23, 42);
-  doc.text(repair.customer || "Walk-in Customer", 18, 93);
+  const customerName = typeof repair.customer === 'string'
+    ? repair.customer
+    : (repair.customer?.name || "Walk-in Customer");
+  doc.text(customerName, 18, 93);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Device: ${repair.deviceType || "Device"} (${repair.brand || "Generic"} ${repair.model || "Model"})`, 18, 98);
+  // Retrieve device details dynamically, falling back to a nested device object
+  const deviceBrand = repair.brand || repair.device?.brand || "Generic";
+  const deviceModel = repair.model || repair.device?.model || "Model";
+  const deviceTypeName = repair.deviceType || repair.device?.type || "Device";
+  doc.text(`Device: ${deviceTypeName} (${deviceBrand} ${deviceModel})`, 18, 98);
   doc.text("Customer Address Stored & Verified", 18, 103);
 
   // Right side info
@@ -686,24 +742,32 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
   doc.text("JOB OVERVIEW:", 110, 88);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Invoice Ref: ${repair.invoiceRef || "N/A"}`, 110, 93);
-  doc.text(`Invoice Date: ${repair.invoiceDate || new Date().toLocaleDateString()}`, 110, 98);
-  doc.text(`Issue Category: ${repair.issueCategory || "Repair"}`, 110, 103);
+  doc.text(`Invoice Ref: ${repair.reference || repair.invoiceRef || "N/A"}`, 110, 93);
+  doc.text(`Invoice Date: ${repair.createdAt ? new Date(repair.createdAt).toLocaleDateString() : (repair.invoiceDate || new Date().toLocaleDateString())}`, 110, 98);
+  doc.text(`Issue Category: ${repair.issue || repair.issueCategory || "Repair"}`, 110, 103);
   doc.text(`Status: ${(repair.status || "Pending").toUpperCase()}`, 110, 108);
 
-  const labor = Number(repair.laborCost) || 0;
-  const parts = Number(repair.partsCost) || 0;
+  const total = Number(repair.finalCost || repair.estimatedCost || repair.pricingTotal) || 0;
+  const parts = Number(repair.partsCost) || (repair.repairPartsUsed || []).reduce((sum: number, p: any) => sum + (Number(p.unitPrice || p.totalPrice) * Number(p.quantityUsed || 1)), 0);
   const discount = Number(repair.discount) || 0;
-  const total = Number(repair.pricingTotal) || (labor + parts - discount);
+  const labor = Number(repair.laborCost) || Math.max(0, total - parts + discount);
+  const advance = Number(repair.advancePayment) || 0;
+  const remaining = Math.max(0, total - advance);
+
+  const tableBody = [
+    ["Labor / Diagnostic Fee", `Rs. ${labor.toLocaleString()}`],
+    ["Replacement Components / Parts Material Cost", `Rs. ${parts.toLocaleString()}`],
+    ["Promotional Discount", `- Rs. ${discount.toLocaleString()}`]
+  ];
+
+  if (advance > 0) {
+    tableBody.push(["Advance Payment / Deposit Stored", `- Rs. ${advance.toLocaleString()}`]);
+  }
 
   autoTable(doc, {
     startY: 120,
     head: [["Technical Service Details", "Rate (LKR)"]],
-    body: [
-      ["Labor / Diagnostic Fee", `Rs. ${labor.toLocaleString()}`],
-      ["Replacement Components / Parts Material Cost", `Rs. ${parts.toLocaleString()}`],
-      ["Promotional Discount", `- Rs. ${discount.toLocaleString()}`]
-    ],
+    body: tableBody,
     headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: "bold", fontSize: 8 },
     bodyStyles: { fontSize: 8, cellPadding: 4, textColor: [15, 23, 42] },
     alternateRowStyles: { fillColor: [248, 250, 252] }
@@ -711,15 +775,63 @@ export async function generateRepairInvoicePDF(repair: any, user: any) {
 
   const finalY = (doc as any).lastAutoTable.finalY + 8;
   doc.setFillColor(248, 250, 252);
-  doc.rect(120, finalY, 76, 20, "F");
+  doc.rect(120, finalY, 76, 25, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text("Total Payable (LKR):", 124, finalY + 7);
+  doc.text("Total Cost:", 124, finalY + 6);
+  doc.text(`Rs. ${total.toLocaleString()}`, 190, finalY + 6, { align: 'right' });
+
+  if (advance > 0) {
+    doc.text("Advance Payment:", 124, finalY + 12);
+    doc.text(`- Rs. ${advance.toLocaleString()}`, 190, finalY + 12, { align: 'right' });
+  }
+
   doc.setTextColor(79, 70, 229);
-  doc.setFontSize(10);
-  doc.text(`Rs. ${total.toLocaleString()}`, 124, finalY + 14);
+  doc.setFontSize(9);
+  doc.text(advance > 0 ? "Remaining Balance Due:" : "Total Payable (LKR):", 124, finalY + 19);
+  doc.text(`Rs. ${remaining.toLocaleString()}`, 190, finalY + 19, { align: 'right' });
+
+  // Proof Photos Section - handle both raw URL strings and API photo objects {url: string}
+  const rawPhotos = repair.photos || repair.uploadedPhotos || [];
+  const proofPhotos: string[] = rawPhotos.map((p: any) => (typeof p === 'string' ? p : p.url)).filter(Boolean);
+  if (proofPhotos.length > 0) {
+    const photosY = finalY + 34;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(79, 70, 229);
+    doc.text("DEVICE PROOF PHOTOS:", 14, photosY);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(14, photosY + 2, 196, photosY + 2);
+
+    let photoX = 14;
+    const photoWidth = 55;
+    const photoHeight = 42;
+    const photoGap = 6;
+    let addedCount = 0;
+    for (const url of proofPhotos.slice(0, 3)) {
+      try {
+        const imgRes = await fetch(url);
+        const imgBlob = await imgRes.blob();
+        const imgBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(imgBlob);
+        });
+        const ext = url.split('.').pop()?.toLowerCase() || 'jpeg';
+        const imgFormat = ext === 'png' ? 'PNG' : 'JPEG';
+        doc.addImage(imgBase64, imgFormat, photoX, photosY + 6, photoWidth, photoHeight);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Photo ${addedCount + 1}`, photoX, photosY + photoHeight + 10);
+        photoX += photoWidth + photoGap;
+        addedCount++;
+      } catch(e) { console.error("Could not embed proof photo:", e); }
+    }
+  }
 
   drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
   doc.save(`Invoice_${repair.invoiceRef || 'Draft'}.pdf`);

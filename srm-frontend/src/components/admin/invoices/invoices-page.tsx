@@ -8,6 +8,7 @@ import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
 import { InvoicesFilterModal, InvoiceFilters } from "@/components/admin/invoices/invoices-filter-modal"
+import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 import {
    Search, Filter, ChevronDown, Plus, Eye,
    Grid, List as ListIcon, Calendar as CalendarIcon,
@@ -90,9 +91,8 @@ export default function InvoicesManagementPage() {
    const [filterStatuses, setFilterStatuses] = useState<string[]>([])
    const [filterStaff, setFilterStaff] = useState<string[]>([])
    const [filterDevices, setFilterDevices] = useState<string[]>([])
-   const [filterAmountRange, setFilterAmountRange] = useState({ min: 0, max: 100000 })
-   const [filterDateFrom, setFilterDateFrom] = useState("")
-   const [filterDateTo, setFilterDateTo] = useState("")
+   const [filterAmountRange, setFilterAmountRange] = useState({ min: 0, max: 250000 })
+   const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
 
    // Master Modals
    const [viewDocumentTarget, setViewDocumentTarget] = useState<any | null>(null)
@@ -260,8 +260,13 @@ export default function InvoicesManagementPage() {
 
       r = r.filter(inv => inv.amount >= filterAmountRange.min && inv.amount <= filterAmountRange.max)
 
-      if (filterDateFrom) r = r.filter(inv => inv.date.slice(0, 10) >= filterDateFrom)
-      if (filterDateTo) r = r.filter(inv => inv.date.slice(0, 10) <= filterDateTo)
+      if (globalDateRange) {
+         r = r.filter(inv => {
+            const invDate = new Date(inv.date);
+            invDate.setHours(0, 0, 0, 0);
+            return invDate >= globalDateRange.from && invDate <= globalDateRange.to;
+         });
+      }
 
       return r.sort((a, b) => {
          if (sortKey === "date-new") return new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -275,7 +280,7 @@ export default function InvoicesManagementPage() {
          if (sortKey === "id-az") return a.invoiceId.localeCompare(b.invoiceId)
          return 0
       })
-   }, [invoicesState, searchTerm, activeTab, filterTypes, filterStatuses, filterAmountRange, filterDateFrom, filterDateTo, sortKey, user?.role])
+   }, [invoicesState, searchTerm, activeTab, filterTypes, filterStatuses, filterAmountRange, globalDateRange, sortKey, user?.role])
 
 
    return (
@@ -288,20 +293,24 @@ export default function InvoicesManagementPage() {
             <main className="flex-1 flex flex-col pt-0 overflow-y-auto" onClick={() => { setActiveDropdownId(null); setIsSortOpen(false); }}>
                <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col">
 
-                  <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold mb-4">
-                     <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title') : 'Dashboard'}</Link>
-                     <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-                     <span className="text-foreground">{mounted ? t('invoicesPage.title') : 'Invoice Management'}</span>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                     <h1 className="text-[28px] font-black text-foreground tracking-tight">{mounted ? t('invoicesPage.title') : 'Invoice Management'}</h1>
-                     <button
-                        onClick={() => setIsAddInvoiceOpen(true)}
-                        className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white shadow-sm hover:bg-[#4338CA] transition-colors focus:outline-none"
-                     >
-                        <Plus className="h-4 w-4" /> {mounted ? t('invoicesPage.add') : 'Add Invoice'}
-                     </button>
+                  <div className="flex flex-col gap-4 mb-8">
+                     <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-semibold">
+                        <Link href="/admin/dashboard" className="hover:text-foreground transition-colors cursor-pointer text-[#4F46E5]">{mounted ? t('dashboard.title') : 'Dashboard'}</Link>
+                        <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                        <span className="text-foreground">{mounted ? t('invoicesPage.title') : 'Invoice Management'}</span>
+                     </div>
+                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <h1 className="text-[28px] font-black text-foreground tracking-tight">{mounted ? t('invoicesPage.title') : 'Invoice Management'}</h1>
+                        <div className="flex flex-wrap items-center gap-3">
+                           <DateRangePicker defaultDays={30} onChange={setGlobalDateRange} />
+                           <button
+                              onClick={() => setIsAddInvoiceOpen(true)}
+                              className="flex items-center gap-2 h-10 px-5 rounded-lg bg-[#4F46E5] text-[13px] font-bold text-white shadow-sm hover:bg-[#4338CA] transition-colors focus:outline-none"
+                           >
+                              <Plus className="h-4 w-4" /> {mounted ? t('invoicesPage.add') : 'Add Invoice'}
+                           </button>
+                        </div>
+                     </div>
                   </div>
 
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
@@ -1117,10 +1126,16 @@ export default function InvoicesManagementPage() {
                                  <span>Subtotal</span>
                                  <span className="text-[#0F172A]">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</span>
                               </div>
+                              {Number(viewDocumentTarget.advancePayment) > 0 && (
+                                 <div className="flex justify-between items-center text-[13px] font-bold text-slate-500 pb-5 border-b border-slate-100">
+                                    <span>Advance Payment</span>
+                                    <span className="text-red-500">- Rs. {Number(viewDocumentTarget.advancePayment).toLocaleString()}</span>
+                                 </div>
+                              )}
                               <div className="flex justify-between items-center pt-2">
                                  <span className="text-[16px] font-black text-[#0F172A] uppercase tracking-tighter">Grand Total Billed</span>
                                  <div className="text-right">
-                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</p>
+                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {Math.max(0, (viewDocumentTarget.amount ?? 0) - (Number(viewDocumentTarget.advancePayment) || 0)).toLocaleString()}</p>
                                     <p className="text-[9px] text-slate-400 font-black uppercase mt-1">Authorized for Transaction</p>
                                  </div>
                               </div>
@@ -1309,10 +1324,16 @@ export default function InvoicesManagementPage() {
                                  <span>Subtotal</span>
                                  <span className="text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</span>
                               </div>
+                              {Number(hiddenInvoiceTarget.advancePayment) > 0 && (
+                                 <div className="flex justify-between items-center text-[13px] font-bold text-slate-500 pb-5 border-b border-slate-100">
+                                    <span>Advance Payment</span>
+                                    <span className="text-red-500">- Rs. {Number(hiddenInvoiceTarget.advancePayment).toLocaleString()}</span>
+                                 </div>
+                              )}
                               <div className="flex justify-between items-center pt-2">
                                  <span className="text-[16px] font-black text-[#0F172A] uppercase tracking-tighter">Grand Total Billed</span>
                                  <div className="text-right">
-                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</p>
+                                    <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter leading-none">Rs. {Math.max(0, (hiddenInvoiceTarget.amount ?? 0) - (Number(hiddenInvoiceTarget.advancePayment) || 0)).toLocaleString()}</p>
                                     <p className="text-[9px] text-slate-400 font-black uppercase mt-1">Authorized for Transaction</p>
                                  </div>
                               </div>
@@ -1377,8 +1398,7 @@ export default function InvoicesManagementPage() {
                   setFilterStaff(filters.staff)
                   setFilterDevices(filters.devices)
                   setFilterAmountRange(filters.amountRange)
-                  setFilterDateFrom(filters.dateFrom)
-                  setFilterDateTo(filters.dateTo)
+                  setGlobalDateRange({ from: new Date(filters.dateFrom), to: new Date(filters.dateTo) })
                   setIsFiltersOpen(false)
                }}
                onReset={() => {
@@ -1387,8 +1407,7 @@ export default function InvoicesManagementPage() {
                   setFilterStaff([])
                   setFilterDevices([])
                   setFilterAmountRange({ min: 0, max: 100000 })
-                  setFilterDateFrom("")
-                  setFilterDateTo("")
+                  setGlobalDateRange({ from: new Date(new Date().setDate(new Date().getDate() - 30)), to: new Date() })
                }}
                currentFilters={{
                   types: filterTypes,
@@ -1396,8 +1415,8 @@ export default function InvoicesManagementPage() {
                   staff: filterStaff,
                   devices: filterDevices,
                   amountRange: filterAmountRange,
-                  dateFrom: filterDateFrom,
-                  dateTo: filterDateTo
+                  dateFrom: globalDateRange.from.toISOString().slice(0, 10),
+                  dateTo: globalDateRange.to.toISOString().slice(0, 10)
                }}
             />
          </div>

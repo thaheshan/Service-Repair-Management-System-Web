@@ -13,7 +13,8 @@ import { Autocomplete } from "@/components/ui/autocomplete"
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
 import { useGetDevicesQuery, useCreateDeviceMutation } from "@/services/api/devicesApiSlice"
 import { useGetStaffListQuery, useGetStaffContextQuery } from "@/services/api/staffApiSlice"
-import { useGetInventoryItemsQuery } from "@/services/api/inventoryApiSlice"
+import { useGetInventoryItemsQuery, useCreateInventoryItemMutation } from "@/services/api/inventoryApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { PhotoUploadModal } from "@/components/shared/modals/PhotoUploadModal"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "@/store/store"
@@ -62,6 +63,7 @@ export default function CreateRepairPage() {
   const [internalNotes, setInternalNotes] = useState("")
   const [estimatedDate, setEstimatedDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]) // Default to 7 days from now
   const [accessories, setAccessories] = useState<string[]>([])
+  const [customOtherAccessory, setCustomOtherAccessory] = useState("")
 
   // New States for Features
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
@@ -72,6 +74,10 @@ export default function CreateRepairPage() {
   // Custom Parts State
   const [partsRequired, setPartsRequired] = useState<{partId: string; partName: string; unitPrice: number; quantity: number}[]>([])
   const [partInput, setPartInput] = useState("")
+  const [showAddInventoryModal, setShowAddInventoryModal] = useState(false)
+  const [newPartName, setNewPartName] = useState("")
+  const [newPartCost, setNewPartCost] = useState("")
+  const [newPartSku, setNewPartSku] = useState("")
 
   // Pricing States
   const [laborCost, setLaborCost] = useState("0")
@@ -96,6 +102,9 @@ export default function CreateRepairPage() {
   const [createDevice] = useCreateDeviceMutation()
   const { data: devicesData } = useGetDevicesQuery({}, { skip: !user?.shopId })
   const { data: inventoryData } = useGetInventoryItemsQuery({}, { skip: !user?.shopId })
+  const [createInventoryItem, { isLoading: isCreatingItem }] = useCreateInventoryItemMutation()
+  const { data: settingsData } = useGetSettingsQuery({})
+  const shopLogoUrl = settingsData?.logoUrl || settingsData?.settings?.appearance?.logoUrl || settingsData?.data?.logoUrl || null
 
   const dispatch = useDispatch()
 
@@ -152,7 +161,15 @@ export default function CreateRepairPage() {
         laborCost: parseFloat(laborCost || "0"),
         partsCost: parseFloat(partsCost || "0"),
         discount: applyDiscount ? parseFloat(discount || "0") : 0,
-        pricingTotal
+        advancePayment: parseFloat(advancePayment || "0"),
+        pricingTotal,
+        photos: uploadedPhotos,
+        repairPartsUsed: partsRequired.map(p => ({
+          partId: p.partId,
+          partName: p.partName,
+          unitPrice: p.unitPrice,
+          quantityUsed: p.quantity
+        }))
       }, user)
       toast.success("Invoice generated successfully!", { id: "pdf-gen" })
     } catch (err) {
@@ -242,6 +259,7 @@ export default function CreateRepairPage() {
           customerId: finalCustomerId,
           shopId: user.shopId,
           tenantId: user.tenantId,
+          status: "IN_SERVICE",
           ...(serialNo && { serialNo }),
           ...(imei && { imei })
         }).unwrap();
@@ -253,6 +271,11 @@ export default function CreateRepairPage() {
         deviceId: selectedDeviceId || newDev?.data?.id,
         issue: issueDescription || issueCategory,
         estimatedCost: Math.round(pricingTotal),
+        finalCost: Math.round(pricingTotal),
+        advancePayment: parseFloat(advancePayment || "0"),
+        accessories: accessories.includes("Other") && customOtherAccessory
+          ? [...accessories.filter(a => a !== "Other"), `Other: ${customOtherAccessory}`]
+          : accessories,
         technicianId: technician || null,
         status: status === "Pending" ? "NOT_STARTED" :
                 status === "In Progress" ? "IN_PROGRESS" :
@@ -522,7 +545,7 @@ export default function CreateRepairPage() {
               <section className="bg-card rounded-xl shadow-sm border border-border p-6">
                  <h2 className="text-lg font-bold text-foreground mb-6">{mounted ? t('repairs.form.deviceTitle') : 'Device Information'}</h2>
 
-                 <div className="mb-6 relative z-10">
+                 <div className="mb-6 relative">
                     <label className="block text-[13px] font-bold text-foreground mb-1.5">Search Existing Device <span className="text-muted-foreground font-normal">(Optional)</span></label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -540,7 +563,7 @@ export default function CreateRepairPage() {
                         disabled={!selectedCustomerId && !customer}
                       />
                       {deviceSearchTerm && !selectedDeviceId && devicesData?.data && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-xl z-[100] max-h-60 overflow-y-auto">
                           {devicesData.data
                             .filter((d: any) => {
                                const matchTerm = `${d.brand} ${d.model} ${d.imei || ''}`.toLowerCase().includes(deviceSearchTerm.toLowerCase());
@@ -714,21 +737,30 @@ export default function CreateRepairPage() {
                  </div>
 
                  <div className="mb-6">
-                   <label className="block text-[13px] font-bold text-foreground mb-3">{mounted ? t('repairs.form.accessories') : 'Device Accessories Included'} ({mounted ? t('common.optional') : 'Optional'})</label>
-                   <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-                     {["Charger", "Battery", "Case", "Original Box", "Mouse / Keyboard", "SD Card / SIM Tray", "Other"].map((acc) => {
-                       const accKey = acc === "Original Box" ? "box" : acc === "Mouse / Keyboard" ? "mouseKeyboard" : acc === "SD Card / SIM Tray" ? "sdSim" : acc.toLowerCase();
-                       const isChecked = accessories.includes(acc)
-                       return (
-                         <label key={acc} className="flex items-center gap-2 cursor-pointer group" onClick={(e) => { e.preventDefault(); toggleAccessory(acc); }}>
-                           <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${isChecked ? 'bg-primary border-primary' : 'border-muted-foreground/30 bg-background group-hover:border-primary'}`}>
-                              {isChecked && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                           </div>
-                           <span className="text-[13px] font-medium text-foreground select-none">{mounted ? t(`repairs.options.${accKey}`) : acc}</span>
-                         </label>
-                       )}
-                     )}
-                   </div>
+                    <label className="block text-[13px] font-bold text-foreground mb-3">{mounted ? t('repairs.form.accessories') : 'Device Accessories Included'} ({mounted ? t('common.optional') : 'Optional'})</label>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                      {["Charger", "Battery", "Case", "Original Box", "Mouse / Keyboard", "SD Card / SIM Tray", "Other"].map((acc) => {
+                        const accKey = acc === "Original Box" ? "box" : acc === "Mouse / Keyboard" ? "mouseKeyboard" : acc === "SD Card / SIM Tray" ? "sdSim" : acc.toLowerCase();
+                        const isChecked = accessories.includes(acc)
+                        return (
+                          <label key={acc} className="flex items-center gap-2 cursor-pointer group" onClick={(e) => { e.preventDefault(); toggleAccessory(acc); }}>
+                            <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${isChecked ? 'bg-primary border-primary' : 'border-muted-foreground/30 bg-background group-hover:border-primary'}`}>
+                               {isChecked && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                            </div>
+                            <span className="text-[13px] font-medium text-foreground select-none">{mounted ? t(`repairs.options.${accKey}`) : acc}</span>
+                          </label>
+                        )}
+                      )}
+                    </div>
+                    {accessories.includes("Other") && (
+                      <input
+                        type="text"
+                        value={customOtherAccessory}
+                        onChange={(e) => setCustomOtherAccessory(e.target.value)}
+                        placeholder="Describe other accessories included..."
+                        className="mt-3 w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#4F46E5] animate-in fade-in slide-in-from-top-1"
+                      />
+                    )}
                  </div>
 
                  <div>
@@ -806,14 +838,14 @@ export default function CreateRepairPage() {
                         value={partInput}
                         onChange={(e) => setPartInput(e.target.value)}
                         onKeyDown={handleAddPart}
-                        placeholder={mounted ? t("repairs.placeholders.partSearch") : "Type part (e.g., Premium Screen Component) and press Enter to specify..."}
+                        placeholder={mounted ? t("repairs.placeholders.partSearch") : "Type part name to search inventory..."}
                         className="w-full h-11 rounded-lg border border-border bg-background pl-10 pr-4 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#4F46E5] placeholder:text-muted-foreground/60"
                       />
                    </div>
                    <div className="flex flex-wrap items-center gap-2 mb-3">
                      {partsRequired.map((part, idx) => (
                        <div key={idx} className="px-3 py-1.5 border border-border rounded-lg bg-muted/30 flex items-center gap-2 inline-flex">
-                         <span className="text-[12px] font-medium text-foreground">{part.partName} {part.unitPrice > 0 ? `(Rs. ${part.unitPrice})` : ''}</span>
+                         <span className="text-[12px] font-medium text-foreground">{part.partName} {part.unitPrice > 0 ? `(Rs. ${part.unitPrice.toLocaleString()})` : ''}</span>
                       <button onClick={(e) => {
                         e.preventDefault();
                         setPartsRequired(partsRequired.filter((_, i) => i !== idx));
@@ -825,8 +857,8 @@ export default function CreateRepairPage() {
                          </button>
                        </div>
                      ))}
-                     <button onClick={(e) => e.preventDefault()} className="text-[13px] font-bold text-primary flex items-center gap-1 hover:underline ml-2 outline-none">
-                       <Plus className="h-3.5 w-3.5" /> {mounted ? t('repairs.actions.browseInventory') : 'Browse Inventory'}
+                     <button onClick={(e) => { e.preventDefault(); setShowAddInventoryModal(true); setNewPartName(partInput); }} className="text-[13px] font-bold text-primary flex items-center gap-1 hover:underline ml-2 outline-none">
+                       <Plus className="h-3.5 w-3.5" /> Add New Inventory Item
                      </button>
                    </div>
                    {/* Live inventory dropdown */}
@@ -1119,7 +1151,15 @@ export default function CreateRepairPage() {
                 <div className="px-8 pb-8 pt-2 flex flex-col items-center text-center">
                    <h2 className="text-[22px] font-bold text-foreground mb-2 leading-tight">{mounted ? t('repairs.createNew') : 'Create New Repair'}?</h2>
                    <p className="text-[13px] text-muted-foreground mb-4">{mounted ? t('repairs.form.review') : 'You are about to create a new repair task.'}</p>
-                   <p className="text-[15px] font-bold text-foreground mb-6">{mounted ? t('repairs.form.total') : 'Total Quote'}: Rs. {pricingTotal.toLocaleString()}</p>
+                   <div className="text-center mb-6 space-y-1">
+                     <p className="text-[15px] font-bold text-foreground">{mounted ? t('repairs.form.total') : 'Total Quote'}: Rs. {pricingTotal.toLocaleString()}</p>
+                     {parseFloat(advancePayment || "0") > 0 && (
+                       <>
+                         <p className="text-[13px] font-semibold text-emerald-600">Advance Paid: Rs. {parseFloat(advancePayment || "0").toLocaleString()}</p>
+                         <p className="text-[14px] font-black text-[#4F46E5]">Remaining Due: Rs. {Math.max(0, pricingTotal - parseFloat(advancePayment || "0")).toLocaleString()}</p>
+                       </>
+                     )}
+                   </div>
 
                    <label className="flex items-center gap-2.5 mb-8 cursor-pointer group">
                       <div className="relative flex items-center justify-center">
@@ -1180,7 +1220,13 @@ export default function CreateRepairPage() {
                  <div className="flex justify-between items-start mb-16">
                      <div>
                         <div className="flex items-center gap-2 mb-2">
-                           <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                           {shopLogoUrl ? (
+                             <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto object-contain" />
+                           ) : (
+                             <div className="h-10 w-10 rounded-lg bg-[#4F46E5] flex items-center justify-center text-white font-black text-lg">
+                               {(user?.shopName || "S").charAt(0).toUpperCase()}
+                             </div>
+                           )}
                            <h2 className="text-[24px] font-black text-[#0F172A] tracking-tighter uppercase">{user?.shopName || "All Fix Private Limited"}</h2>
                         </div>
                         <div className="text-[11px] text-muted-foreground/80 font-medium leading-[1.6]">
@@ -1226,8 +1272,12 @@ export default function CreateRepairPage() {
                         </div>
                      </div>
                      <div className="col-span-1 text-right bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1.5 font-bold">Total Payable</p>
-                        <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter">Rs.{pricingTotal.toLocaleString()}</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1.5 font-bold">
+                          {parseFloat(advancePayment || "0") > 0 ? "Remaining Due" : "Total Payable"}
+                        </p>
+                        <p className="text-[24px] font-black text-[#4F46E5] tracking-tighter">
+                          Rs.{(pricingTotal - parseFloat(advancePayment || "0")).toLocaleString()}
+                        </p>
                         <div className="mt-4 pt-4 border-t border-slate-200">
                            <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-bold">{mounted ? t('common.status') : 'Status'}</p>
                            <p className="text-[11px] font-black text-[#0F172A] uppercase">{status}</p>
@@ -1280,9 +1330,19 @@ export default function CreateRepairPage() {
                                <span>Tax ({tax}%)</span>
                                <span className="text-[#0F172A]">Rs.{((Math.max(0, (parseFloat(laborCost || "0") + parseFloat(partsCost || "0")) - (applyDiscount ? parseFloat(discount || "0") : 0))) * (parseFloat(tax || "0") / 100)).toLocaleString()}</span>
                             </div>
+                            {parseFloat(advancePayment || "0") > 0 && (
+                               <div className="flex justify-between text-[13px] font-bold text-emerald-600 pb-3 border-b border-slate-100">
+                                  <span>Advance Paid</span>
+                                  <span>-Rs.{parseFloat(advancePayment || "0").toLocaleString()}</span>
+                               </div>
+                            )}
                             <div className="flex justify-between items-center pt-2">
-                               <span className="text-[14px] font-black text-[#0F172A]">{mounted ? t('repairs.form.total') : 'Total Amount'}</span>
-                               <span className="text-[20px] font-black text-[#4F46E5]">Rs.{pricingTotal.toLocaleString()}</span>
+                               <span className="text-[14px] font-black text-[#0F172A]">
+                                 {parseFloat(advancePayment || "0") > 0 ? "Remaining Balance" : "Total Amount"}
+                               </span>
+                               <span className="text-[20px] font-black text-[#4F46E5]">
+                                 Rs.{(pricingTotal - parseFloat(advancePayment || "0")).toLocaleString()}
+                               </span>
                             </div>
                         </div>
                     </div>
@@ -1311,6 +1371,103 @@ export default function CreateRepairPage() {
         onClose={() => setIsPhotoModalOpen(false)}
         onUploadSuccess={(url) => setUploadedPhotos(prev => [...prev, url])}
       />
+
+      {showAddInventoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card border border-border w-full max-w-md p-6 rounded-2xl shadow-xl animate-in fade-in zoom-in-95">
+            <h3 className="text-lg font-bold text-foreground mb-4">Add New Inventory Item</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[13px] font-bold text-foreground mb-1">Part Name *</label>
+                <input
+                  type="text"
+                  value={newPartName}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setNewPartName(name);
+                    // Auto-generate clean SKU from name: e.g. IPHONE-13-PRO-SCREEN-1234
+                    const generatedSku = name
+                      .toUpperCase()
+                      .replace(/[^A-Z0-9 ]/g, "")
+                      .trim()
+                      .replace(/\s+/g, "-");
+                    setNewPartSku(generatedSku ? `${generatedSku}-${Math.floor(1000 + Math.random() * 9000)}` : "");
+                  }}
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#4F46E5]"
+                  placeholder="e.g. iPhone 13 Pro Screen"
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-foreground mb-1">SKU / Part Number</label>
+                <input
+                  type="text"
+                  value={newPartSku}
+                  onChange={(e) => setNewPartSku(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#4F46E5]"
+                  placeholder="e.g. IP13P-SCR"
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-foreground mb-1">Cost Price (Rs.) *</label>
+                <input
+                  type="number"
+                  value={newPartCost}
+                  onChange={(e) => setNewPartCost(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#4F46E5]"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowAddInventoryModal(false)}
+                className="px-4 py-2 border border-border rounded-lg text-sm font-semibold hover:bg-muted/50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!newPartName.trim() || !newPartCost) {
+                    alert("Please fill in required fields.");
+                    return;
+                  }
+                  try {
+                    const priceVal = parseFloat(newPartCost);
+                    const result = await createInventoryItem({
+                      partName: newPartName,
+                      partNumber: newPartSku || undefined,
+                      unitCost: priceVal,
+                      sellingPrice: priceVal,
+                      quantityInStock: 10,
+                      minimumStockLevel: 2,
+                      shopId: user?.shopId,
+                      tenantId: user?.tenantId
+                    }).unwrap();
+                    
+                    const createdId = result?.itemId || result?.data?.id || result?.id;
+                    if (createdId) {
+                      setPartsRequired(prev => [...prev, { partId: createdId, partName: newPartName, unitPrice: priceVal, quantity: 1 }]);
+                      setPartsCost(prev => (parseFloat(prev || "0") + priceVal).toString());
+                    }
+                    setShowAddInventoryModal(false);
+                    setNewPartName("");
+                    setNewPartSku("");
+                    setNewPartCost("");
+                    toast.success("Inventory item added successfully!");
+                  } catch (err: any) {
+                    console.error("Failed to add inventory item", err);
+                    toast.error(err?.data?.message || "Failed to create inventory item");
+                  }
+                }}
+                disabled={isCreatingItem}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/95 disabled:opacity-50"
+              >
+                {isCreatingItem ? "Saving..." : "Add Part"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
