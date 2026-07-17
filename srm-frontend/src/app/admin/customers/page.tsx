@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { CustomerCreatedSuccessModal, CustomerData } from "@/components/customer/CustomerCreatedSuccessModal"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardFooter } from "@/components/admin/dashboard/footer"
@@ -43,6 +45,7 @@ export default function CustomerManagementPage() {
 
   const { data: response, isLoading } = useGetCustomersQuery({});
   const [createCustomer] = useCreateCustomerMutation();
+  const router = useRouter();
 
   const customers = useMemo(() => {
     const apiCustomers = response?.customers || [];
@@ -99,6 +102,7 @@ export default function CustomerManagementPage() {
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
+  const [successModalData, setSuccessModalData] = useState<CustomerData | null>(null)
   const { data: settingsData } = useGetSettingsQuery({})
   const liveRoles = useMemo(() => settingsData?.settings?.customerTiers || INITIAL_ROLES, [settingsData])
 
@@ -160,7 +164,7 @@ export default function CustomerManagementPage() {
   const handleAddCustomer = async () => {
     if (!form.name || !form.phone) return
     try {
-      await createCustomer({
+      const response = await createCustomer({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -170,6 +174,13 @@ export default function CustomerManagementPage() {
 
       setShowAddModal(false)
       setForm({ name: "", email: "", phone: "", address: "", tier: "Regular" })
+
+      const newCustomer = response.customer || response;
+      setSuccessModalData({
+        id: newCustomer.id || newCustomer._id || newCustomer.customerId || response.customerId,
+        name: newCustomer.name || form.name,
+        email: newCustomer.email || form.email
+      })
     } catch (err) {
       console.error("Failed to add customer:", err);
     }
@@ -533,7 +544,16 @@ export default function CustomerManagementPage() {
           </div>
         </div>
       )}
+
+      <CustomerCreatedSuccessModal
+        isOpen={!!successModalData}
+        customer={successModalData}
+        onClose={() => setSuccessModalData(null)}
+        onViewDetails={(id) => {
+          setSuccessModalData(null)
+          router.push(`/admin/customers/${id}`)
+        }}
+      />
     </div>
   )
 }
-
