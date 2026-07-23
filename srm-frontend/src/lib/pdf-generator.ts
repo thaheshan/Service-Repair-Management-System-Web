@@ -287,23 +287,38 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
   doc.text("INVOICE SUMMARY:", 110, 48);
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
+  const formattedDate = invoice.date
+    ? (new Date(invoice.date).toLocaleDateString('en-US') !== 'Invalid Date'
+      ? new Date(invoice.date).toISOString().replace('T', ' ').slice(0, 19)
+      : invoice.date)
+    : new Date().toLocaleDateString();
+
   doc.text(`Reference: ${invoice.invoiceId || invoice.orderNumber || "N/A"}`, 110, 53);
-  doc.text(`Issue Date: ${invoice.date || new Date().toLocaleDateString()}`, 110, 58);
+  doc.text(`Issue Date: ${formattedDate}`, 110, 58);
   doc.text(`Service Category: ${(invoice.type || "Repair").replace(/_/g, ' ')}`, 110, 63);
   doc.text(`Status: ${(invoice.status || "Pending").toUpperCase()}`, 110, 68);
 
   // Determine items list
-  const totalVal = invoice.amount || invoice.total || 0;
+  const totalVal = Number(invoice.amount || invoice.total || 0);
   const advance = Number(invoice.advancePayment) || 0;
   const remaining = Math.max(0, totalVal - advance);
 
-  const laborVal = invoice.laborCost !== undefined ? invoice.laborCost : totalVal * 0.4;
-  const partsVal = invoice.partsCost !== undefined ? invoice.partsCost : totalVal * 0.6;
+  let partsVal = invoice.partsCost !== undefined ? Number(invoice.partsCost) : totalVal * 0.6;
+  let laborVal = invoice.laborCost !== undefined ? Number(invoice.laborCost) : Math.max(0, totalVal - partsVal);
+  if (Math.abs((laborVal + partsVal) - totalVal) > 0.01) {
+    laborVal = Math.max(0, totalVal - partsVal);
+  }
 
-  const items = invoice.items || [
-    { description: "Advanced Technical Service Labor", qty: 1, price: laborVal, amount: laborVal },
-    { description: "OEM Grade Replacement Component Parts", qty: 1, price: partsVal, amount: partsVal }
-  ];
+  const items = invoice.items || (
+    invoice.type === 'client_repair'
+      ? [
+          { description: "Advanced Service Labor", subText: "Expert Technical Diagnostics & Repair", qty: 1, price: laborVal, amount: laborVal },
+          { description: "Component / Parts Material", subText: "OEM Grade Replacement Parts", qty: 1, price: partsVal, amount: partsVal }
+        ]
+      : [
+          { description: "Component material & Bulk sales", subText: "Professional Inventory Sale", qty: 1, price: totalVal, amount: totalVal }
+        ]
+  );
 
   autoTable(doc, {
     startY: 80,

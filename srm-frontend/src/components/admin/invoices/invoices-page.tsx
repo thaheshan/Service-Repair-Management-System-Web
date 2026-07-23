@@ -22,6 +22,7 @@ import {
    useDeleteInvoiceMutation,
 } from "@/services/api/invoicesApiSlice"
 import { useSearchCustomersQuery } from "@/services/api/customersApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { generateClientInvoicePDF } from "@/lib/pdf-generator"
 
 const STAFF_LIST = ["John Smith", "Mike Chen", "Sarah Connor", "Alex Kumar", "Admin"]
@@ -52,11 +53,13 @@ export default function InvoicesManagementPage() {
    useEffect(() => setMounted(true), []);
 
    const { data: apiResponse, isLoading } = useGetInvoicesQuery({});
+   const { data: settingsData } = useGetSettingsQuery({});
    const [createInvoiceMutation, { isLoading: isCreating }] = useCreateInvoiceMutation();
    const [updateInvoiceStatus] = useUpdateInvoiceStatusMutation();
    const [deleteInvoiceMutation] = useDeleteInvoiceMutation();
 
    const { user } = useSelector((state: any) => state.auth);
+   const shopLogoUrl = settingsData?.logoUrl || settingsData?.settings?.appearance?.logoUrl || settingsData?.data?.logoUrl || user?.shopLogoUrl || user?.logoUrl || "/all-fix-logo-black.png";
 
    const invoicesState = useMemo(() => {
       return (apiResponse?.invoices || []).map((inv: any) => ({
@@ -157,7 +160,8 @@ export default function InvoicesManagementPage() {
     const handleDownloadPDF = async (inv?: any) => {
        setIsGeneratingPDF(true)
 
-       const targetInv = inv || viewDocumentTarget || hiddenInvoiceTarget
+       const isInvoiceObj = inv && typeof inv === 'object' && ('invoiceId' in inv || 'id' in inv || 'amount' in inv) && !('nativeEvent' in inv) && !('target' in inv);
+       const targetInv = isInvoiceObj ? inv : (viewDocumentTarget || hiddenInvoiceTarget);
        if (!targetInv) {
           setIsGeneratingPDF(false)
           return
@@ -940,7 +944,7 @@ export default function InvoicesManagementPage() {
                   {/* STICKY ACTION HEADER */}
                   <div className="w-full max-w-[800px] flex justify-end gap-3 mb-6 shrink-0 sticky top-0 z-50">
                      <button
-                        onClick={handleDownloadPDF}
+                        onClick={() => handleDownloadPDF(viewDocumentTarget)}
                         disabled={isGeneratingPDF}
                         className={`h-11 px-6 rounded-full text-white text-[14px] font-black flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${isGeneratingPDF ? 'bg-[#4F46E5]/70 cursor-not-allowed' : 'bg-[#4F46E5] hover:bg-[#4338CA] hover:shadow-indigo-200'
                            }`}
@@ -963,7 +967,7 @@ export default function InvoicesManagementPage() {
                      <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                              <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                              <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
                               <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                                  {user?.shopName || "All Fix Private Limited"}
                               </h2>
@@ -1041,29 +1045,34 @@ export default function InvoicesManagementPage() {
                            <div className="col-span-2 text-right text-[11px] text-[#0F172A] uppercase tracking-widest font-black">Subtotal</div>
                         </div>
 
-                        {viewDocumentTarget.type === 'client_repair' ? (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                        {viewDocumentTarget.type === 'client_repair' ? (() => {
+                           const totalAmt = Number(viewDocumentTarget.amount ?? 0);
+                           const partsVal = viewDocumentTarget.partsCost !== undefined ? Number(viewDocumentTarget.partsCost) : totalAmt * 0.6;
+                           const laborVal = Math.max(0, totalAmt - partsVal);
+                           return (
+                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {laborVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {laborVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.laborCost !== undefined ? viewDocumentTarget.laborCost : (viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(viewDocumentTarget.laborCost !== undefined ? viewDocumentTarget.laborCost : (viewDocumentTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                              </div>
 
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {partsVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {partsVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.partsCost !== undefined ? viewDocumentTarget.partsCost : (viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(viewDocumentTarget.partsCost !== undefined ? viewDocumentTarget.partsCost : (viewDocumentTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
                               </div>
-                           </div>
-                        ) : (
+                           );
+                        })() : (
                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                               <div className="grid grid-cols-12 items-center">
                                  <div className="col-span-6">
@@ -1147,7 +1156,7 @@ export default function InvoicesManagementPage() {
                      <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                              <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                              <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
                               <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                                  {user?.shopName || "All Fix Private Limited"}
                               </h2>
@@ -1227,29 +1236,34 @@ export default function InvoicesManagementPage() {
                            <div className="col-span-2 text-right text-[11px] text-[#0F172A] uppercase tracking-widest font-black">Subtotal</div>
                         </div>
 
-                        {hiddenInvoiceTarget.type === 'client_repair' ? (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                        {hiddenInvoiceTarget.type === 'client_repair' ? (() => {
+                           const totalAmt = Number(hiddenInvoiceTarget.amount ?? 0);
+                           const partsVal = hiddenInvoiceTarget.partsCost !== undefined ? Number(hiddenInvoiceTarget.partsCost) : totalAmt * 0.6;
+                           const laborVal = Math.max(0, totalAmt - partsVal);
+                           return (
+                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {laborVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {laborVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.laborCost !== undefined ? hiddenInvoiceTarget.laborCost : (hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.laborCost !== undefined ? hiddenInvoiceTarget.laborCost : (hiddenInvoiceTarget.amount ?? 0) * 0.4).toLocaleString()}</div>
-                              </div>
 
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {partsVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {partsVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.partsCost !== undefined ? hiddenInvoiceTarget.partsCost : (hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.partsCost !== undefined ? hiddenInvoiceTarget.partsCost : (hiddenInvoiceTarget.amount ?? 0) * 0.6).toLocaleString()}</div>
                               </div>
-                           </div>
-                        ) : (
+                           );
+                        })() : (
                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                               <div className="grid grid-cols-12 items-center">
                                  <div className="col-span-6">
