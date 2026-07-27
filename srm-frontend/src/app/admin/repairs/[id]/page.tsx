@@ -95,12 +95,12 @@ function TaskDetailsPage() {
       <div className="flex bg-background h-screen overflow-hidden">
         <DashboardSidebar />
         <div className="flex-1 lg:ml-[200px] ml-0 flex flex-col items-center justify-center p-8">
-          <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-            <X className="h-6 w-6 text-red-600" />
+          <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <X className="h-6 w-6 text-destructive" />
           </div>
           <h3 className="text-lg font-bold text-foreground">Task not found</h3>
           <p className="text-sm text-muted-foreground mt-1 mb-6">The repair task you are looking for doesn't exist or was removed.</p>
-          <button onClick={() => router.push("/admin/repairs")} className="h-10 px-6 rounded-xl bg-primary text-white font-bold">Go back to Repairs</button>
+          <button onClick={() => router.push("/admin/repairs")} className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors">Go back to Repairs</button>
         </div>
       </div>
     )
@@ -115,7 +115,7 @@ function TaskDetailsPage() {
       <div className="flex-1 lg:ml-[200px] ml-0 flex flex-col min-w-0">
         <DashboardHeader />
 
-        <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-[#F8FAFC]">
+        <main className="flex-1 flex flex-col pt-0 overflow-y-auto bg-muted/20">
           <div className="w-full max-w-[1280px] px-8 py-8 mx-auto flex flex-col">
 
             {/* Breadcrumbs */}
@@ -140,7 +140,7 @@ function TaskDetailsPage() {
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[11px] font-bold tracking-wide">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-bold tracking-wide">
                     Task #{repair.reference}
                   </span>
                 </div>
@@ -165,18 +165,18 @@ function TaskDetailsPage() {
 
               {/* Header Actions */}
               <div className="flex items-center gap-3 shrink-0 relative">
-                <button onClick={() => router.push("/admin/schedule")} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#4F46E5] text-[#4F46E5] bg-white text-[13px] font-bold hover:bg-[#EEF2FF] transition-colors focus:outline-none shadow-sm">
+                <button onClick={() => router.push("/admin/schedule")} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-primary text-primary bg-card text-[13px] font-bold hover:bg-primary/10 transition-colors focus:outline-none shadow-sm">
                   <Calendar className="h-4 w-4" /> Reschedule
                 </button>
                 <div className="relative">
                   <button 
                     onClick={() => setIsReassignDropdownOpen(!isReassignDropdownOpen)}
-                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#10B981] text-[#10B981] bg-white text-[13px] font-bold hover:bg-[#D1FAE5] transition-colors focus:outline-none shadow-sm"
+                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-card text-[13px] font-bold hover:bg-emerald-500/10 transition-colors focus:outline-none shadow-sm"
                   >
                     <User className="h-4 w-4" /> Reassign
                   </button>
                   {isReassignDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white shadow-xl border border-border z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute right-0 mt-2 w-56 rounded-xl bg-popover shadow-xl border border-border z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
                       <p className="text-[11px] font-bold text-muted-foreground px-3 py-2 uppercase tracking-wider">Select Technician</p>
                       <div className="max-h-60 overflow-y-auto custom-scrollbar">
                         <button 
@@ -192,7 +192,7 @@ function TaskDetailsPage() {
                             onClick={() => handleReassign(tech.id)}
                             className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted flex items-center gap-3 transition-colors"
                           >
-                            <div className="h-8 w-8 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] text-[11px] font-black shrink-0 border border-[#4F46E5]/10">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-black shrink-0 border border-primary/10">
                               {tech.name?.charAt(0) || 'T'}
                             </div>
                             <div className="flex flex-col min-w-0">
@@ -206,7 +206,7 @@ function TaskDetailsPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => setIsCancelModalOpen(true)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#EF4444] text-[#EF4444] bg-white text-[13px] font-bold hover:bg-[#FEE2E2] transition-colors focus:outline-none shadow-sm">
+                <button onClick={() => setIsCancelModalOpen(true)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-destructive text-destructive bg-card text-[13px] font-bold hover:bg-destructive/10 transition-colors focus:outline-none shadow-sm">
                   <Trash2 className="h-4 w-4" /> Cancel Task
                 </button>
               </div>
@@ -214,39 +214,39 @@ function TaskDetailsPage() {
 
             {/* Active Status Banner */}
             {!isCompleted ? (
-              <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
-                    <Wrench className="h-5 w-5 text-[#D97706]" />
+                  <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <Wrench className="h-5 w-5 text-amber-600 dark:text-amber-500" />
                   </div>
                   <div>
-                    <h3 className="text-[14px] font-bold text-[#92400E]">Repair is currently {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
-                    <p className="text-[13px] text-[#B45309] font-medium">Estimated cost: <span className="font-bold">Rs. {repair.estimatedCost?.toLocaleString() || '0'}</span></p>
+                    <h3 className="text-[14px] font-bold text-amber-800 dark:text-amber-400">Repair is currently {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
+                    <p className="text-[13px] text-amber-700 dark:text-amber-400 font-medium">Estimated cost: <span className="font-bold">Rs. {repair.estimatedCost?.toLocaleString() || '0'}</span></p>
                   </div>
                 </div>
                 <button 
                   disabled={isUpdating}
                   onClick={handleToggleComplete} 
-                  className={`h-9 px-5 rounded-lg bg-[#4F46E5] text-white text-[13px] font-bold hover:bg-[#4338CA] shadow-md transition-colors focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`h-9 px-5 rounded-lg bg-primary text-primary-foreground text-[13px] font-bold hover:bg-primary/90 shadow-md transition-colors focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isUpdating ? "Updating..." : "Mark Complete"}
                 </button>
               </div>
             ) : (
-              <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl p-4 flex items-center justify-between mb-8 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
-                    <CheckCircle className="h-5 w-5 text-[#059669]" />
+                  <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
                   </div>
                   <div>
-                    <h3 className="text-[14px] font-bold text-[#065F46]">Repair {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
-                    <p className="text-[13px] text-[#065F46] font-medium">Final cost: <span className="font-bold">Rs. {repair.finalCost?.toLocaleString() || repair.estimatedCost?.toLocaleString() || '0'}</span></p>
+                    <h3 className="text-[14px] font-bold text-emerald-800 dark:text-emerald-400">Repair {repair.status.replace(/_/g, ' ').toLowerCase()}</h3>
+                    <p className="text-[13px] text-emerald-800 dark:text-emerald-400 font-medium">Final cost: <span className="font-bold">Rs. {repair.finalCost?.toLocaleString() || repair.estimatedCost?.toLocaleString() || '0'}</span></p>
                   </div>
                 </div>
                 <button 
                   disabled={isUpdating}
                   onClick={handleToggleComplete} 
-                  className={`h-9 px-5 rounded-lg border border-[#10B981] text-[#10B981] bg-white text-[13px] font-bold hover:bg-[#D1FAE5] shadow-sm transition-colors focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`h-9 px-5 rounded-lg border border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-card text-[13px] font-bold hover:bg-emerald-500/10 shadow-sm transition-colors focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isUpdating ? "Updating..." : "Reopen Task"}
                 </button>
@@ -260,22 +260,22 @@ function TaskDetailsPage() {
               <div className="flex flex-col gap-6">
 
                 {/* Timeline */}
-                <section className="bg-white rounded-xl shadow-sm border border-border p-7">
+                <section className="bg-card rounded-xl shadow-sm border border-border p-7">
                   <h2 className="text-[15px] font-bold text-foreground mb-8 flex items-center gap-2">
-                    <Clock className="h-[18px] w-[18px] text-[#4F46E5]" /> Task Timeline
+                    <Clock className="h-[18px] w-[18px] text-primary" /> Task Timeline
                   </h2>
                   <div className="relative pl-4 space-y-8 before:absolute before:inset-0 before:ml-8 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
                     {repair.timeline?.length > 0 ? (
                       repair.timeline.map((event: any, idx: number) => (
                         <div key={event.id} className="relative flex items-start gap-5">
                           {idx !== repair.timeline.length - 1 && (
-                            <div className="absolute left-[1px] h-full w-0.5 bg-[#CBD5E1] top-8" />
+                            <div className="absolute left-[1px] h-full w-0.5 bg-border top-8" />
                           )}
-                          <div className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 ${event.type === 'CREATED' ? 'border-[#10B981] bg-[#D1FAE5]' : 'border-[#4F46E5] bg-[#EEF2FF]'}`}>
+                          <div className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 ${event.type === 'CREATED' ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-900/50' : 'border-primary bg-primary/10'}`}>
                             {event.type === 'CREATED' ? (
-                              <Plus className="h-4 w-4 text-[#10B981]" strokeWidth={3} />
+                              <Plus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" strokeWidth={3} />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-[#4F46E5]" />
+                              <ChevronRight className="h-4 w-4 text-primary" />
                             )}
                           </div>
                           <div className="flex flex-col pt-0.5">
@@ -293,9 +293,9 @@ function TaskDetailsPage() {
                 </section>
 
                 {/* Notes */}
-                <section className="bg-white rounded-xl shadow-sm border border-border p-7">
+                <section className="bg-card rounded-xl shadow-sm border border-border p-7">
                   <h2 className="text-[15px] font-bold text-foreground mb-6 flex items-center gap-2">
-                    <PenTool className="h-[18px] w-[18px] text-[#4F46E5]" /> Technician Notes
+                    <PenTool className="h-[18px] w-[18px] text-primary" /> Technician Notes
                   </h2>
                   <div className="space-y-6 mb-8">
                     {repair.notes?.length > 0 ? (
@@ -340,11 +340,11 @@ function TaskDetailsPage() {
                           setShowMentionDropdown(false);
                         }
                       }}
-                      className="w-full p-4 text-[13px] border border-border rounded-xl focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] outline-none bg-transparent"
+                      className="w-full p-4 text-[13px] border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-transparent"
                     />
                     
                     {showMentionDropdown && (
-                      <div className="absolute left-0 bottom-full mb-2 w-64 rounded-xl bg-white border border-border shadow-xl z-50 p-2 max-h-48 overflow-y-auto custom-scrollbar">
+                      <div className="absolute left-0 bottom-full mb-2 w-64 rounded-xl bg-popover border border-border shadow-xl z-50 p-2 max-h-48 overflow-y-auto custom-scrollbar">
                         <p className="text-[10px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">Mention Staff / Owner</p>
                         {technicians
                           .filter((t: any) => (t.name || t.fullName || "").toLowerCase().includes(mentionQuery.toLowerCase()))
@@ -362,7 +362,7 @@ function TaskDetailsPage() {
                                 }}
                                 className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-muted text-[13px] font-medium flex items-center gap-2 transition-colors"
                               >
-                                <div className="h-6 w-6 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] text-[10px] font-bold">
+                                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
                                   {name.charAt(0)}
                                 </div>
                                 <span className="text-foreground">{name}</span>
@@ -379,7 +379,7 @@ function TaskDetailsPage() {
                     <button 
                       disabled={isAddingNote || !taskNote.trim()}
                       onClick={handleAddNote} 
-                      className={`h-8 px-5 rounded-lg bg-[#4F46E5] text-[12px] font-bold text-white hover:bg-[#4338CA] transition-all ${isAddingNote || !taskNote.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`h-8 px-5 rounded-lg bg-primary text-[12px] font-bold text-primary-foreground hover:bg-primary/90 transition-all ${isAddingNote || !taskNote.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {isAddingNote ? "Adding..." : "Add Note"}
                     </button>
@@ -387,17 +387,17 @@ function TaskDetailsPage() {
                 </section>
 
                 {/* Device Photos */}
-                <section className="bg-white rounded-xl shadow-sm border border-border p-7">
+                <section className="bg-card rounded-xl shadow-sm border border-border p-7">
                   <div className="flex items-center justify-between mb-5">
                     <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2">
-                      <ImageIcon className="h-[18px] w-[18px] text-[#4F46E5]" /> Device Photos
+                      <ImageIcon className="h-[18px] w-[18px] text-primary" /> Device Photos
                       {repair.photos?.length > 0 && (
                         <span className="ml-2 text-[12px] font-medium text-muted-foreground">{repair.photos.length} photo{repair.photos.length > 1 ? 's' : ''}</span>
                       )}
                     </h2>
                     <button
                       onClick={() => setIsUploadModalOpen(true)}
-                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[12px] font-bold hover:bg-[#E0E7FF] transition-colors"
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary/10 text-primary text-[12px] font-bold hover:bg-primary/20 transition-colors"
                     >
                       <Camera className="h-3.5 w-3.5" /> Add Photo
                     </button>
@@ -408,7 +408,7 @@ function TaskDetailsPage() {
                       {repair.photos.map((photo: any, i: number) => (
                         <div
                           key={photo.id || i}
-                          className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted group hover:ring-2 hover:ring-[#4F46E5] transition-all cursor-pointer"
+                          className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted group hover:ring-2 hover:ring-primary transition-all cursor-pointer"
                           onClick={() => setLightboxPhoto(photo.url)}
                         >
                           <img
@@ -430,7 +430,7 @@ function TaskDetailsPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="py-8 text-center bg-[#F8FAFC] rounded-xl border border-dashed border-border">
+                    <div className="py-8 text-center bg-muted/30 rounded-xl border border-dashed border-border">
                       <p className="text-[13px] text-muted-foreground font-medium">No photos uploaded yet.</p>
                     </div>
                   )}
@@ -439,7 +439,7 @@ function TaskDetailsPage() {
 
               {/* Right Column */}
               <div className="flex flex-col gap-6">
-                <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-6">
                   <h3 className="text-[14px] font-bold text-foreground mb-5">Technician</h3>
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -452,15 +452,15 @@ function TaskDetailsPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-6">
                   <h3 className="text-[14px] font-bold text-foreground mb-5">Customer</h3>
-                  <p className="font-bold text-[#4F46E5]">{repair.customer?.name}</p>
+                  <p className="font-bold text-primary">{repair.customer?.name}</p>
                   <p className="text-[13px] text-muted-foreground">{repair.customer?.phone}</p>
                   <p className="text-[13px] text-muted-foreground mt-1">{repair.customer?.email}</p>
                 </div>
 
                 {repair.repairPartsUsed?.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+                  <div className="bg-card rounded-xl shadow-sm border border-border p-6">
                     <h3 className="text-[14px] font-bold text-foreground mb-5">Parts Used</h3>
                     <div className="space-y-3">
                       {repair.repairPartsUsed.map((item: any) => (
@@ -488,8 +488,8 @@ function TaskDetailsPage() {
       {/* Modals outside the flow */}
       {isCancelModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-xl font-bold mb-2">Cancel Task?</h2>
+          <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold mb-2 text-foreground">Cancel Task?</h2>
             <p className="text-sm text-muted-foreground mb-6">Are you sure you want to cancel this repair? This action will record a cancellation event in the timeline.</p>
             <div className="flex gap-4">
               <button onClick={() => setIsCancelModalOpen(false)} className="flex-1 h-11 rounded-xl border border-border font-bold hover:bg-muted transition-colors">Go Back</button>
@@ -503,7 +503,7 @@ function TaskDetailsPage() {
                     console.error("Failed to cancel repair", err)
                   }
                 }} 
-                className="flex-1 h-11 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground font-bold hover:bg-destructive/90 transition-colors shadow-lg dark:shadow-none"
               >
                 Confirm Cancel
               </button>
@@ -538,7 +538,7 @@ function TaskDetailsPage() {
       {/* Delete Photo Modal */}
       {photoToDelete && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl p-6 shadow-xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-foreground">Delete Photo</h2>
               <button onClick={() => setPhotoToDelete(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
@@ -565,7 +565,7 @@ function TaskDetailsPage() {
                     setPhotoToDelete(null);
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+                className="px-4 py-2 rounded-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground text-sm font-semibold transition-colors"
               >
                 Delete Permanently
               </button>
