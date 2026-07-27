@@ -85,7 +85,7 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess, repairId }:
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
+      <div className="bg-card rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-bold text-foreground">Upload Device Photo</h3>
@@ -97,13 +97,13 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess, repairId }:
         {/* Tabs */}
         <div className="flex border-b border-border">
           <button
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'upload' ? 'text-[#4F46E5] border-b-2 border-[#4F46E5]' : 'text-muted-foreground hover:bg-muted/50'}`}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'upload' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:bg-muted/50'}`}
             onClick={() => setActiveTab('upload')}
           >
             Upload File
           </button>
           <button
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'camera' ? 'text-[#4F46E5] border-b-2 border-[#4F46E5]' : 'text-muted-foreground hover:bg-muted/50'}`}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'camera' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:bg-muted/50'}`}
             onClick={() => setActiveTab('camera')}
           >
             Use Webcam
@@ -114,7 +114,7 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess, repairId }:
         <div className="p-6">
           {activeTab === 'upload' ? (
             <div className="flex flex-col items-center justify-center py-8">
-              <label className={`w-full h-40 border-2 border-dashed border-border rounded-xl bg-[#F8FAFC] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+              <label className={`w-full h-40 border-2 border-dashed border-border rounded-xl bg-muted/30 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <input
                   type="file"
                   accept="image/png, image/jpeg, image/jpg"
@@ -122,7 +122,7 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess, repairId }:
                   onChange={handleFileUpload}
                   disabled={isUploading}
                 />
-                <div className="flex items-center justify-center h-12 w-12 bg-white rounded-full shadow-sm text-[#4F46E5]">
+                <div className="flex items-center justify-center h-12 w-12 bg-background border border-border rounded-full shadow-sm text-primary">
                   <Upload className="h-6 w-6" />
                 </div>
                 <div className="text-center mt-2">
@@ -164,7 +164,7 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess, repairId }:
                     </button>
                     <button
                       onClick={uploadCapturedImage}
-                      className="px-4 py-2 bg-[#4F46E5] hover:bg-[#4338ca] text-white rounded-lg text-sm font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold flex items-center gap-1 transition-colors shadow-sm"
                       disabled={isUploading}
                     >
                       {isUploading ? 'Uploading...' : <><Check className="h-4 w-4" /> Use Photo</>}
