@@ -14,13 +14,54 @@ const fallbackData = [
   { name: "PAID",        value: 0, color: "#10B981" },
 ]
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: any[]
+  t?: (key: string) => string
+  totalRepairs?: number
+}
+
+const CustomTooltip = ({ active, payload, t, totalRepairs = 0 }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const item = payload[0].payload
+    const rawName = item.name || ""
+    const formattedName = t 
+      ? t(`dashboard.status.${rawName.toLowerCase().replace(/[\s_]+/g, '')}`) || rawName 
+      : rawName
+
+    const count = Number(item.value || 0)
+    const percentage = totalRepairs > 0 ? ((count / totalRepairs) * 100).toFixed(1) : "0.0"
+
     return (
-      <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg">
-        <p className="text-[12px] font-bold text-foreground">{item.name}</p>
-        <p className="text-[13px] font-black" style={{ color: item.color }}>{item.value} repairs</p>
+      <div className="min-w-[160px] max-w-[240px] bg-popover/95 text-popover-foreground border border-border/80 rounded-xl px-3.5 py-2.5 shadow-xl backdrop-blur-md flex flex-col gap-1.5 z-50 pointer-events-none">
+        {/* Status Header with Color Indicator */}
+        <div className="flex items-center gap-2">
+          <span 
+            className="h-2.5 w-2.5 rounded-full shrink-0 shadow-sm" 
+            style={{ backgroundColor: item.color }} 
+          />
+          <span className="text-[12px] font-bold text-popover-foreground tracking-tight whitespace-nowrap truncate">
+            {formattedName}
+          </span>
+        </div>
+
+        {/* Separator line for clear vertical separation */}
+        <div className="h-px bg-border/60 w-full" />
+
+        {/* Count and Percentage Row */}
+        <div className="flex items-center justify-between gap-3 text-[12px]">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            {t ? t('common.repairs') : 'Repairs'}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-black text-[13px]" style={{ color: item.color }}>
+              {count}
+            </span>
+            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
+              {percentage}%
+            </span>
+          </div>
+        </div>
       </div>
     )
   }
@@ -72,7 +113,11 @@ export function RepairStatusChart({ days = 30 }: { days?: number }) {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip 
+                content={<CustomTooltip t={t} totalRepairs={totalRepairs} />} 
+                allowEscapeViewBox={{ x: false, y: false }}
+                wrapperStyle={{ outline: "none", zIndex: 100 }}
+              />
             </PieChart>
           </ResponsiveContainer>
 

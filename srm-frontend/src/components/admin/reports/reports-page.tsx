@@ -570,14 +570,18 @@ export default function ReportsPage() {
                           ))}
                         </Pie>
                         <Tooltip 
+                          allowEscapeViewBox={{ x: false, y: false }}
+                          wrapperStyle={{ outline: 'none', zIndex: 100 }}
                           contentStyle={{ 
-                            backgroundColor: '#ffffff',
+                            backgroundColor: 'hsl(var(--popover))',
+                            color: 'hsl(var(--popover-foreground))',
                             borderRadius: '12px', 
-                            border: '1px solid #e2e8f0', 
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                            padding: '10px 14px'
+                            border: '1px solid hsl(var(--border))', 
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                            padding: '10px 14px',
+                            minWidth: '140px',
                           }}
-                          itemStyle={{ color: '#0f172a', fontSize: '13px', fontWeight: '700' }}
+                          itemStyle={{ color: 'hsl(var(--popover-foreground))', fontSize: '13px', fontWeight: '700' }}
                           labelStyle={{ display: 'none' }}
                         />
                       </PieChart>
