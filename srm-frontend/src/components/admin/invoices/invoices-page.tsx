@@ -12,7 +12,7 @@ import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared
 import {
    Search, Filter, ChevronDown, Plus, Eye,
    Grid, List as ListIcon, Calendar as CalendarIcon,
-   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ChevronLeft, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, Calendar, SlidersHorizontal, ArrowUpRight
+   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, ArrowUpRight
 } from "lucide-react"
 
 import {
@@ -22,6 +22,7 @@ import {
    useDeleteInvoiceMutation,
 } from "@/services/api/invoicesApiSlice"
 import { useSearchCustomersQuery } from "@/services/api/customersApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { generateClientInvoicePDF } from "@/lib/pdf-generator"
 
 const STAFF_LIST = ["John Smith", "Mike Chen", "Sarah Connor", "Alex Kumar", "Admin"]
@@ -46,28 +47,18 @@ const STATUS_STYLE: Record<string, string> = {
    Overdue: "bg-red-50 text-red-600 border-red-200",
 }
 
-const extractCosts = (notes: string | undefined, totalAmount: number) => {
-   if (!notes) return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
-   const labourMatch = notes.match(/Labour:\s*Rs\.?(\d+(?:\.\d+)?)/i);
-   const partsMatch = notes.match(/Parts:\s*Rs\.?(\d+(?:\.\d+)?)/i);
-   let labour = labourMatch ? parseFloat(labourMatch[1]) : null;
-   let parts = partsMatch ? parseFloat(partsMatch[1]) : null;
-   if (labour !== null && parts !== null) return { labour, parts };
-   return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
-};
-
 export default function InvoicesManagementPage() {
    const { t } = useTranslation();
    const [mounted, setMounted] = useState(false);
    useEffect(() => setMounted(true), []);
 
    const { data: apiResponse, isLoading } = useGetInvoicesQuery({});
+   const { data: settingsData } = useGetSettingsQuery({});
    const [createInvoiceMutation, { isLoading: isCreating }] = useCreateInvoiceMutation();
    const [updateInvoiceStatus] = useUpdateInvoiceStatusMutation();
    const [deleteInvoiceMutation] = useDeleteInvoiceMutation();
 
    const { user } = useSelector((state: any) => state.auth);
-   const queries = useSelector((state: any) => state.api?.queries);
 
    const invoicesState = useMemo(() => {
       return (apiResponse?.invoices || []).map((inv: any) => ({
@@ -148,20 +139,25 @@ export default function InvoicesManagementPage() {
    const hiddenPrintRef = useRef<HTMLDivElement>(null)
    const [hiddenInvoiceTarget, setHiddenInvoiceTarget] = useState<any | null>(null)
 
+   // Resolves the shop's logo: a per-invoice override, then the logged-in
+   // user's stored logo, then whatever the settings API returned (checking
+   // the couple of shapes that endpoint has been seen to return), finally
+   // a generic placeholder. No redux-store introspection needed since
+   // useGetSettingsQuery already gives us the data directly.
    const getResolvedLogo = (invoiceTarget: any) => {
-      let url = invoiceTarget?.shopLogoUrl || user?.shopLogoUrl || null;
-      if (!url && queries) {
-         const settingsQuery = Object.keys(queries).find(key => key.startsWith('getSettings') || key.startsWith('getShopProfile'));
-         if (settingsQuery && queries[settingsQuery]?.data) {
-            const data = queries[settingsQuery].data;
-            url = data?.logoUrl || data?.settings?.appearance?.logoUrl || data?.shopLogoUrl || null;
-         }
-      }
-      return url || "/placeholder-logo.png";
+      return (
+         invoiceTarget?.shopLogoUrl ||
+         user?.shopLogoUrl ||
+         user?.logoUrl ||
+         settingsData?.logoUrl ||
+         settingsData?.settings?.appearance?.logoUrl ||
+         settingsData?.data?.logoUrl ||
+         "/placeholder-logo.png"
+      );
    };
 
-   const viewTargetLogo = useMemo(() => getResolvedLogo(viewDocumentTarget), [viewDocumentTarget, user, queries]);
-   const hiddenTargetLogo = useMemo(() => getResolvedLogo(hiddenInvoiceTarget), [hiddenInvoiceTarget, user, queries]);
+   const viewTargetLogo = useMemo(() => getResolvedLogo(viewDocumentTarget), [viewDocumentTarget, user, settingsData]);
+   const hiddenTargetLogo = useMemo(() => getResolvedLogo(hiddenInvoiceTarget), [hiddenInvoiceTarget, user, settingsData]);
 
    // Customer Search State
    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false)
@@ -183,9 +179,11 @@ export default function InvoicesManagementPage() {
    const handleDownloadPDF = async (inv?: any) => {
       setIsGeneratingPDF(true)
 
-      // If 'inv' is a React Synthetic Event (e.g. from onClick={handleDownloadPDF}), ignore it
-      const passedInv = (inv && inv.nativeEvent) ? null : inv
-      const targetInv = passedInv || viewDocumentTarget || hiddenInvoiceTarget
+      // If 'inv' looks like a real invoice record, use it directly. Otherwise
+      // (e.g. it's a React SyntheticEvent from onClick={handleDownloadPDF})
+      // fall back to whichever invoice is currently open.
+      const isInvoiceObj = inv && typeof inv === 'object' && ('invoiceId' in inv || 'id' in inv || 'amount' in inv) && !('nativeEvent' in inv) && !('target' in inv);
+      const targetInv = isInvoiceObj ? inv : (viewDocumentTarget || hiddenInvoiceTarget);
       if (!targetInv) {
          setIsGeneratingPDF(false)
          return
@@ -968,7 +966,7 @@ export default function InvoicesManagementPage() {
                   {/* STICKY ACTION HEADER */}
                   <div className="w-full max-w-[800px] flex justify-end gap-3 mb-6 shrink-0 sticky top-0 z-50">
                      <button
-                        onClick={handleDownloadPDF}
+                        onClick={() => handleDownloadPDF(viewDocumentTarget)}
                         disabled={isGeneratingPDF}
                         className={`h-11 px-6 rounded-full text-white text-[14px] font-black flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${isGeneratingPDF ? 'bg-[#4F46E5]/70 cursor-not-allowed' : 'bg-[#4F46E5] hover:bg-[#4338CA] hover:shadow-indigo-200'
                            }`}
@@ -1083,29 +1081,34 @@ export default function InvoicesManagementPage() {
                            <div className="col-span-2 text-right text-[11px] text-[#0F172A] uppercase tracking-widest font-black">Subtotal</div>
                         </div>
 
-                        {viewDocumentTarget.type === 'client_repair' ? (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                        {viewDocumentTarget.type === 'client_repair' ? (() => {
+                           const totalAmt = Number(viewDocumentTarget.amount ?? 0);
+                           const partsVal = viewDocumentTarget.partsCost !== undefined ? Number(viewDocumentTarget.partsCost) : totalAmt * 0.6;
+                           const laborVal = Math.max(0, totalAmt - partsVal);
+                           return (
+                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {laborVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {laborVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).labour.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).labour.toLocaleString()}</div>
-                              </div>
 
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {partsVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {partsVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).parts.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).parts.toLocaleString()}</div>
                               </div>
-                           </div>
-                        ) : (
+                           );
+                        })() : (
                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                               <div className="grid grid-cols-12 items-center">
                                  <div className="col-span-6">
@@ -1177,7 +1180,7 @@ export default function InvoicesManagementPage() {
                </div>
             )}
 
-            {/* 🛠️ INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
+            {/* INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
             <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
                {hiddenInvoiceTarget && (
                   <div
@@ -1281,29 +1284,34 @@ export default function InvoicesManagementPage() {
                            <div className="col-span-2 text-right text-[11px] text-[#0F172A] uppercase tracking-widest font-black">Subtotal</div>
                         </div>
 
-                        {hiddenInvoiceTarget.type === 'client_repair' ? (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                        {hiddenInvoiceTarget.type === 'client_repair' ? (() => {
+                           const totalAmt = Number(hiddenInvoiceTarget.amount ?? 0);
+                           const partsVal = hiddenInvoiceTarget.partsCost !== undefined ? Number(hiddenInvoiceTarget.partsCost) : totalAmt * 0.6;
+                           const laborVal = Math.max(0, totalAmt - partsVal);
+                           return (
+                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {laborVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {laborVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).labour.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).labour.toLocaleString()}</div>
-                              </div>
 
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {partsVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {partsVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).parts.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).parts.toLocaleString()}</div>
                               </div>
-                           </div>
-                        ) : (
+                           );
+                        })() : (
                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                               <div className="grid grid-cols-12 items-center">
                                  <div className="col-span-6">
