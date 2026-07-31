@@ -154,6 +154,7 @@
     "stats": {
       "totalRepairs": "Total Repairs",
       "pendingRepairs": "Pending Repairs",
+      "repairs": "Repairs",
       "revenue": "Total Revenue",
       "netProfit": "Net Profit",
       "activeTechnicians": "Active Technicians",

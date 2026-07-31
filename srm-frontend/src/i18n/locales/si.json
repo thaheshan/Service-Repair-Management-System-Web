@@ -147,6 +147,7 @@
     "stats": {
       "totalRepairs": "මුළු අලුත්වැඩියා",
       "pendingRepairs": "පොරොත්තු අලුත්වැඩියා",
+      "repairs": "අලුත්වැඩියා",
       "revenue": "මුළු ආදායම",
       "netProfit": "ශුද්ධ ලාභය",
       "activeTechnicians": "ක්‍රියාකාරී ශිල්පීන්",
