@@ -12,6 +12,7 @@ import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { useSearchParams } from "next/navigation"
 import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
+import { ImageUploadModal } from "./ImageUploadModal"
 
 import {
   Search,
@@ -42,6 +43,7 @@ import {
   Tag,
   FileDown,
   Settings,
+  Camera,
 } from "lucide-react"
 import {
   BarChart,
@@ -170,6 +172,7 @@ export default function InventoryManagementPage() {
       location: item.location || "Store",
       status: (item.quantityInStock ?? item.stockQuantity ?? 0) === 0 ? "Out of Stock" : (item.quantityInStock ?? item.stockQuantity ?? 0) <= (item.minimumStockLevel || 5) ? "Low Stock" : "In Stock",
       rawCreatedAt: item.createdAt,
+      imageUrl: item.imageUrl || null,
     }));
   }, [response]);
 
@@ -198,7 +201,11 @@ export default function InventoryManagementPage() {
   const [chartTimeRange, setChartTimeRange] = useState("Last 6 months")
 
   // Master Modals State
+  const [isAddItemChoiceOpen, setIsAddItemChoiceOpen] = useState(false)
   const [isAddItemOpen, setIsAddItemOpen] = useState(false)
+  const [isBulkAddOpen, setIsBulkAddOpen] = useState(false)
+  const [isSavingBulk, setIsSavingBulk] = useState(false)
+  const [bulkAddItems, setBulkAddItems] = useState<any[]>([])
   const [viewPOTarget, setViewPOTarget] = useState<any | null>(null)
   const [editItemTarget, setEditItemTarget] = useState<any | null>(null)
   const [viewDetailsTarget, setViewDetailsTarget] = useState<any | null>(null)
@@ -226,9 +233,16 @@ export default function InventoryManagementPage() {
   const [editPOTarget, setEditPOTarget] = useState<any | null>(null);
   const [deletePOTarget, setDeletePOTarget] = useState<any | null>(null);
 
+  // Image Upload Modal Control State
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [activeImageUploadTarget, setActiveImageUploadTarget] = useState<{
+    type: "single" | "bulk" | "edit";
+    rowIndex?: number;
+  } | null>(null);
+
   // Forms
   const [addItemForm, setAddItemForm] = useState({
-    name: "", sku: "", brand: "Apple", category: "Screens", price: 0, costPrice: 0, stockQuantity: 0, supplier: "Tech Supplies Inc"
+    name: "", sku: "", brand: "Apple", category: "Screens", price: 0, costPrice: 0, stockQuantity: 0, supplier: "Tech Supplies Inc", imageUrl: ""
   });
 
   const [adjustStockForm, setAdjustStockForm] = useState({
@@ -266,6 +280,95 @@ export default function InventoryManagementPage() {
     }
   }, [isAddItemOpen, inventoryState]);
 
+  const handleOpenAddItemChoice = () => {
+    setIsAddItemChoiceOpen(true);
+  };
+
+  const handleOpenSingleItem = () => {
+    setIsAddItemChoiceOpen(false);
+    setIsAddItemOpen(true);
+  };
+
+  const handleOpenBulkAdd = () => {
+    setIsAddItemChoiceOpen(false);
+    
+    let nextNum = 1;
+    const skuNumbers = inventoryState
+      .map(i => {
+        const match = (i.code || "").match(/SKU-(\d+)/i);
+        return match ? parseInt(match[1], 10) : null;
+      })
+      .filter((n): n is number => n !== null);
+
+    if (skuNumbers.length > 0) {
+      nextNum = Math.max(...skuNumbers) + 1;
+    } else {
+      nextNum = inventoryState.length + 1;
+    }
+
+    setBulkAddItems([
+      { id: 'bulk-1', name: '', sku: `SKU-${nextNum}`, brand: 'Apple', category: 'Screens', costPrice: 0, price: 0, stockQuantity: 0, supplier: 'Tech Supplies Inc', imageUrl: '' },
+      { id: 'bulk-2', name: '', sku: `SKU-${nextNum + 1}`, brand: 'Samsung', category: 'Batteries', costPrice: 0, price: 0, stockQuantity: 0, supplier: 'Tech Supplies Inc', imageUrl: '' },
+      { id: 'bulk-3', name: '', sku: `SKU-${nextNum + 2}`, brand: 'Generic', category: 'Charging Ports', costPrice: 0, price: 0, stockQuantity: 0, supplier: 'Tech Supplies Inc', imageUrl: '' },
+    ]);
+    setIsBulkAddOpen(true);
+  };
+
+  const handleAddBulkRow = () => {
+    const nextNum = bulkAddItems.length + 1 + inventoryState.length;
+    setBulkAddItems(prev => [
+      ...prev,
+      { id: `bulk-${Date.now()}-${Math.random()}`, name: '', sku: `SKU-${nextNum}`, brand: 'Apple', category: 'Screens', costPrice: 0, price: 0, stockQuantity: 0, supplier: 'Tech Supplies Inc', imageUrl: '' }
+    ]);
+  };
+
+  const handleRemoveBulkRow = (id: string) => {
+    if (bulkAddItems.length <= 1) {
+      toast.error("You must keep at least one row.");
+      return;
+    }
+    setBulkAddItems(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleSaveBulkItems = async () => {
+    const validRows = bulkAddItems.filter(r => r.name.trim() !== '');
+    if (validRows.length === 0) {
+      toast.error("Please enter an item name for at least one row.");
+      return;
+    }
+
+    setIsSavingBulk(true);
+    let successCount = 0;
+    try {
+      for (const row of validRows) {
+        await createInventoryItem({
+          partName: row.name,
+          partNumber: row.sku,
+          category: row.category,
+          compatibleBrands: [row.brand],
+          compatibleModels: [],
+          supplierName: row.supplier,
+          quantityInStock: Number(row.stockQuantity),
+          minimumStockLevel: 5,
+          unitCost: Number(row.costPrice),
+          sellingPrice: Number(row.price),
+          imageUrl: row.imageUrl || null,
+        }).unwrap();
+        successCount++;
+      }
+
+      toast.success(`Successfully added ${successCount} inventory item(s)!`);
+      setIsBulkAddOpen(false);
+      refetchItems();
+      refetchSummary();
+    } catch (err: any) {
+      console.error("Bulk add error:", err);
+      toast.error(`Saved ${successCount} items, but encountered error on remaining items.`);
+    } finally {
+      setIsSavingBulk(false);
+    }
+  };
+
   const handleAddItem = async () => {
     if (!addItemForm.name) {
       toast.error("Item name is required.");
@@ -291,11 +394,12 @@ export default function InventoryManagementPage() {
         minimumStockLevel: 5,
         unitCost: Number(addItemForm.costPrice),
         sellingPrice: Number(addItemForm.price),
+        imageUrl: addItemForm.imageUrl || null,
       }).unwrap();
 
       toast.success("Item added successfully!");
       setIsAddItemOpen(false);
-      setAddItemForm({ name: "", sku: "", brand: "Apple", category: "Screens", price: 0, costPrice: 0, stockQuantity: 0, supplier: "Tech Supplies Inc" });
+      setAddItemForm({ name: "", sku: "", brand: "Apple", category: "Screens", price: 0, costPrice: 0, stockQuantity: 0, supplier: "Tech Supplies Inc", imageUrl: "" });
     } catch (err: any) {
       console.error("Failed to add inventory item:", err);
       const msg = err.data?.message || err.data?.error || err.message || "Failed to add item";
@@ -313,7 +417,7 @@ export default function InventoryManagementPage() {
         supplierName: editItemTarget.supplier,
         sellingPrice: Number(editItemTarget.price),
         unitCost: Number(editItemTarget.costPrice),
-        // location: editItemTarget.location // Not currently supported in backend schema
+        imageUrl: editItemTarget.imageUrl ?? null,
       }).unwrap();
       setEditItemTarget(null);
       toast.success("Item updated successfully!");
@@ -657,7 +761,7 @@ export default function InventoryManagementPage() {
                 </div>
                 {user?.role !== 'TECHNICIAN' && (
                   <button
-                    onClick={() => setIsAddItemOpen(true)}
+                    onClick={handleOpenAddItemChoice}
                     className="flex items-center gap-2 h-10 px-4 rounded-lg bg-[#4F46E5] text-sm font-semibold text-white hover:bg-[#4338CA] transition-all shadow-md active:scale-95 focus:outline-none ml-auto"
                   >
                     <Plus className="h-4 w-4" /> {mounted ? t('inventoryPage.addItem') : 'Add Item'}
@@ -1953,6 +2057,264 @@ export default function InventoryManagementPage() {
           </div>
         )}
 
+        {/* Add Choice Option Modal */}
+        {isAddItemChoiceOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="bg-card w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
+              <div className="bg-muted/30 p-6 border-b border-border flex justify-between items-center">
+                <div>
+                  <h2 className="text-[20px] font-black text-foreground mb-1 leading-none tracking-tight">Add Inventory Items</h2>
+                  <p className="text-[11px] text-primary font-black uppercase tracking-widest">Select entry method to register products</p>
+                </div>
+                <button onClick={() => setIsAddItemChoiceOpen(false)} className="h-9 w-9 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-all focus:outline-none"><X className="h-4 w-4" /></button>
+              </div>
+
+              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Single Item Card */}
+                <button
+                  onClick={handleOpenSingleItem}
+                  className="flex flex-col items-start p-6 rounded-2xl border-2 border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left group focus:outline-none"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+                    <Package className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-base font-black text-foreground mb-1">Add Single Item</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Create a single SKU product record with detailed pricing and initial stock quantity.</p>
+                  <span className="mt-4 text-xs font-black text-primary flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    Open Single Form →
+                  </span>
+                </button>
+
+                {/* Bulk Items Card */}
+                <button
+                  onClick={handleOpenBulkAdd}
+                  className="flex flex-col items-start p-6 rounded-2xl border-2 border-border hover:border-emerald-600 bg-card hover:bg-emerald-500/5 transition-all text-left group focus:outline-none"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 mb-4 group-hover:scale-110 transition-transform">
+                    <LayoutGrid className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-base font-black text-foreground mb-1">Add Bulk Items</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Register multiple inventory items and stock counts at once in a single batch list.</p>
+                  <span className="mt-4 text-xs font-black text-emerald-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    Open Batch List →
+                  </span>
+                </button>
+              </div>
+
+              <div className="p-4 bg-muted/20 border-t border-border text-center">
+                <button onClick={() => setIsAddItemChoiceOpen(false)} className="text-xs font-bold text-muted-foreground hover:underline">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Inventory Entry Modal */}
+        {isBulkAddOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="bg-card w-full max-w-6xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border-t-8 border-emerald-600 max-h-[90vh] flex flex-col">
+              <div className="bg-muted/30 p-6 border-b border-border flex justify-between items-center">
+                <div>
+                  <h2 className="text-[22px] font-black text-foreground mb-1 leading-none tracking-tight">Bulk Register Inventory Items</h2>
+                  <p className="text-[11px] text-emerald-600 font-black uppercase tracking-widest">Create multiple SKU product records at once</p>
+                </div>
+                <button onClick={() => setIsBulkAddOpen(false)} className="h-9 w-9 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-all focus:outline-none"><X className="h-4 w-4" /></button>
+              </div>
+
+              {/* Bulk Items Table */}
+              <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                <div className="overflow-x-auto rounded-2xl border border-border">
+                  <table className="w-full text-left border-collapse min-w-[900px]">
+                    <thead>
+                      <tr className="bg-muted/50 border-b border-border text-[11px] font-black text-muted-foreground uppercase tracking-wider">
+                        <th className="px-3 py-3 w-10 text-center">#</th>
+                        <th className="px-3 py-3 w-20 text-center">Image</th>
+                        <th className="px-3 py-3 w-36">SKU Code</th>
+                        <th className="px-3 py-3">Item Name *</th>
+                        <th className="px-3 py-3 w-32">Brand</th>
+                        <th className="px-3 py-3 w-36">Category</th>
+                        <th className="px-3 py-3 w-28 text-right">Cost (Rs.)</th>
+                        <th className="px-3 py-3 w-28 text-right">Selling (Rs.)</th>
+                        <th className="px-3 py-3 w-24 text-center">Stock</th>
+                        <th className="px-3 py-3 w-12 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {bulkAddItems.map((item, index) => (
+                        <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                          <td className="px-3 py-3 text-center text-xs font-black text-muted-foreground">{index + 1}</td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveImageUploadTarget({ type: "bulk", rowIndex: index });
+                                setIsImageModalOpen(true);
+                              }}
+                              className="w-10 h-10 rounded-xl border border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-100/50 flex items-center justify-center overflow-hidden transition-all mx-auto group"
+                            >
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt="Product" className="w-full h-full object-cover" />
+                              ) : (
+                                <Camera className="h-4 w-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+                              )}
+                            </button>
+                          </td>
+                          <td className="px-3 py-3">
+                            <input
+                              type="text"
+                              value={item.sku}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, sku: val } : r));
+                              }}
+                              className="w-full h-9 rounded-lg border border-border px-2 text-xs font-mono font-bold bg-background focus:border-emerald-600 outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            <input
+                              type="text"
+                              placeholder="e.g. iPhone 14 Battery"
+                              value={item.name}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, name: val } : r));
+                              }}
+                              className="w-full h-9 rounded-lg border border-border px-3 text-xs font-bold bg-background focus:border-emerald-600 outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            <select
+                              value={item.brand}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, brand: val } : r));
+                              }}
+                              className="w-full h-9 rounded-lg border border-border px-2 text-xs font-bold bg-background focus:border-emerald-600 outline-none"
+                            >
+                              <option>Apple</option>
+                              <option>Samsung</option>
+                              <option>Google</option>
+                              <option>Xiaomi</option>
+                              <option>Oppo</option>
+                              <option>Vivo</option>
+                              <option>Generic</option>
+                              <option>Other</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-3">
+                            <select
+                              value={item.category}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, category: val } : r));
+                              }}
+                              className="w-full h-9 rounded-lg border border-border px-2 text-xs font-bold bg-background focus:border-emerald-600 outline-none"
+                            >
+                              <option>Screens</option>
+                              <option>Batteries</option>
+                              <option>Charging Ports</option>
+                              <option>Back Glass</option>
+                              <option>Cameras</option>
+                              <option>Tools</option>
+                              <option>Accessories</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-3">
+                            <input
+                              type="number"
+                              value={item.costPrice || ""}
+                              onChange={e => {
+                                const val = Number(e.target.value);
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, costPrice: val } : r));
+                              }}
+                              placeholder="0"
+                              className="w-full h-9 rounded-lg border border-border px-2 text-xs font-black text-right bg-background focus:border-emerald-600 outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            <input
+                              type="number"
+                              value={item.price || ""}
+                              onChange={e => {
+                                const val = Number(e.target.value);
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, price: val } : r));
+                              }}
+                              placeholder="0"
+                              className="w-full h-9 rounded-lg border border-border px-2 text-xs font-black text-right bg-background focus:border-emerald-600 outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            <input
+                              type="number"
+                              value={item.stockQuantity || ""}
+                              onChange={e => {
+                                const val = Number(e.target.value);
+                                setBulkAddItems(prev => prev.map(r => r.id === item.id ? { ...r, stockQuantity: val } : r));
+                              }}
+                              placeholder="0"
+                              className="w-full h-9 rounded-lg border border-border px-2 text-xs font-black text-center bg-background focus:border-emerald-600 outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              onClick={() => handleRemoveBulkRow(item.id)}
+                              className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Remove row"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <button
+                  onClick={handleAddBulkRow}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-emerald-600/40 text-emerald-600 hover:bg-emerald-500/10 font-bold text-xs transition-colors"
+                >
+                  <Plus className="h-4 w-4" /> Add Another Item Row
+                </button>
+              </div>
+
+              {/* Footer Summary & Controls */}
+              <div className="p-6 bg-muted/30 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-6 text-xs font-bold text-muted-foreground">
+                  <span>Total Rows: <strong className="text-foreground">{bulkAddItems.length}</strong></span>
+                  <span>Valid Items: <strong className="text-emerald-600">{bulkAddItems.filter(r => r.name.trim() !== '').length}</strong></span>
+                  <span>Total Batch Units: <strong className="text-foreground">{bulkAddItems.reduce((acc, r) => acc + (Number(r.stockQuantity) || 0), 0)}</strong></span>
+                  <span>Batch Cost: <strong className="text-foreground">Rs. {bulkAddItems.reduce((acc, r) => acc + ((Number(r.costPrice) || 0) * (Number(r.stockQuantity) || 0)), 0).toLocaleString()}</strong></span>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={() => setIsBulkAddOpen(false)}
+                    className="flex-1 sm:flex-none h-11 px-6 rounded-xl border border-border bg-card text-xs font-bold text-foreground hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveBulkItems}
+                    disabled={isSavingBulk}
+                    className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 transition-all disabled:opacity-50"
+                  >
+                    {isSavingBulk ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>Saving Batch...</span>
+                      </>
+                    ) : (
+                      <span>Save All Items</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isAddItemOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
             <div className="bg-card w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border-t-8 border-primary max-h-[90vh] flex flex-col">
@@ -2001,6 +2363,34 @@ export default function InventoryManagementPage() {
                 <div className="col-span-2">
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.currentStock') : 'Current Stock'}</label>
                   <input value={addItemForm.stockQuantity || ""} onChange={e => setAddItemForm(p => ({ ...p, stockQuantity: Number(e.target.value) }))} type="number" placeholder="45" className="w-full h-12 rounded-xl border border-border px-4 text-[14px] font-black focus:ring-4 focus:ring-[#4F46E5]/5 focus:border-[#4F46E5] outline-none transition-all" />
+                </div>
+                <div className="col-span-2 pt-2">
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Image</label>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveImageUploadTarget({ type: "single" });
+                        setIsImageModalOpen(true);
+                      }}
+                      className="h-16 px-6 rounded-2xl border-2 border-dashed border-purple-300 hover:border-purple-600 bg-purple-50/50 hover:bg-purple-100/50 font-black text-xs text-purple-700 flex items-center gap-2 transition-all"
+                    >
+                      <Camera className="h-5 w-5" />
+                      <span>{addItemForm.imageUrl ? "Change Product Photo" : "Upload or Snap Product Photo"}</span>
+                    </button>
+                    {addItemForm.imageUrl && (
+                      <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-purple-500 shadow-sm">
+                        <img src={addItemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setAddItemForm(p => ({ ...p, imageUrl: "" }))}
+                          className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-black text-white rounded-full transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2 pt-6">
                   <div className="flex gap-4">
@@ -2056,6 +2446,34 @@ export default function InventoryManagementPage() {
                 <div>
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('inventoryPage.storageLocation') : 'Storage Location'}</label>
                   <input value={editItemTarget.location || ""} onChange={e => setEditItemTarget(p => p ? { ...p, location: e.target.value } : p)} type="text" className="w-full h-12 rounded-xl border border-border px-4 text-[13px] font-bold" />
+                </div>
+                <div className="col-span-2 pt-2">
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Image</label>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveImageUploadTarget({ type: "edit" });
+                        setIsImageModalOpen(true);
+                      }}
+                      className="h-16 px-6 rounded-2xl border-2 border-dashed border-purple-300 hover:border-purple-600 bg-purple-50/50 hover:bg-purple-100/50 font-black text-xs text-purple-700 flex items-center gap-2 transition-all"
+                    >
+                      <Camera className="h-5 w-5" />
+                      <span>{editItemTarget.imageUrl ? "Change Product Photo" : "Upload or Snap Product Photo"}</span>
+                    </button>
+                    {editItemTarget.imageUrl && (
+                      <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-purple-500 shadow-sm">
+                        <img src={editItemTarget.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setEditItemTarget((p: any) => p ? { ...p, imageUrl: null } : p)}
+                          className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-black text-white rounded-full transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2 pt-6">
                   <button onClick={handleUpdateItem} className="w-full h-14 rounded-2xl bg-[#4F46E5] text-white text-[15px] font-black shadow-xl shadow-[#4F46E5]/20 hover:bg-[#4338CA] transition-all uppercase tracking-tight">{mounted ? t('inventoryPage.updateItemRecord') : 'Update Item Record'}</button>
@@ -2477,6 +2895,26 @@ export default function InventoryManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Global Image Upload Modal */}
+      <ImageUploadModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onSelectImage={(imageDataUrl) => {
+          if (!activeImageUploadTarget) return;
+
+          if (activeImageUploadTarget.type === "single") {
+            setAddItemForm((prev) => ({ ...prev, imageUrl: imageDataUrl }));
+          } else if (activeImageUploadTarget.type === "edit" && editItemTarget) {
+            setEditItemTarget((prev: any) => ({ ...prev, imageUrl: imageDataUrl }));
+          } else if (activeImageUploadTarget.type === "bulk" && typeof activeImageUploadTarget.rowIndex === "number") {
+            const idx = activeImageUploadTarget.rowIndex;
+            setBulkAddItems((prev) =>
+              prev.map((r, i) => (i === idx ? { ...r, imageUrl: imageDataUrl } : r))
+            );
+          }
+        }}
+      />
     </div>
   )
 }

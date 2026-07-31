@@ -12,7 +12,7 @@ import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared
 import {
    Search, Filter, ChevronDown, Plus, Eye,
    Grid, List as ListIcon, Calendar as CalendarIcon,
-   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ChevronLeft, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, Calendar, SlidersHorizontal, ArrowUpRight
+   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, ArrowUpRight
 } from "lucide-react"
 
 import {
@@ -59,7 +59,6 @@ export default function InvoicesManagementPage() {
    const [deleteInvoiceMutation] = useDeleteInvoiceMutation();
 
    const { user } = useSelector((state: any) => state.auth);
-   const shopLogoUrl = settingsData?.logoUrl || settingsData?.settings?.appearance?.logoUrl || settingsData?.data?.logoUrl || user?.shopLogoUrl || user?.logoUrl || "/all-fix-logo-black.png";
 
    const invoicesState = useMemo(() => {
       return (apiResponse?.invoices || []).map((inv: any) => ({
@@ -117,21 +116,21 @@ export default function InvoicesManagementPage() {
 
    const resetAddForm = () => {
       setNewInvoiceData({
-        name: "",
-        phone: "",
-        amount: 0,
-        labour: 0,
-        parts: 0,
-        discount: 0,
-        category: "Mobile Phone",
-        brand: "",
-        model: "",
-        serial: "",
-        fault: "",
-        customerId: "",
-        priority: "MEDIUM",
-        estimatedDate: "",
-        technician: "Admin"
+         name: "",
+         phone: "",
+         amount: 0,
+         labour: 0,
+         parts: 0,
+         discount: 0,
+         category: "Mobile Phone",
+         brand: "",
+         model: "",
+         serial: "",
+         fault: "",
+         customerId: "",
+         priority: "MEDIUM",
+         estimatedDate: "",
+         technician: "Admin"
       });
    };
 
@@ -140,42 +139,65 @@ export default function InvoicesManagementPage() {
    const hiddenPrintRef = useRef<HTMLDivElement>(null)
    const [hiddenInvoiceTarget, setHiddenInvoiceTarget] = useState<any | null>(null)
 
+   // Resolves the shop's logo: a per-invoice override, then the logged-in
+   // user's stored logo, then whatever the settings API returned (checking
+   // the couple of shapes that endpoint has been seen to return), finally
+   // a generic placeholder. No redux-store introspection needed since
+   // useGetSettingsQuery already gives us the data directly.
+   const getResolvedLogo = (invoiceTarget: any) => {
+      return (
+         invoiceTarget?.shopLogoUrl ||
+         user?.shopLogoUrl ||
+         user?.logoUrl ||
+         settingsData?.logoUrl ||
+         settingsData?.settings?.appearance?.logoUrl ||
+         settingsData?.data?.logoUrl ||
+         "/placeholder-logo.png"
+      );
+   };
+
+   const viewTargetLogo = useMemo(() => getResolvedLogo(viewDocumentTarget), [viewDocumentTarget, user, settingsData]);
+   const hiddenTargetLogo = useMemo(() => getResolvedLogo(hiddenInvoiceTarget), [hiddenInvoiceTarget, user, settingsData]);
+
    // Customer Search State
    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false)
    const customerSearchRef = useRef<HTMLDivElement>(null)
-   const { data: searchResults } = useSearchCustomersQuery(newInvoiceData.name, { 
-     skip: !isCustomerSearchOpen || newInvoiceData.name.length < 2 
+   const { data: searchResults } = useSearchCustomersQuery(newInvoiceData.name, {
+      skip: !isCustomerSearchOpen || newInvoiceData.name.length < 2
    })
 
    useEffect(() => {
-     const handleClickOutside = (event: MouseEvent) => {
-       if (customerSearchRef.current && !customerSearchRef.current.contains(event.target as Node)) {
-         setIsCustomerSearchOpen(false)
-       }
-     }
-     document.addEventListener("mousedown", handleClickOutside)
-     return () => document.removeEventListener("mousedown", handleClickOutside)
+      const handleClickOutside = (event: MouseEvent) => {
+         if (customerSearchRef.current && !customerSearchRef.current.contains(event.target as Node)) {
+            setIsCustomerSearchOpen(false)
+         }
+      }
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
    }, [])
 
-    const handleDownloadPDF = async (inv?: any) => {
-       setIsGeneratingPDF(true)
+   const handleDownloadPDF = async (inv?: any) => {
+      setIsGeneratingPDF(true)
 
-       const isInvoiceObj = inv && typeof inv === 'object' && ('invoiceId' in inv || 'id' in inv || 'amount' in inv) && !('nativeEvent' in inv) && !('target' in inv);
-       const targetInv = isInvoiceObj ? inv : (viewDocumentTarget || hiddenInvoiceTarget);
-       if (!targetInv) {
-          setIsGeneratingPDF(false)
-          return
-       }
+      // If 'inv' looks like a real invoice record, use it directly. Otherwise
+      // (e.g. it's a React SyntheticEvent from onClick={handleDownloadPDF})
+      // fall back to whichever invoice is currently open.
+      const isInvoiceObj = inv && typeof inv === 'object' && ('invoiceId' in inv || 'id' in inv || 'amount' in inv) && !('nativeEvent' in inv) && !('target' in inv);
+      const targetInv = isInvoiceObj ? inv : (viewDocumentTarget || hiddenInvoiceTarget);
+      if (!targetInv) {
+         setIsGeneratingPDF(false)
+         return
+      }
 
-       try {
-          await generateClientInvoicePDF(targetInv, user);
-       } catch (err) {
-          console.error("PDF generation failed:", err)
-          alert("Error: Could not generate PDF. Please try again.")
-       } finally {
-          setIsGeneratingPDF(false)
-       }
-    }
+      try {
+         await generateClientInvoicePDF(targetInv, user);
+      } catch (err) {
+         console.error("PDF generation failed:", err)
+         alert("Error: Could not generate PDF. Please try again.")
+      } finally {
+         setIsGeneratingPDF(false)
+      }
+   }
 
    const handleStatusUpdate = async (id: string, newStatus: string) => {
       const dbStatus = newStatus === 'Paid' ? 'COMPLETED' : newStatus === 'Pending' ? 'PENDING' : 'FAILED';
@@ -321,16 +343,16 @@ export default function InvoicesManagementPage() {
                               {isSortOpen && (
                                  <div className="absolute top-12 right-0 w-48 bg-card rounded-xl border border-border shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                                     {SORT_OPTIONS.map(opt => {
-                                        if (user?.role === 'TECHNICIAN' && (opt.value === 'amount-high' || opt.value === 'amount-low')) return null;
-                                        return (
-                                           <button
-                                              key={opt.value}
-                                              onClick={() => setSortKey(opt.value)}
-                                              className={`w-full text-left px-4 py-2.5 text-[12px] font-bold transition-colors focus:outline-none ${sortKey === opt.value ? 'bg-[#4F46E5]/10 text-[#4F46E5]' : 'text-foreground hover:bg-muted'}`}
-                                           >
-                                              {opt.label}
-                                           </button>
-                                        )
+                                       if (user?.role === 'TECHNICIAN' && (opt.value === 'amount-high' || opt.value === 'amount-low')) return null;
+                                       return (
+                                          <button
+                                             key={opt.value}
+                                             onClick={() => setSortKey(opt.value)}
+                                             className={`w-full text-left px-4 py-2.5 text-[12px] font-bold transition-colors focus:outline-none ${sortKey === opt.value ? 'bg-[#4F46E5]/10 text-[#4F46E5]' : 'text-foreground hover:bg-muted'}`}
+                                          >
+                                             {opt.label}
+                                          </button>
+                                       )
                                     })}
                                  </div>
                               )}
@@ -402,13 +424,13 @@ export default function InvoicesManagementPage() {
                                  )}
 
                                  {user?.role !== 'TECHNICIAN' && (
-                                   <div className="pt-4 border-t border-border">
+                                    <div className="pt-4 border-t border-border">
                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Total Amount</p>
-                                      <div className="flex items-baseline gap-1">
+                                       <div className="flex items-baseline gap-1">
                                           <span className="text-[14px] font-bold text-muted-foreground">Rs.</span>
                                           <span className="text-[26px] font-black text-foreground tracking-tighter">{(inv.amount ?? 0).toLocaleString()}</span>
-                                      </div>
-                                   </div>
+                                       </div>
+                                    </div>
                                  )}
                               </div>
 
@@ -420,9 +442,9 @@ export default function InvoicesManagementPage() {
                                     <Edit2 className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
                                  </button>
                                  {user?.role !== 'TECHNICIAN' && (
-                                   <button onClick={() => setDeleteFormTarget(inv)} className="h-12 flex justify-center items-center text-muted-foreground hover:bg-muted hover:text-red-600 transition-all focus:outline-none group/btn">
-                                      <Trash2 className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
-                                   </button>
+                                    <button onClick={() => setDeleteFormTarget(inv)} className="h-12 flex justify-center items-center text-muted-foreground hover:bg-muted hover:text-red-600 transition-all focus:outline-none group/btn">
+                                       <Trash2 className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                                    </button>
                                  )}
                               </div>
                            </div>
@@ -445,7 +467,7 @@ export default function InvoicesManagementPage() {
                               </thead>
                               <tbody className="divide-y divide-border">
                                  {processedInvoices.map((inv) => (
-                                     <tr key={inv.id} className="hover:bg-muted/30 transition-colors group">
+                                    <tr key={inv.id} className="hover:bg-muted/30 transition-colors group">
                                        <td className="px-6 py-4"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-[#4F46E5] focus:ring-[#4F46E5]/20 cursor-pointer" /></td>
                                        <td className="px-6 py-4">
                                           <div className={`flex items-center justify-center w-9 h-9 rounded-xl border ${inv.type === 'client_repair' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
@@ -459,7 +481,7 @@ export default function InvoicesManagementPage() {
                                        </td>
                                        <td className="px-6 py-4">
                                           <div className="flex flex-col gap-0.5">
-                                              <span className="text-[14px] font-black text-foreground tracking-tight truncate max-w-[180px]">{inv.name}</span>
+                                             <span className="text-[14px] font-black text-foreground tracking-tight truncate max-w-[180px]">{inv.name}</span>
                                              <span className="text-[11px] text-muted-foreground font-bold">{inv.phone}</span>
                                              {inv.device && inv.device !== 'Internal' && (
                                                 <span className="text-[10px] font-bold text-[#4F46E5] flex items-center gap-1 mt-0.5">
@@ -470,16 +492,16 @@ export default function InvoicesManagementPage() {
                                           </div>
                                        </td>
                                        {user?.role !== 'TECHNICIAN' && (
-                                       <td className="px-6 py-4">
-                                          <div className="flex flex-col">
-                                              <span className="text-[14px] font-black text-foreground">Rs. {(inv.amount ?? 0).toLocaleString()}</span>
-                                             <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md border w-fit mt-1 uppercase tracking-wider ${STATUS_STYLE[inv.status]}`}>{inv.status}</span>
-                                          </div>
-                                       </td>
+                                          <td className="px-6 py-4">
+                                             <div className="flex flex-col">
+                                                <span className="text-[14px] font-black text-foreground">Rs. {(inv.amount ?? 0).toLocaleString()}</span>
+                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md border w-fit mt-1 uppercase tracking-wider ${STATUS_STYLE[inv.status]}`}>{inv.status}</span>
+                                             </div>
+                                          </td>
                                        )}
                                        <td className="px-6 py-4">
                                           <div className="flex flex-col text-[12px]">
-                                              <span className="font-bold text-foreground">{new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                             <span className="font-bold text-foreground">{new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                                              <span className="text-[10px] text-muted-foreground font-medium uppercase">{new Date(inv.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                           </div>
                                        </td>
@@ -488,16 +510,16 @@ export default function InvoicesManagementPage() {
                                              <button onClick={() => setViewDocumentTarget(inv)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"><Eye className="h-4 w-4" /></button>
                                              <button onClick={() => setEditInvoiceTarget(inv)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></button>
                                              <div className="relative">
-                                                 <button onClick={(e) => { e.stopPropagation(); setActiveDropdownId(activeDropdownId === inv.id ? null : inv.id) }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"><MoreVertical className="h-4 w-4" /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); setActiveDropdownId(activeDropdownId === inv.id ? null : inv.id) }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"><MoreVertical className="h-4 w-4" /></button>
                                                 {activeDropdownId === inv.id && (
-                                                    <div className="absolute top-10 right-0 w-44 bg-card rounded-xl border border-border mt-1 shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2">
-                                                       <button onClick={() => { handleDownloadPDF(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-[12px] font-bold text-foreground hover:bg-muted">
-                                                          <Download className="h-3.5 w-3.5 text-muted-foreground" /> Download PDF
-                                                       </button>
-                                                       {user?.role !== 'TECHNICIAN' && (
-                                                          <>
-                                                             <div className="w-full h-px bg-border my-1" />
-                                                             <button onClick={() => { setDeleteFormTarget(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center justify-between gap-2 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-500/10">
+                                                   <div className="absolute top-10 right-0 w-44 bg-card rounded-xl border border-border mt-1 shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2">
+                                                      <button onClick={() => { handleDownloadPDF(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-[12px] font-bold text-foreground hover:bg-muted">
+                                                         <Download className="h-3.5 w-3.5 text-muted-foreground" /> Download PDF
+                                                      </button>
+                                                      {user?.role !== 'TECHNICIAN' && (
+                                                         <>
+                                                            <div className="w-full h-px bg-border my-1" />
+                                                            <button onClick={() => { setDeleteFormTarget(inv); setActiveDropdownId(null); }} className="w-full text-left flex items-center justify-between gap-2 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-500/10">
                                                                Void Record <Trash2 className="h-3.5 w-3.5" />
                                                             </button>
                                                          </>
@@ -566,45 +588,45 @@ export default function InvoicesManagementPage() {
                                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('invoicesPage.customerName') : 'Customer / Client Name'}</label>
                                  <div className="relative group" ref={customerSearchRef}>
                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-[#4F46E5] transition-colors" />
-                                    <input 
+                                    <input
                                        value={newInvoiceData.name}
                                        onChange={(e) => {
-                                         setNewInvoiceData(p => ({...p, name: e.target.value}))
-                                         setIsCustomerSearchOpen(true)
+                                          setNewInvoiceData(p => ({ ...p, name: e.target.value }))
+                                          setIsCustomerSearchOpen(true)
                                        }}
                                        onFocus={() => setIsCustomerSearchOpen(true)}
-                                       type="text" 
-                                       placeholder={mounted ? t('invoicesPage.searchOrEnter') : "Search or Enter Name..."} 
-                                       className="w-full h-12 rounded-xl border border-slate-200 pl-10 pr-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" 
+                                       type="text"
+                                       placeholder={mounted ? t('invoicesPage.searchOrEnter') : "Search or Enter Name..."}
+                                       className="w-full h-12 rounded-xl border border-slate-200 pl-10 pr-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300"
                                     />
 
                                     {isCustomerSearchOpen && searchResults?.customers?.length > 0 && (
                                        <div className="absolute top-full left-0 w-full bg-card rounded-xl border border-border shadow-xl mt-2 py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200 max-h-[240px] overflow-y-auto custom-scrollbar">
-                                         {searchResults.customers.map((c: any) => (
-                                           <button
-                                             key={c.id}
-                                             onClick={() => {
-                                               setNewInvoiceData(p => ({ ...p, name: c.name, phone: c.phone || "", customerId: c.id }))
-                                               setIsCustomerSearchOpen(false)
-                                             }}
-                                             className="w-full text-left px-4 py-2.5 hover:bg-muted flex flex-col transition-colors"
-                                           >
-                                             <span className="text-[14px] font-bold text-[#0F172A]">{c.name}</span>
-                                             <span className="text-[11px] text-slate-400 font-medium">{c.phone || "No phone"}</span>
-                                           </button>
-                                         ))}
+                                          {searchResults.customers.map((c: any) => (
+                                             <button
+                                                key={c.id}
+                                                onClick={() => {
+                                                   setNewInvoiceData(p => ({ ...p, name: c.name, phone: c.phone || "", customerId: c.id }))
+                                                   setIsCustomerSearchOpen(false)
+                                                }}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-muted flex flex-col transition-colors"
+                                             >
+                                                <span className="text-[14px] font-bold text-[#0F172A]">{c.name}</span>
+                                                <span className="text-[11px] text-slate-400 font-medium">{c.phone || "No phone"}</span>
+                                             </button>
+                                          ))}
                                        </div>
                                     )}
                                  </div>
                               </div>
                               <div className="col-span-2 lg:col-span-1">
                                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{mounted ? t('invoicesPage.contactNumber') : 'Contact Number'}</label>
-                                 <input 
+                                 <input
                                     value={newInvoiceData.phone}
-                                    onChange={(e) => setNewInvoiceData(p => ({...p, phone: e.target.value}))}
-                                    type="text" 
-                                    placeholder="+94 7X XXX XXXX" 
-                                    className="w-full h-12 rounded-xl border border-slate-200 px-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300" 
+                                    onChange={(e) => setNewInvoiceData(p => ({ ...p, phone: e.target.value }))}
+                                    type="text"
+                                    placeholder="+94 7X XXX XXXX"
+                                    className="w-full h-12 rounded-xl border border-slate-200 px-4 text-[14px] font-bold focus:ring-4 focus:ring-[#4F46E5]/10 focus:border-[#4F46E5] outline-none transition-all placeholder:text-slate-300"
                                  />
                               </div>
                            </div>
@@ -671,9 +693,9 @@ export default function InvoicesManagementPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-                                          <select 
+                                          <select
                                              value={newInvoiceData.category}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, category: e.target.value}))}
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, category: e.target.value }))}
                                              className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           >
                                              {DEVICE_TYPES.map(type => (
@@ -683,32 +705,32 @@ export default function InvoicesManagementPage() {
                                        </div>
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Brand</label>
-                                          <input 
+                                          <input
                                              value={newInvoiceData.brand}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, brand: e.target.value}))}
-                                             type="text" 
-                                             placeholder="e.g. Samsung" 
-                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, brand: e.target.value }))}
+                                             type="text"
+                                             placeholder="e.g. Samsung"
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           />
                                        </div>
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Model</label>
-                                          <input 
+                                          <input
                                              value={newInvoiceData.model}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, model: e.target.value}))}
-                                             type="text" 
-                                             placeholder="e.g. Galaxy S21" 
-                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, model: e.target.value }))}
+                                             type="text"
+                                             placeholder="e.g. Galaxy S21"
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           />
                                        </div>
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Serial/IMEI</label>
-                                          <input 
+                                          <input
                                              value={newInvoiceData.serial}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, serial: e.target.value}))}
-                                             type="text" 
-                                             placeholder="IMEI number..." 
-                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, serial: e.target.value }))}
+                                             type="text"
+                                             placeholder="IMEI number..."
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           />
                                        </div>
                                     </div>
@@ -716,9 +738,9 @@ export default function InvoicesManagementPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Priority</label>
-                                          <select 
+                                          <select
                                              value={newInvoiceData.priority}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, priority: e.target.value}))}
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, priority: e.target.value }))}
                                              className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           >
                                              <option value="LOW">Low</option>
@@ -729,18 +751,18 @@ export default function InvoicesManagementPage() {
                                        </div>
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estimated Date</label>
-                                          <input 
+                                          <input
                                              value={newInvoiceData.estimatedDate}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, estimatedDate: e.target.value}))}
-                                             type="date" 
-                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, estimatedDate: e.target.value }))}
+                                             type="date"
+                                             className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           />
                                        </div>
                                        <div>
                                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Assign Technician</label>
-                                          <select 
+                                          <select
                                              value={newInvoiceData.technician}
-                                             onChange={(e) => setNewInvoiceData(p => ({...p, technician: e.target.value}))}
+                                             onChange={(e) => setNewInvoiceData(p => ({ ...p, technician: e.target.value }))}
                                              className="w-full h-11 rounded-xl border border-border bg-card px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
                                           >
                                              {STAFF_LIST.map(staff => (
@@ -754,68 +776,68 @@ export default function InvoicesManagementPage() {
                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <div>
                                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Fault Description</label>
-                                       <textarea 
+                                       <textarea
                                           value={newInvoiceData.fault}
-                                          onChange={(e) => setNewInvoiceData(p => ({...p, fault: e.target.value}))}
-                                          rows={3} 
-                                          placeholder="Describe the issue in detail..." 
+                                          onChange={(e) => setNewInvoiceData(p => ({ ...p, fault: e.target.value }))}
+                                          rows={3}
+                                          placeholder="Describe the issue in detail..."
                                           className="w-full rounded-xl border border-border bg-card p-4 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors resize-none"
                                        ></textarea>
                                     </div>
                                     <div className="space-y-4">
-                                    <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm">
-                                       <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                          <Receipt className="h-4 w-4" /> Cost Breakdown
-                                       </h4>
-                                       <div className="grid grid-cols-3 gap-4">
-                                          <div>
-                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Labour</label>
-                                             <input 
-                                                value={newInvoiceData.labour || ""} 
-                                                onChange={(e) => {
-                                                   const val = +e.target.value;
-                                                   setNewInvoiceData(p => ({...p, labour: val, amount: (val + p.parts) - p.discount}))
-                                                }}
-                                                type="number" 
-                                                placeholder="0" 
-                                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
-                                             />
+                                       <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm">
+                                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                             <Receipt className="h-4 w-4" /> Cost Breakdown
+                                          </h4>
+                                          <div className="grid grid-cols-3 gap-4">
+                                             <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Labour</label>
+                                                <input
+                                                   value={newInvoiceData.labour || ""}
+                                                   onChange={(e) => {
+                                                      const val = +e.target.value;
+                                                      setNewInvoiceData(p => ({ ...p, labour: val, amount: (val + p.parts) - p.discount }))
+                                                   }}
+                                                   type="number"
+                                                   placeholder="0"
+                                                   className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
+                                                />
+                                             </div>
+                                             <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Parts</label>
+                                                <input
+                                                   value={newInvoiceData.parts || ""}
+                                                   onChange={(e) => {
+                                                      const val = +e.target.value;
+                                                      setNewInvoiceData(p => ({ ...p, parts: val, amount: (p.labour + val) - p.discount }))
+                                                   }}
+                                                   type="number"
+                                                   placeholder="0"
+                                                   className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
+                                                />
+                                             </div>
+                                             <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Discount</label>
+                                                <input
+                                                   value={newInvoiceData.discount || ""}
+                                                   onChange={(e) => {
+                                                      const val = +e.target.value;
+                                                      setNewInvoiceData(p => ({ ...p, discount: val, amount: (p.labour + p.parts) - val }))
+                                                   }}
+                                                   type="number"
+                                                   placeholder="0"
+                                                   className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors"
+                                                />
+                                             </div>
                                           </div>
-                                          <div>
-                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Parts</label>
-                                             <input 
-                                                value={newInvoiceData.parts || ""} 
-                                                onChange={(e) => {
-                                                   const val = +e.target.value;
-                                                   setNewInvoiceData(p => ({...p, parts: val, amount: (p.labour + val) - p.discount}))
-                                                }}
-                                                type="number" 
-                                                placeholder="0" 
-                                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
-                                             />
-                                          </div>
-                                          <div>
-                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Discount</label>
-                                             <input 
-                                                value={newInvoiceData.discount || ""} 
-                                                onChange={(e) => {
-                                                   const val = +e.target.value;
-                                                   setNewInvoiceData(p => ({...p, discount: val, amount: (p.labour + p.parts) - val}))
-                                                }}
-                                                type="number" 
-                                                placeholder="0" 
-                                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-bold outline-none focus:border-[#4F46E5] transition-colors" 
-                                             />
+                                          <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                                             <span className="text-[13px] font-black text-[#0F172A]">Grand Total</span>
+                                             <div className="flex flex-col items-end">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Total Payable</span>
+                                                <span className="text-[20px] font-black text-[#4F46E5] tracking-tight">Rs. {newInvoiceData.amount.toLocaleString()}</span>
+                                             </div>
                                           </div>
                                        </div>
-                                       <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
-                                          <span className="text-[13px] font-black text-[#0F172A]">Grand Total</span>
-                                          <div className="flex flex-col items-end">
-                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Total Payable</span>
-                                             <span className="text-[20px] font-black text-[#4F46E5] tracking-tight">Rs. {newInvoiceData.amount.toLocaleString()}</span>
-                                          </div>
-                                       </div>
-                                    </div>
                                     </div>
                                  </div>
                               </div>
@@ -847,9 +869,9 @@ export default function InvoicesManagementPage() {
                                     status: 'Paid',
                                     paymentType: 'FULL',
                                     paymentMethod: 'CASH',
-                                    notes: addInvoiceType === 'client_repair' 
-                                      ? `Repair: ${newInvoiceData.category} ${newInvoiceData.brand} ${newInvoiceData.model} - ${newInvoiceData.fault} | Labour: Rs.${newInvoiceData.labour} | Parts: Rs.${newInvoiceData.parts} | Discount: Rs.${newInvoiceData.discount} | Total: Rs.${newInvoiceData.amount} | Priority: ${newInvoiceData.priority} | Date: ${newInvoiceData.estimatedDate} | Tech: ${newInvoiceData.technician} | Serial: ${newInvoiceData.serial}`
-                                      : `Inventory Sale: ${invoiceItems.map(i => i.name).join(', ')}`,
+                                    notes: addInvoiceType === 'client_repair'
+                                       ? `Repair: ${newInvoiceData.category} ${newInvoiceData.brand} ${newInvoiceData.model} - ${newInvoiceData.fault} | Labour: Rs.${newInvoiceData.labour} | Parts: Rs.${newInvoiceData.parts} | Discount: Rs.${newInvoiceData.discount} | Total: Rs.${newInvoiceData.amount} | Priority: ${newInvoiceData.priority} | Date: ${newInvoiceData.estimatedDate} | Tech: ${newInvoiceData.technician} | Serial: ${newInvoiceData.serial}`
+                                       : `Inventory Sale: ${invoiceItems.map(i => i.name).join(', ')}`,
                                  }).unwrap();
 
                                  setIsAddInvoiceOpen(false);
@@ -957,59 +979,73 @@ export default function InvoicesManagementPage() {
                         className="h-11 w-11 rounded-full bg-card text-muted-foreground flex items-center justify-center shadow-xl hover:bg-muted hover:text-foreground transition-all focus:outline-none active:scale-95 border border-border"
                      >
                         <X className="h-5 w-5" />
-                      </button>
+                     </button>
                   </div>
 
                   {/* INVOICE PAPER CONTAINER */}
                   <div ref={printRef} className="w-full max-w-[800px] bg-white rounded-[24px] shadow-2xl p-16 shrink-0 z-10 animate-in zoom-in-95 duration-500 border border-slate-100 flex flex-col min-h-[1000px]">
 
                      {/* BRANDING HEADER */}
-                     <div className="flex justify-between items-start mb-20">
-                        <div>
-                           <div className="flex items-center gap-2.5 mb-2">
-                              <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
-                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
+                     <div className="mb-10">
+                        <div className="flex justify-between items-center mb-6">
+                           <img
+                              src={viewTargetLogo}
+                              alt="Shop Logo"
+                              className="w-auto h-[120px] object-contain"
+                              onError={(e) => { e.currentTarget.src = "/placeholder-logo.png" }}
+                           />
+                           <img
+                              src="/all-fix-logo-black.png"
+                              alt="SRM Allfix Logo"
+                              className="w-auto h-[120px] object-contain"
+                           />
+                        </div>
+                        <div className="flex justify-between items-end">
+                           <div>
+                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase mb-2">
                                  {user?.shopName || "All Fix Private Limited"}
                               </h2>
+                              <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                                 <p className="flex items-center gap-1.5"><Smartphone className="h-3 w-3" /> {user?.shopWebsite || "Digital Repair Hub"}</p>
+                                 <p>{user?.shopEmail || "contact@allfix.lk"}</p>
+                                 <p>{user?.shopPhone || "+94 11 234 5678"}</p>
+                              </div>
                            </div>
-                           <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                              <p className="flex items-center gap-1.5"><Smartphone className="h-3 w-3" /> {user?.shopWebsite || "Digital Repair Hub"}</p>
-                              <p>{user?.shopEmail || "contact@allfix.lk"}</p>
-                              <p>{user?.shopPhone || "+94 11 234 5678"}</p>
+                           <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
+                              <p>Premium Service Center</p>
+                              <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                              <p className="text-[#4F46E5] mt-1">
+                                 {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
+                              </p>
                            </div>
-                        </div>
-                        <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
-                           <p>Premium Service Center</p>
-                           <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
-                           <p className="text-[#4F46E5] mt-1">
-                              {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
-                           </p>
                         </div>
                      </div>
 
                      {/* LOGISTICS & META GRID */}
-                     <div className="grid grid-cols-4 gap-8 mb-16">
-                        <div className="col-span-1 border-l-2 border-[#4F46E5] pl-5">
-                           <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-black">Billed to,</p>
-                           <p className="text-[14px] font-black text-[#0F172A] mb-1">{viewDocumentTarget.name ?? 'Guest'}</p>
-                           <p className="text-[12px] text-slate-500 font-bold leading-relaxed">{viewDocumentTarget.phone ?? 'N/A'}<br />Client Address Stored<br />Verification Required</p>
+                     <div className="grid grid-cols-4 gap-4 mb-10">
+                        <div className="col-span-1 border-l-2 border-[#4F46E5] pl-4">
+                           <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-2 font-black">Billed to,</p>
+                           <p className="text-[12px] font-black text-[#0F172A] mb-1">{viewDocumentTarget.name ?? 'Guest'}</p>
+                           <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{viewDocumentTarget.phone ?? 'N/A'}<br />Client Address Stored<br />Verification Required</p>
                         </div>
-                        <div className="col-span-2 px-8 border-x border-slate-50">
-                           <div className="grid grid-cols-2 gap-y-8">
+                        <div className="col-span-2 px-4 border-x border-slate-50">
+                           <div className="grid grid-cols-2 gap-y-4">
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Invoice Reference</p>
-                                 <p className="text-[13px] font-black text-[#0F172A] font-mono bg-slate-50 px-2 py-1 rounded inline-block border border-slate-100">{viewDocumentTarget.invoiceId ?? '#000000'}</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Invoice Reference</p>
+                                 <p className="text-[11px] font-black text-[#0F172A] font-mono  ">{viewDocumentTarget.invoiceId ?? '#000000'}</p>
                               </div>
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Issue Date</p>
-                                 <p className="text-[13px] font-black text-[#0F172A]">{viewDocumentTarget.date ?? 'N/A'}</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Issue Date</p>
+                                 <p className="text-[11px] font-black text-[#0F172A]">
+                                    {viewDocumentTarget.date ? viewDocumentTarget.date.toString().split('T')[0] : 'N/A'}
+                                 </p>
                               </div>
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Service Category</p>
-                                 <p className="text-[13px] font-black text-[#0F172A] capitalize">{(viewDocumentTarget.type || "").replace(/_/g, ' ')}</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Service Category</p>
+                                 <p className="text-[11px] font-black text-[#0F172A] capitalize">{(viewDocumentTarget.type || "").replace(/_/g, ' ')}</p>
                               </div>
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Current Status</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Current Status</p>
                                  <span
                                     className="text-[10px] font-black px-2 py-0.5 rounded-md border uppercase inline-block"
                                     style={{
@@ -1023,15 +1059,15 @@ export default function InvoicesManagementPage() {
                               </div>
                            </div>
                         </div>
-                        <div className="col-span-1 text-right bg-slate-50/50 p-6 rounded-2xl border border-slate-100 h-fit">
-                           <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Total Payable</p>
-                           <p className="text-[32px] font-black text-[#0F172A] tracking-tighter leading-none mb-1">
-                              <span className="text-[14px] text-slate-400 mr-1.5">Rs.</span>
+                        <div className="col-span-1 text-left  h-fit">
+                           <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Total Payable</p>
+                           <p className="text-[24px] font-black text-[#0F172A] tracking-tighter leading-none mb-1">
+                              <span className="text-[10px] text-slate-400 mr-1.5">Rs.</span>
                               {(viewDocumentTarget.amount ?? 0).toLocaleString()}
                            </p>
-                           <div className="mt-8 border-t border-slate-200 pt-4">
-                              <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-black underline decoration-[#4F46E5] underline-offset-4">Due Schedule</p>
-                              <p className="text-[12px] font-black text-[#4F46E5]">Payable on Receipt</p>
+                           <div className="mt-4 border-t border-slate-200 pt-2">
+                              <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black underline decoration-[#4F46E5] underline-offset-4">Due Schedule</p>
+                              <p className="text-[10px] font-black text-[#4F46E5]">Payable on Receipt</p>
                            </div>
                         </div>
                      </div>
@@ -1144,7 +1180,7 @@ export default function InvoicesManagementPage() {
                </div>
             )}
 
-            {/* 🛠️ INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
+            {/* INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
             <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
                {hiddenInvoiceTarget && (
                   <div
@@ -1153,54 +1189,66 @@ export default function InvoicesManagementPage() {
                      style={{ minHeight: '1100px' }}
                   >
                      {/* BRANDING HEADER */}
-                     <div className="flex justify-between items-start mb-20">
-                        <div>
-                           <div className="flex items-center gap-2.5 mb-2">
-                              <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
-                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
+                     <div className="mb-10">
+                        <div className="flex justify-between items-center mb-6">
+                           <img
+                              src={hiddenTargetLogo}
+                              alt="Shop Logo"
+                              className="w-auto h-[120px] object-contain"
+                              onError={(e) => { e.currentTarget.src = "/placeholder-logo.png" }}
+                           />
+                           <img
+                              src="/all-fix-logo-black.png"
+                              alt="SRM Allfix Logo"
+                              className="w-auto h-[120px] object-contain"
+                           />
+                        </div>
+                        <div className="flex justify-between items-end">
+                           <div>
+                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase mb-2">
                                  {user?.shopName || "All Fix Private Limited"}
                               </h2>
+                              <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                                 <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">
+                                    {user?.shopWebsite || "Digital Repair Hub"}
+                                 </p>
+                                 <p>{user?.shopEmail || "contact@allfix.lk"}</p>
+                                 <p>{user?.shopPhone || "+94 11 234 5678"}</p>
+                              </div>
                            </div>
-                           <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                              <p className="flex items-center gap-1.5 underline decoration-[#4F46E5] underline-offset-4">
-                                 {user?.shopWebsite || "Digital Repair Hub"}
+                           <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
+                              <p>Premium Service Center</p>
+                              <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
+                              <p className="text-[#4F46E5] mt-1">
+                                 {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
                               </p>
-                              <p>{user?.shopEmail || "contact@allfix.lk"}</p>
-                              <p>{user?.shopPhone || "+94 11 234 5678"}</p>
                            </div>
-                        </div>
-                        <div className="text-right text-[11px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
-                           <p>Premium Service Center</p>
-                           <p>{user?.shopAddress ? `${user.shopAddress}${user.shopCity ? `, ${user.shopCity}` : ''}` : "Colombo, Sri Lanka"}</p>
-                           <p className="text-[#4F46E5] mt-1">
-                              {user?.shopTaxNumber ? `VAT REG: ${user.shopTaxNumber}` : "VAT REG: 009876543-X"}
-                           </p>
                         </div>
                      </div>
 
                      {/* LOGISTICS & META GRID */}
-                     <div className="grid grid-cols-4 gap-8 mb-16">
-                        <div className="col-span-1 border-l-2 border-[#4F46E5] pl-5">
-                           <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-black">Billed to,</p>
-                           <p className="text-[14px] font-black text-[#0F172A] mb-1">{hiddenInvoiceTarget.name ?? 'Guest'}</p>
-                           <p className="text-[12px] text-slate-500 font-bold leading-relaxed">{hiddenInvoiceTarget.phone ?? 'N/A'}<br />Client Address Stored<br />Verification Required</p>
+                     <div className="grid grid-cols-4 gap-4 mb-10">
+                        <div className="col-span-1 border-l-2 border-[#4F46E5] pl-4">
+                           <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-2 font-black">Billed to,</p>
+                           <p className="text-[12px] font-black text-[#0F172A] mb-1">{hiddenInvoiceTarget.name ?? 'Guest'}</p>
+                           <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{hiddenInvoiceTarget.phone ?? 'N/A'}<br />Client Address Stored<br />Verification Required</p>
                         </div>
-                        <div className="col-span-2 px-8 border-x border-slate-50">
-                           <div className="grid grid-cols-2 gap-y-8">
+                        <div className="col-span-2 px-4 border-x border-slate-50">
+                           <div className="grid grid-cols-2 gap-y-4">
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Invoice Reference</p>
-                                 <p className="text-[13px] font-black text-[#0F172A] font-mono bg-slate-50 px-2 py-1 rounded inline-block border border-slate-100">{hiddenInvoiceTarget.invoiceId ?? '#000000'}</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Invoice Reference</p>
+                                 <p className="text-[11px] font-black text-[#0F172A] font-mono bg-slate-50 px-2 py-1 rounded inline-block border border-slate-100">{hiddenInvoiceTarget.invoiceId ?? '#000000'}</p>
                               </div>
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Issue Date</p>
-                                 <p className="text-[13px] font-black text-[#0F172A]">{hiddenInvoiceTarget.date ?? 'N/A'}</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Issue Date</p>
+                                 <p className="text-[11px] font-black text-[#0F172A]">{hiddenInvoiceTarget.date ?? 'N/A'}</p>
                               </div>
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Service Category</p>
-                                 <p className="text-[13px] font-black text-[#0F172A] capitalize">{(hiddenInvoiceTarget.type || "").replace(/_/g, ' ')}</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Service Category</p>
+                                 <p className="text-[11px] font-black text-[#0F172A] capitalize">{(hiddenInvoiceTarget.type || "").replace(/_/g, ' ')}</p>
                               </div>
                               <div>
-                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Current Status</p>
+                                 <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Current Status</p>
                                  <span
                                     className="text-[10px] font-black px-2 py-0.5 rounded-md border uppercase inline-block"
                                     style={{
@@ -1214,15 +1262,15 @@ export default function InvoicesManagementPage() {
                               </div>
                            </div>
                         </div>
-                        <div className="col-span-1 text-right bg-slate-50/50 p-6 rounded-2xl border border-slate-100 h-fit">
-                           <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-black">Total Payable</p>
-                           <p className="text-[32px] font-black text-[#0F172A] tracking-tighter leading-none mb-1">
-                              <span className="text-[14px] text-slate-400 mr-1.5">Rs.</span>
+                        <div className="col-span-1 text-left bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-fit">
+                           <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Total Payable</p>
+                           <p className="text-[24px] font-black text-[#0F172A] tracking-tighter leading-none mb-1">
+                              <span className="text-[10px] text-slate-400 mr-1.5">Rs.</span>
                               {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}
                            </p>
-                           <div className="mt-8 border-t border-slate-200 pt-4">
-                              <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-black underline decoration-[#4F46E5] underline-offset-4">Due Schedule</p>
-                              <p className="text-[12px] font-black text-[#4F46E5]">Payable on Receipt</p>
+                           <div className="mt-4 border-t border-slate-200 pt-2">
+                              <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black underline decoration-[#4F46E5] underline-offset-4">Due Schedule</p>
+                              <p className="text-[10px] font-black text-[#4F46E5]">Payable on Receipt</p>
                            </div>
                         </div>
                      </div>

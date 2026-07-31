@@ -8,6 +8,49 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 
+const getDisplayValue = (val: any) => {
+  if (val === undefined || val === null || val === '') return 'N/A';
+  if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : 'N/A';
+  if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+};
+
+const formatLabel = (key: string) => {
+  const result = key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ');
+  return result.charAt(0).toUpperCase() + result.slice(1).trim();
+};
+
+const getFields = (req: any) => {
+  const fields: Record<string, any> = {
+    'Name': req.shopName,
+    'Owner Name': req.ownerName,
+    'Email': req.ownerEmail,
+    'Contact Number': req.fullData?.phone,
+    'Subscription Plan': req.fullData?.plan,
+    'Payment Method': req.fullData?.paymentMethod,
+    'Number of Branches': req.fullData?.branches,
+    'Main Branch': req.fullData?.mainBranch,
+    'Shop Location': [req.fullData?.city, req.fullData?.country].filter(Boolean).join(', '),
+    'Address': req.fullData?.address,
+    'District': req.fullData?.district,
+  };
+
+  const knownKeys = ['phone', 'plan', 'paymentMethod', 'branches', 'mainBranch', 'city', 'country', 'address', 'district', 'brn', 'repairTypes', 'shop_name', 'owner', 'tenant_id', 'shop_id'];
+  
+  if (req.fullData) {
+    if (req.fullData.brn) fields['Business Registration Number'] = req.fullData.brn;
+    if (req.fullData.repairTypes) fields['Repair Types'] = req.fullData.repairTypes;
+
+    Object.keys(req.fullData).forEach(key => {
+      if (!knownKeys.includes(key)) {
+        fields[formatLabel(key)] = req.fullData[key];
+      }
+    });
+  }
+  return fields;
+};
+
 export default function AdminOnboardingPage() {
   const { data: registrations, isLoading, refetch } = useListRegistrationsQuery('PENDING');
   const [approveRegistration, { isLoading: isApproving }] = useApproveRegistrationMutation();
@@ -47,7 +90,7 @@ export default function AdminOnboardingPage() {
                 <CardHeader className="bg-muted/50 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-xl">{req.shopName}</CardTitle>
+                      <CardTitle className="text-xl">Registration Request</CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
                         Submitted on {new Date(req.createdAt).toLocaleDateString()}
                       </p>
@@ -56,29 +99,25 @@ export default function AdminOnboardingPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Owner Details</h4>
-                        <p className="font-medium">{req.ownerName}</p>
-                        <p className="text-sm">{req.ownerEmail}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Business Info</h4>
-                        <p className="text-sm">Plan: <span className="font-medium capitalize">{req.fullData?.plan || 'Starter'}</span></p>
-                        <p className="text-sm">Location: {req.fullData?.city}, {req.fullData?.country}</p>
-                      </div>
+                  <div className="flex flex-col lg:flex-row gap-8 justify-between">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 flex-1">
+                      {Object.entries(getFields(req)).map(([label, value]) => (
+                        <div key={label} className="break-words">
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-1">{label}:</h4>
+                          <p className="text-sm font-medium">{getDisplayValue(value)}</p>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex flex-col justify-center items-end gap-3">
+                    <div className="flex flex-col justify-start lg:justify-center items-stretch lg:items-end gap-3 min-w-[200px] border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-6 border-border">
                       <Button 
                         onClick={() => handleApprove(req.approvalToken)} 
                         disabled={isApproving}
-                        className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700"
                       >
                         {isApproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                         Approve Registration
                       </Button>
-                      <Button variant="outline" className="w-full md:w-auto text-destructive border-destructive hover:bg-destructive/10">
+                      <Button variant="outline" className="w-full text-destructive border-destructive hover:bg-destructive/10">
                         <XCircle className="mr-2 h-4 w-4" />
                         Reject Request
                       </Button>

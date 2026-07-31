@@ -43,7 +43,7 @@ export default function ContactSection() {
         title: "Message sent!",
         description: "We'll get back to you as soon as possible.",
       });
-      
+
       (e.target as HTMLFormElement).reset();
     } catch (error) {
       toast({
@@ -115,7 +115,7 @@ export default function ContactSection() {
             </div>
           </div>
 
-          <Card className="border-slate-200 shadow-md">
+          <Card className="border-slate-200 shadow-md bg-white text-slate-900">
             <CardContent className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -128,6 +128,7 @@ export default function ContactSection() {
                       name="name"
                       required
                       placeholder="John Doe"
+                      className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -140,6 +141,7 @@ export default function ContactSection() {
                       type="email"
                       required
                       placeholder="john@example.com"
+                      className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -152,6 +154,7 @@ export default function ContactSection() {
                     id="subject"
                     name="subject"
                     placeholder="How can we help?"
+                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
                   />
                 </div>
 
@@ -165,12 +168,13 @@ export default function ContactSection() {
                     required
                     rows={4}
                     placeholder="Tell us about your needs..."
+                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -202,8 +206,8 @@ export default function ContactSection() {
                 Schedule a free 30-minute discovery call with our product experts. We'll show you exactly how AllFix can streamline your specific repair shop workflows.
               </p>
             </div>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => setIsDemoModalOpen(true)}
               className="bg-white text-indigo-900 hover:bg-blue-50 font-bold px-8 py-6 rounded-xl shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] transition-all hover:scale-105"
             >
@@ -212,10 +216,10 @@ export default function ContactSection() {
           </div>
         </div>
       </div>
-      
-      <BookDemoModal 
-        isOpen={isDemoModalOpen} 
-        onClose={() => setIsDemoModalOpen(false)} 
+
+      <BookDemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
       />
     </section>
   );
