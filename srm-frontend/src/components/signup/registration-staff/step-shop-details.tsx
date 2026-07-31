@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Store, ArrowLeft, CheckCircle2, Loader2, UserCog, Wrench } from "lucide-react"
+import { Store, ArrowLeft, CheckCircle2, Loader2, UserCog, Wrench, Package, ChevronRight } from "lucide-react"
 import { RegistrationStepper } from "./registration-stepper"
 import { SidePanelStep2 } from "./side-panel-step2"
 

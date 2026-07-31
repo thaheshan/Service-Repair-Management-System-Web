@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
+  ShoppingCart,
   Wrench,
   Users,
   Smartphone,
@@ -30,6 +31,7 @@ import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 
 interface NavItem {
   icon: any
@@ -41,6 +43,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "dashboard", href: "/admin/dashboard" },
+  { icon: ShoppingCart, label: "pos", href: "/admin/pos" },
   { icon: Wrench, label: "repairs", href: "/admin/repairs", aliases: ["/admin/schedule"] },
   { icon: Users, label: "customers", href: "/admin/customers", aliases: ["/admin/customers/"] },
   { icon: Smartphone, label: "devices", href: "/admin/devices", aliases: ["/admin/devices/"] },
@@ -62,6 +65,8 @@ export function DashboardSidebar() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   const user = useSelector((state: RootState) => state.auth.user)
+  const { data: settingsData } = useGetSettingsQuery(undefined, { skip: !mounted })
+  const featureFlags = settingsData?.settings?.featureFlags || {}
 
   useEffect(() => {
     setMounted(true)
@@ -143,12 +148,41 @@ export function DashboardSidebar() {
         <nav className="mt-2 flex-1 px-3">
           <ul className="flex flex-col gap-0.5">
             {navItems.filter(item => {
+              const userRole = user?.role || 'TECHNICIAN';
+              
+              const defaultRoleFlags: Record<string, Record<string, boolean>> = {
+                ADMIN: {
+                  dashboard: true, pos: true, repairs: true, customers: true, devices: true,
+                  invoices: true, inventory: true, reports: true, staff: true, logs: true, settings: true
+                },
+                MANAGER: {
+                  dashboard: true, pos: true, repairs: true, customers: true, devices: true,
+                  invoices: true, inventory: true, reports: true, staff: true, logs: false, settings: true
+                },
+                TECHNICIAN: {
+                  dashboard: true, pos: true, repairs: true, customers: true, devices: true,
+                  invoices: true, inventory: true, reports: false, staff: false, logs: false, settings: true
+                }
+              };
+
+              const isEnabled = (() => {
+                if (featureFlags && typeof featureFlags === 'object') {
+                  const roleConfig = (featureFlags as any)[userRole];
+                  if (roleConfig && typeof roleConfig === 'object') {
+                    return roleConfig[item.label] !== false;
+                  }
+                  if (typeof (featureFlags as any)[item.label] === 'boolean') {
+                    return (featureFlags as any)[item.label];
+                  }
+                }
+                const roleDefault = defaultRoleFlags[userRole] || defaultRoleFlags.TECHNICIAN;
+                return roleDefault[item.label] !== false;
+              })();
+
+              if (!isEnabled) return false;
+
               if (item.adminOnly && user?.role !== 'ADMIN') return false;
-              if (user?.role === 'TECHNICIAN') {
-                const allowed = ["dashboard", "repairs", "customers", "devices", "invoices", "inventory", "settings"]
-                return allowed.includes(item.label)
-              }
-              return true
+              return true;
             }).map((item) => {
               // Determine if the current path matches the item's href or aliases
               const isActive =
