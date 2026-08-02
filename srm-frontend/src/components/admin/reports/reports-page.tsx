@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux'
 import { useTranslation } from "react-i18next"
 import Link from 'next/link'
 import { generateReportsPDF } from "@/lib/pdf-generator"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { 
   BarChart3, 
   TrendingUp, 
@@ -199,6 +200,8 @@ export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const { user } = useSelector((state: any) => state.auth);
+  const { data: settingsData } = useGetSettingsQuery({});
+  const shopLogoUrl = settingsData?.logoUrl || settingsData?.settings?.appearance?.logoUrl || settingsData?.data?.logoUrl || user?.shopLogoUrl || user?.logoUrl || "/all-fix-logo-black.png";
 
   const [globalDateRange, setGlobalDateRange] = useState<DateRange>(makeRange(30))
   const [isExportOpen, setIsExportOpen] = useState(false)
@@ -820,7 +823,7 @@ export default function ReportsPage() {
                 <div className="flex justify-between items-start mb-16">
                     <div>
                        <div className="flex items-center gap-3 mb-3">
-                          <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-12 w-auto object-contain" />
+                          <img src={shopLogoUrl} alt="Shop Logo" className="h-12 w-auto max-h-14 object-contain" />
                           <h2 className="text-[32px] font-black text-foreground tracking-tighter uppercase">{user?.shopName || "All Fix Private Limited"}</h2>
                        </div>
                        <div className="text-[12px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">
