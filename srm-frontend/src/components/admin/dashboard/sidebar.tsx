@@ -182,6 +182,19 @@ export function DashboardSidebar() {
               if (!isEnabled) return false;
 
               if (item.adminOnly && user?.role !== 'ADMIN') return false;
+
+              // Department filtering for staff/admin
+              const userDepartment = user?.department?.toLowerCase();
+              if (userDepartment && user?.role !== 'ADMIN') {
+                if (userDepartment === 'inventory') {
+                  const allowedInventoryItems = ['dashboard', 'pos', 'inventory', 'reports', 'settings'];
+                  if (!allowedInventoryItems.includes(item.label)) return false;
+                } else if (userDepartment === 'repair') {
+                  const allowedRepairItems = ['dashboard', 'pos', 'repairs', 'customers', 'devices', 'invoices', 'reports', 'settings'];
+                  if (!allowedRepairItems.includes(item.label)) return false;
+                }
+              }
+
               return true;
             }).map((item) => {
               // Determine if the current path matches the item's href or aliases

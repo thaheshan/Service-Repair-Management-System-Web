@@ -19,7 +19,7 @@ export interface StaffMember {
   avatar?: string
 }
 
-export const ROLES: StaffRole[] = ["Lead Technician", "Senior Technician", "Technician", "Junior Technician", "Manager", "Receptionist"]
+export const ROLES: StaffRole[] = ["Super Admin", "Admin", "Lead Technician", "Senior Technician", "Technician", "Junior Technician", "Manager", "Receptionist"]
 export const SPECIALTIES: Specialty[] = ["Mobile Phones", "Tablets", "Laptops", "Gaming Consoles", "All Electronics", "Computers"]
 export const STATUSES: StaffStatus[] = ["Available", "Busy", "On Leave", "Off Duty"]
 export const BRANCHES = ["Main Branch", "City Center", "Kandy Branch", "Galle Branch"]

@@ -80,6 +80,9 @@ export function StatCards({ days = 30 }: { days?: number }) {
           if (user?.role === 'TECHNICIAN') {
             return stat.title !== 'revenue' && stat.title !== 'netProfit'
           }
+          if (user?.department?.toLowerCase() === 'inventory') {
+            return stat.title === 'revenue' || stat.title === 'netProfit'
+          }
           return true
         })
         .map((stat) => (

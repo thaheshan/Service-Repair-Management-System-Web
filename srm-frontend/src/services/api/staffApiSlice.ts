@@ -12,7 +12,7 @@ export const staffApiSlice = apiSlice.injectEndpoints({
     }),
     createStaff: builder.mutation({
       query: (data) => ({
-        url: '/v1/staff',
+        url: '/v1/staff/register',
         method: 'POST',
         body: data,
       }),

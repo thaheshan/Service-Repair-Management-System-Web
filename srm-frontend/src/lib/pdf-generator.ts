@@ -398,12 +398,39 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
   const laborVal = invoice.laborCost !== undefined ? invoice.laborCost : fallbackCosts.labour;
   const partsVal = invoice.partsCost !== undefined ? invoice.partsCost : fallbackCosts.parts;
 
-  const items = invoice.items || (invoice.type === 'inventory_item' ? [
-    { description: "Component material & Bulk sales", qty: 1, price: totalVal, amount: totalVal }
-  ] : [
-    { description: "Advanced Technical Service Labor", qty: 1, price: laborVal, amount: laborVal },
-    { description: "OEM Grade Replacement Component Parts", qty: 1, price: partsVal, amount: partsVal }
-  ]);
+  // Helper to parse POS item descriptions from notes (e.g., "POS Sale: iphone 17 x1 @ Rs.565,000; battery x2 @ Rs.15,000")
+  const parseItemsFromNotes = (notes?: string) => {
+    if (!notes || !notes.startsWith("POS Sale:")) return null;
+    const cleanNotes = notes.replace(/^POS Sale:\s*/, "").split("[Discount:")[0];
+    const parts = cleanNotes.split(";");
+    const parsed: any[] = [];
+    parts.forEach(p => {
+      const match = p.trim().match(/^(.*?)\s*x(\d+)\s*@\s*Rs\.?\s*([\d,]+)/i);
+      if (match) {
+        const name = match[1].trim();
+        const qty = parseInt(match[2], 10) || 1;
+        const price = parseFloat(match[3].replace(/,/g, "")) || 0;
+        parsed.push({
+          description: name,
+          qty,
+          price,
+          amount: qty * price
+        });
+      }
+    });
+    return parsed.length > 0 ? parsed : null;
+  };
+
+  const parsedNotesItems = parseItemsFromNotes(invoice.notes);
+
+  const items = invoice.items && invoice.items.length > 0
+    ? invoice.items
+    : parsedNotesItems || (invoice.type === 'inventory_item' ? [
+        { description: invoice.notes?.replace(/^POS Sale:\s*/, "") || "Inventory Product Sale", qty: 1, price: totalVal, amount: totalVal }
+      ] : [
+        { description: "Advanced Technical Service Labor", qty: 1, price: laborVal, amount: laborVal },
+        { description: "OEM Grade Replacement Component Parts", qty: 1, price: partsVal, amount: partsVal }
+      ]);
 
   autoTable(doc, {
     startY: 120,
@@ -458,7 +485,11 @@ export async function generateClientInvoicePDF(invoice: any, user: any) {
     doc.text(`Rs. ${totalVal.toLocaleString()}`, 188, finalY + 20, { align: 'right' });
   }
 
-  drawFooter(doc, `Thank you for choosing ${shop.name} for your repair solutions.`, 'portrait');
+  const footerMsg = invoice.type === 'inventory_item'
+    ? `Thank you for choosing ${shop.name} for your product purchase.`
+    : `Thank you for choosing ${shop.name} for your repair solutions.`;
+
+  drawFooter(doc, footerMsg, 'portrait');
   doc.save(`SRM_Invoice_${invoice.invoiceId || invoice.orderNumber || "receipt"}.pdf`);
 }
 
