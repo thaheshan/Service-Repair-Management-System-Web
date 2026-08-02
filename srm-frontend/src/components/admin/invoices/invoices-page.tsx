@@ -12,7 +12,7 @@ import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared
 import {
    Search, Filter, ChevronDown, Plus, Eye,
    Grid, List as ListIcon, Calendar as CalendarIcon,
-   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ChevronLeft, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, Calendar, SlidersHorizontal, ArrowUpRight
+   ChevronRight, MoreVertical, Edit2, Download, Trash2, X, ArrowUpDown, Receipt, Box, Wrench, Smartphone, AlertCircle, ShoppingCart, ArrowUpRight
 } from "lucide-react"
 
 import {
@@ -22,6 +22,7 @@ import {
    useDeleteInvoiceMutation,
 } from "@/services/api/invoicesApiSlice"
 import { useSearchCustomersQuery } from "@/services/api/customersApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { generateClientInvoicePDF } from "@/lib/pdf-generator"
 
 const STAFF_LIST = ["John Smith", "Mike Chen", "Sarah Connor", "Alex Kumar", "Admin"]
@@ -46,28 +47,18 @@ const STATUS_STYLE: Record<string, string> = {
    Overdue: "bg-red-50 text-red-600 border-red-200",
 }
 
-const extractCosts = (notes: string | undefined, totalAmount: number) => {
-   if (!notes) return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
-   const labourMatch = notes.match(/Labour:\s*Rs\.?(\d+(?:\.\d+)?)/i);
-   const partsMatch = notes.match(/Parts:\s*Rs\.?(\d+(?:\.\d+)?)/i);
-   let labour = labourMatch ? parseFloat(labourMatch[1]) : null;
-   let parts = partsMatch ? parseFloat(partsMatch[1]) : null;
-   if (labour !== null && parts !== null) return { labour, parts };
-   return { labour: totalAmount * 0.4, parts: totalAmount * 0.6 };
-};
-
 export default function InvoicesManagementPage() {
    const { t } = useTranslation();
    const [mounted, setMounted] = useState(false);
    useEffect(() => setMounted(true), []);
 
    const { data: apiResponse, isLoading } = useGetInvoicesQuery({});
+   const { data: settingsData } = useGetSettingsQuery({});
    const [createInvoiceMutation, { isLoading: isCreating }] = useCreateInvoiceMutation();
    const [updateInvoiceStatus] = useUpdateInvoiceStatusMutation();
    const [deleteInvoiceMutation] = useDeleteInvoiceMutation();
 
    const { user } = useSelector((state: any) => state.auth);
-   const queries = useSelector((state: any) => state.api?.queries);
 
    const invoicesState = useMemo(() => {
       return (apiResponse?.invoices || []).map((inv: any) => ({
@@ -148,20 +139,21 @@ export default function InvoicesManagementPage() {
    const hiddenPrintRef = useRef<HTMLDivElement>(null)
    const [hiddenInvoiceTarget, setHiddenInvoiceTarget] = useState<any | null>(null)
 
+   // Resolves the shop's logo
    const getResolvedLogo = (invoiceTarget: any) => {
-      let url = invoiceTarget?.shopLogoUrl || user?.shopLogoUrl || null;
-      if (!url && queries) {
-         const settingsQuery = Object.keys(queries).find(key => key.startsWith('getSettings') || key.startsWith('getShopProfile'));
-         if (settingsQuery && queries[settingsQuery]?.data) {
-            const data = queries[settingsQuery].data;
-            url = data?.logoUrl || data?.settings?.appearance?.logoUrl || data?.shopLogoUrl || null;
-         }
-      }
-      return url || "/placeholder-logo.png";
+      return (
+         invoiceTarget?.shopLogoUrl ||
+         user?.shopLogoUrl ||
+         user?.logoUrl ||
+         settingsData?.logoUrl ||
+         settingsData?.settings?.appearance?.logoUrl ||
+         settingsData?.data?.logoUrl ||
+         "/placeholder-logo.png"
+      );
    };
 
-   const viewTargetLogo = useMemo(() => getResolvedLogo(viewDocumentTarget), [viewDocumentTarget, user, queries]);
-   const hiddenTargetLogo = useMemo(() => getResolvedLogo(hiddenInvoiceTarget), [hiddenInvoiceTarget, user, queries]);
+   const viewTargetLogo = useMemo(() => getResolvedLogo(viewDocumentTarget), [viewDocumentTarget, user, settingsData]);
+   const hiddenTargetLogo = useMemo(() => getResolvedLogo(hiddenInvoiceTarget), [hiddenInvoiceTarget, user, settingsData]);
 
    // Customer Search State
    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false)
@@ -183,9 +175,8 @@ export default function InvoicesManagementPage() {
    const handleDownloadPDF = async (inv?: any) => {
       setIsGeneratingPDF(true)
 
-      // If 'inv' is a React Synthetic Event (e.g. from onClick={handleDownloadPDF}), ignore it
-      const passedInv = (inv && inv.nativeEvent) ? null : inv
-      const targetInv = passedInv || viewDocumentTarget || hiddenInvoiceTarget
+      const isInvoiceObj = inv && typeof inv === 'object' && ('invoiceId' in inv || 'id' in inv || 'amount' in inv) && !('nativeEvent' in inv) && !('target' in inv);
+      const targetInv = isInvoiceObj ? inv : (viewDocumentTarget || hiddenInvoiceTarget);
       if (!targetInv) {
          setIsGeneratingPDF(false)
          return
@@ -271,7 +262,7 @@ export default function InvoicesManagementPage() {
       return r.sort((a, b) => {
          if (sortKey === "date-new") return new Date(b.date).getTime() - new Date(a.date).getTime()
          if (sortKey === "date-old") return new Date(a.date).getTime() - new Date(a.date).getTime()
-         if (user?.role !== 'TECHNICIAN') {
+         if (user?.role !== 'TECHNICIAN' && (sortKey === "amount-high" || sortKey === "amount-low")) {
             if (sortKey === "amount-high") return b.amount - a.amount
             if (sortKey === "amount-low") return a.amount - b.amount
          }
@@ -968,7 +959,7 @@ export default function InvoicesManagementPage() {
                   {/* STICKY ACTION HEADER */}
                   <div className="w-full max-w-[800px] flex justify-end gap-3 mb-6 shrink-0 sticky top-0 z-50">
                      <button
-                        onClick={handleDownloadPDF}
+                        onClick={() => handleDownloadPDF(viewDocumentTarget)}
                         disabled={isGeneratingPDF}
                         className={`h-11 px-6 rounded-full text-white text-[14px] font-black flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${isGeneratingPDF ? 'bg-[#4F46E5]/70 cursor-not-allowed' : 'bg-[#4F46E5] hover:bg-[#4338CA] hover:shadow-indigo-200'
                            }`}
@@ -1034,7 +1025,7 @@ export default function InvoicesManagementPage() {
                            <div className="grid grid-cols-2 gap-y-4">
                               <div>
                                  <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Invoice Reference</p>
-                                 <p className="text-[11px] font-black text-[#0F172A] font-mono  ">{viewDocumentTarget.invoiceId ?? '#000000'}</p>
+                                 <p className="text-[11px] font-black text-[#0F172A] font-mono">{viewDocumentTarget.invoiceId ?? '#000000'}</p>
                               </div>
                               <div>
                                  <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Issue Date</p>
@@ -1061,7 +1052,7 @@ export default function InvoicesManagementPage() {
                               </div>
                            </div>
                         </div>
-                        <div className="col-span-1 text-left  h-fit">
+                        <div className="col-span-1 text-left h-fit">
                            <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Total Payable</p>
                            <p className="text-[24px] font-black text-[#0F172A] tracking-tighter leading-none mb-1">
                               <span className="text-[10px] text-slate-400 mr-1.5">Rs.</span>
@@ -1083,29 +1074,34 @@ export default function InvoicesManagementPage() {
                            <div className="col-span-2 text-right text-[11px] text-[#0F172A] uppercase tracking-widest font-black">Subtotal</div>
                         </div>
 
-                        {viewDocumentTarget.type === 'client_repair' ? (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                        {viewDocumentTarget.type === 'client_repair' ? (() => {
+                           const totalAmt = Number(viewDocumentTarget.amount ?? 0);
+                           const partsVal = viewDocumentTarget.partsCost !== undefined ? Number(viewDocumentTarget.partsCost) : totalAmt * 0.6;
+                           const laborVal = Math.max(0, totalAmt - partsVal);
+                           return (
+                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {laborVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {laborVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).labour.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).labour.toLocaleString()}</div>
-                              </div>
 
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {partsVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {partsVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).parts.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(viewDocumentTarget.notes, viewDocumentTarget.amount ?? 0).parts.toLocaleString()}</div>
                               </div>
-                           </div>
-                        ) : (
+                           );
+                        })() : (
                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                               {(() => {
                                  const itemsList = viewDocumentTarget.items && viewDocumentTarget.items.length > 0
@@ -1153,7 +1149,7 @@ export default function InvoicesManagementPage() {
                                           <p className="text-[14px] font-black text-[#0F172A] mb-1">
                                              {viewDocumentTarget.notes?.replace(/^POS Sale:\s*/, "") || "Inventory Product Sale"}
                                           </p>
-                                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Inventory Sale</p>
+                                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Component Ledgers</p>
                                        </div>
                                        <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
                                        <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</div>
@@ -1225,7 +1221,7 @@ export default function InvoicesManagementPage() {
                </div>
             )}
 
-            {/* 🛠️ INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
+            {/* INVISIBLE PDF RENDER TARGET (FOR DIRECT DOWNLOADS) */}
             <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none z-[-1]">
                {hiddenInvoiceTarget && (
                   <div
@@ -1329,86 +1325,91 @@ export default function InvoicesManagementPage() {
                            <div className="col-span-2 text-right text-[11px] text-[#0F172A] uppercase tracking-widest font-black">Subtotal</div>
                         </div>
 
-                        {hiddenInvoiceTarget.type === 'client_repair' ? (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                        {hiddenInvoiceTarget.type === 'client_repair' ? (() => {
+                           const totalAmt = Number(hiddenInvoiceTarget.amount ?? 0);
+                           const partsVal = hiddenInvoiceTarget.partsCost !== undefined ? Number(hiddenInvoiceTarget.partsCost) : totalAmt * 0.6;
+                           const laborVal = Math.max(0, totalAmt - partsVal);
+                           return (
+                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Advanced Service Labor</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Expert Technical Diagnostics & Repair</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {laborVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {laborVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).labour.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).labour.toLocaleString()}</div>
-                              </div>
 
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                 <div className="grid grid-cols-12 items-center">
+                                    <div className="col-span-6">
+                                       <p className="text-[14px] font-black text-[#0F172A] mb-1">Component / Parts Material</p>
+                                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">OEM Grade Replacement Parts</p>
+                                    </div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                    <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {partsVal.toLocaleString()}</div>
+                                    <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {partsVal.toLocaleString()}</div>
                                  </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).parts.toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {extractCosts(hiddenInvoiceTarget.notes, hiddenInvoiceTarget.amount ?? 0).parts.toLocaleString()}</div>
                               </div>
+                           );
+                        })() : (
+                           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                              {(() => {
+                                 const itemsList = hiddenInvoiceTarget.items && hiddenInvoiceTarget.items.length > 0
+                                    ? hiddenInvoiceTarget.items.map((i: any) => ({
+                                       name: i.name || i.description || "Inventory Item",
+                                       qty: i.qty || i.quantity || 1,
+                                       price: i.price || hiddenInvoiceTarget.amount,
+                                       subtotal: (i.qty || i.quantity || 1) * (i.price || hiddenInvoiceTarget.amount)
+                                    }))
+                                    : (() => {
+                                       const notes = hiddenInvoiceTarget.notes || "";
+                                       if (notes.startsWith("POS Sale:")) {
+                                          const clean = notes.replace(/^POS Sale:\s*/, "").split("[Discount:")[0];
+                                          return clean.split(";").map((p: string) => {
+                                             const match = p.trim().match(/^(.*?)\s*x(\d+)\s*@\s*Rs\.?\s*([\d,]+)/i);
+                                             if (match) {
+                                                const name = match[1].trim();
+                                                const qty = parseInt(match[2], 10) || 1;
+                                                const price = parseFloat(match[3].replace(/,/g, "")) || 0;
+                                                return { name, qty, price, subtotal: qty * price };
+                                             }
+                                             return null;
+                                          }).filter(Boolean);
+                                       }
+                                       return [];
+                                    })();
+
+                                 if (itemsList.length > 0) {
+                                    return itemsList.map((itm: any, idx: number) => (
+                                       <div key={idx} className="grid grid-cols-12 items-center pb-3 border-b border-slate-100 last:border-b-0">
+                                          <div className="col-span-6">
+                                             <p className="text-[14px] font-black text-[#0F172A] mb-0.5 capitalize">{itm.name}</p>
+                                             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">POS Inventory Item</p>
+                                          </div>
+                                          <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">{itm.qty}</div>
+                                          <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {itm.price.toLocaleString()}</div>
+                                          <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {itm.subtotal.toLocaleString()}</div>
+                                       </div>
+                                    ));
+                                 }
+
+                                 return (
+                                    <div className="grid grid-cols-12 items-center">
+                                       <div className="col-span-6">
+                                          <p className="text-[14px] font-black text-[#0F172A] mb-1">
+                                             {hiddenInvoiceTarget.notes?.replace(/^POS Sale:\s*/, "") || "Inventory Product Sale"}
+                                          </p>
+                                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Component Ledgers</p>
+                                       </div>
+                                       <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                       <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
+                                       <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
+                                    </div>
+                                 );
+                              })()}
                            </div>
-                        ) : (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                               {(() => {
-                                  const itemsList = hiddenInvoiceTarget.items && hiddenInvoiceTarget.items.length > 0
-                                     ? hiddenInvoiceTarget.items.map((i: any) => ({
-                                          name: i.name || i.description || "Inventory Item",
-                                          qty: i.qty || i.quantity || 1,
-                                          price: i.price || hiddenInvoiceTarget.amount,
-                                          subtotal: (i.qty || i.quantity || 1) * (i.price || hiddenInvoiceTarget.amount)
-                                       }))
-                                     : (() => {
-                                          const notes = hiddenInvoiceTarget.notes || "";
-                                          if (notes.startsWith("POS Sale:")) {
-                                             const clean = notes.replace(/^POS Sale:\s*/, "").split("[Discount:")[0];
-                                             return clean.split(";").map((p: string) => {
-                                                const match = p.trim().match(/^(.*?)\s*x(\d+)\s*@\s*Rs\.?\s*([\d,]+)/i);
-                                                if (match) {
-                                                   const name = match[1].trim();
-                                                   const qty = parseInt(match[2], 10) || 1;
-                                                   const price = parseFloat(match[3].replace(/,/g, "")) || 0;
-                                                   return { name, qty, price, subtotal: qty * price };
-                                                }
-                                                return null;
-                                             }).filter(Boolean);
-                                          }
-                                          return [];
-                                       })();
-
-                                  if (itemsList.length > 0) {
-                                     return itemsList.map((itm: any, idx: number) => (
-                                        <div key={idx} className="grid grid-cols-12 items-center pb-3 border-b border-slate-100 last:border-b-0">
-                                           <div className="col-span-6">
-                                              <p className="text-[14px] font-black text-[#0F172A] mb-0.5 capitalize">{itm.name}</p>
-                                              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">POS Inventory Item</p>
-                                           </div>
-                                           <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">{itm.qty}</div>
-                                           <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {itm.price.toLocaleString()}</div>
-                                           <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {itm.subtotal.toLocaleString()}</div>
-                                        </div>
-                                     ));
-                                  }
-
-                                  return (
-                                     <div className="grid grid-cols-12 items-center">
-                                        <div className="col-span-6">
-                                           <p className="text-[14px] font-black text-[#0F172A] mb-1">
-                                              {hiddenInvoiceTarget.notes?.replace(/^POS Sale:\s*/, "") || "Inventory Product Sale"}
-                                           </p>
-                                           <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Component Ledgers</p>
-                                        </div>
-                                        <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                        <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
-                                        <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
-                                     </div>
-                                  );
-                               })()}
-                            </div>
-                         )}
+                        )}
 
                         {/* FINANCIAL TOTALS */}
                         <div className="flex justify-end pt-12 mt-12 border-t-4 border-slate-50">
