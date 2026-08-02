@@ -6,7 +6,7 @@ import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { useGetInventoryItemsQuery } from "@/services/api/inventoryApiSlice"
 import { useCreateInvoiceMutation } from "@/services/api/invoicesApiSlice"
-import { useGetCustomersQuery } from "@/services/api/customersApiSlice"
+import { useGetCustomersQuery, useCreateCustomerMutation, useSendCustomerSMSMutation } from "@/services/api/customersApiSlice"
 import { generateClientInvoicePDF } from "@/lib/pdf-generator"
 import { toast } from "sonner"
 import { useSelector } from "react-redux"
@@ -15,6 +15,7 @@ import {
   Search,
   Grid2X2,
   Plus,
+  UserPlus,
   Minus,
   X,
   ShoppingCart,
@@ -28,6 +29,7 @@ import {
   Package,
   ChevronRight,
   FileText,
+  MessageSquare,
   ListOrdered,
   RefreshCw,
 } from "lucide-react"
@@ -99,8 +101,46 @@ export default function POSPage() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
   const [customerSearchQuery, setCustomerSearchQuery] = useState("")
 
+  // Add New Customer Modal State (POS)
+  const [isAddPosCustomerOpen, setIsAddPosCustomerOpen] = useState(false)
+  const [newPosCustomer, setNewPosCustomer] = useState({ name: "", phone: "", email: "", address: "" })
+
   // API Mutations
   const [createInvoice, { isLoading: isSavingSale }] = useCreateInvoiceMutation()
+  const [createCustomer, { isLoading: isCreatingCustomer }] = useCreateCustomerMutation()
+  const [sendCustomerSMS] = useSendCustomerSMSMutation()
+
+  const handleCreatePosCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPosCustomer.name || !newPosCustomer.phone) {
+      toast.error("Customer name and phone number are required");
+      return;
+    }
+    try {
+      const created = await createCustomer({
+        name: newPosCustomer.name,
+        phone: newPosCustomer.phone,
+        email: newPosCustomer.email,
+        address: newPosCustomer.address,
+        shopId: user?.shopId,
+        tenantId: user?.tenantId
+      }).unwrap();
+      const newCustObj = created?.data || created;
+      const custId = newCustObj?.id || newCustObj?.customerId || created?.customerId;
+      
+      setSelectedCustomer({
+        id: custId,
+        name: newPosCustomer.name,
+        phone: newPosCustomer.phone
+      });
+      setIsAddPosCustomerOpen(false);
+      setIsCustomerModalOpen(false);
+      setNewPosCustomer({ name: "", phone: "", email: "", address: "" });
+      toast.success(`Customer "${newPosCustomer.name}" created and selected!`);
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to create customer");
+    }
+  };
 
   // Custom categories added by user (stored locally; products added separately)
   const [customCategories, setCustomCategories] = useState<string[]>([])
@@ -184,7 +224,9 @@ export default function POSPage() {
     return cart.reduce((sum, item) => sum + item.quantity, 0)
   }, [cart])
 
-  const discount = 0
+  const [discountAmount, setDiscountAmount] = useState<number | "">(0)
+
+  const discount = useMemo(() => Number(discountAmount) || 0, [discountAmount])
   const totalPayable = useMemo(() => Math.max(0, subtotal - discount), [subtotal, discount])
 
   // Handlers for Add-to-Cart Modal
@@ -296,34 +338,90 @@ export default function POSPage() {
 
   // Finalize Sale — saves a Payment record to the backend so revenue trend updates
   const handleProcessPayment = async () => {
+    let savedInvoiceRef = currentInvoiceRef
     try {
-      // Build a human-readable note listing the items sold
+      // Build a human-readable note listing the items sold & discount
       const itemsNote = cart.map(i => `${i.partName} x${i.quantity} @ Rs.${i.price.toLocaleString()}`).join("; ")
-      const noteText = `POS Sale: ${itemsNote}`
+      const discountText = discount > 0 ? ` [Discount: Rs. ${discount.toLocaleString()}]` : ""
+      const noteText = `POS Sale: ${itemsNote}${discountText}`
 
-      await createInvoice({
+      const result = await createInvoice({
         amount: totalPayable,
+        type: "inventory_item",
         paymentMethod: paymentMethod.toUpperCase(),
         paymentType: "FULL",
         status: "COMPLETED",
         notes: noteText,
         customerId: selectedCustomer?.id !== "walk-in" ? selectedCustomer?.id : undefined,
         transactionReference: currentInvoiceRef,
+        items: cart.map(i => ({
+          name: i.partName,
+          sku: i.sku,
+          qty: i.quantity,
+          price: i.price,
+        })),
       }).unwrap()
+
+      // Prefer the server-returned ref if available
+      savedInvoiceRef =
+        result?.data?.transactionReference ||
+        result?.transactionReference ||
+        result?.data?.reference ||
+        result?.reference ||
+        currentInvoiceRef
 
       toast.success(`✅ Payment of Rs. ${totalPayable.toLocaleString()} saved successfully!`)
     } catch (err: any) {
       console.error("POS sale save failed:", err)
-      // Still allow the cashier to proceed — just warn them
       toast.warning("Sale completed locally but could not sync to server. Check your connection.")
-    } finally {
-      // Always reset state to POS screen regardless of API outcome
-      setCart([])
-      setSelectedCustomer({ id: "walk-in", name: "Walk-in Customer", phone: "N/A" })
-      setPaymentMethod("Cash")
-      setStep("POS")
-      setSidebarTab("CART")
     }
+
+    // ── Send SMS e-bill to customer via Text.lk (Backend API) ─────────────────
+    try {
+      const isRegisteredCust = selectedCustomer?.id && selectedCustomer.id !== "walk-in"
+      
+      if (isRegisteredCust) {
+        // Build the e-bill URL (public invoice page)
+        const origin = typeof window !== "undefined" ? window.location.origin : ""
+        const eBillUrl = `${origin}/invoice/${savedInvoiceRef}`
+
+        // Build item lines for the SMS
+        const itemLines = cart
+          .map(i => `${i.partName} x${i.quantity} (Rs.${(i.price * i.quantity).toLocaleString()})`)
+          .join(", ")
+
+        const shopName = user?.shopName || "Our Store"
+        const discountSmsText = discount > 0 ? `\nDiscount: Rs. ${discount.toLocaleString()}` : ""
+
+        const message =
+          `Hello ${selectedCustomer?.name || "Customer"},\n` +
+          `Thank you for shopping at ${shopName}!\n` +
+          `Invoice: ${savedInvoiceRef}\n` +
+          `Items: ${itemLines}\n` +
+          `Subtotal: Rs. ${subtotal.toLocaleString()}${discountSmsText}\n` +
+          `Total Paid: Rs. ${totalPayable.toLocaleString()} (${paymentMethod})\n` +
+          `View your e-bill: ${eBillUrl}\n` +
+          `We appreciate your business!`
+
+        await sendCustomerSMS({
+          customerId: selectedCustomer.id,
+          message: message,
+        }).unwrap()
+
+        toast.success("📱 E-bill SMS sent to customer via Text.lk!")
+      }
+    } catch (smsErr: any) {
+      console.warn("[POS] SMS send failed:", smsErr)
+      toast.warning(`SMS notification could not be sent: ${smsErr?.data?.message || smsErr?.message || "Check SMS settings"}`)
+    }
+
+    // Always reset state to POS screen regardless of API outcome
+    setCart([])
+    setSelectedCustomer({ id: "walk-in", name: "Walk-in Customer", phone: "N/A" })
+    setPaymentMethod("Cash")
+    setDiscountAmount(0)
+    setStep("POS")
+    setSidebarTab("CART")
   }
 
   return (
@@ -434,18 +532,31 @@ export default function POSPage() {
                               </span>
                             )}
 
-                            {(product.imageUrl || product.photoUrl || product.image) ? (
-                              <img
-                                src={product.imageUrl || product.photoUrl || product.image}
-                                alt={product.partName || product.name || "Product"}
-                                className="w-full h-full object-cover rounded-t-xl group-hover:scale-105 transition-transform duration-300"
-                              />
-                            ) : (
-                              <div className="flex flex-col items-center justify-center text-slate-300 group-hover:scale-105 transition-transform">
-                                <Package className="h-14 w-14 stroke-[1.5]" />
-                                <span className="text-[10px] font-extrabold uppercase tracking-widest mt-1">NO IMAGE</span>
-                              </div>
-                            )}
+                            {(() => {
+                              const imgSrc = product.imageUrl || product.photoUrl || product.image || product.imgUrl || product.picture || product.photo || (Array.isArray(product.images) ? product.images[0] : null) || (Array.isArray(product.photos) ? product.photos[0] : null) || product.avatar;
+                              if (imgSrc) {
+                                return (
+                                  <img
+                                    src={imgSrc}
+                                    alt={product.partName || product.name || "Product"}
+                                    className="w-full h-full object-cover rounded-t-xl group-hover:scale-105 transition-transform duration-300"
+                                    onError={(e) => {
+                                      // Fallback on broken image load error
+                                      (e.target as HTMLElement).style.display = 'none';
+                                      if ((e.target as HTMLElement).nextElementSibling) {
+                                        ((e.target as HTMLElement).nextElementSibling as HTMLElement).style.display = 'flex';
+                                      }
+                                    }}
+                                  />
+                                );
+                              }
+                              return (
+                                <div className="flex flex-col items-center justify-center text-slate-300 group-hover:scale-105 transition-transform">
+                                  <Package className="h-14 w-14 stroke-[1.5]" />
+                                  <span className="text-[10px] font-extrabold uppercase tracking-widest mt-1">NO IMAGE</span>
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* Product Details */}
@@ -614,10 +725,10 @@ export default function POSPage() {
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           <button
                             onClick={() => setSelectedCustomer({ id: "walk-in", name: "Walk-in Customer", phone: "N/A" })}
-                            className={`h-10 rounded-xl font-extrabold text-xs uppercase tracking-wider transition-all border ${
+                            className={`h-10 rounded-xl font-extrabold text-[11px] uppercase tracking-wider transition-all border ${
                               selectedCustomer?.id === "walk-in"
                                 ? "bg-purple-50 border-purple-400 text-purple-700 shadow-sm"
                                 : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -627,9 +738,15 @@ export default function POSPage() {
                           </button>
                           <button
                             onClick={() => setIsCustomerModalOpen(true)}
-                            className="h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1"
+                            className="h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1"
                           >
-                            <Plus className="h-3.5 w-3.5" /> SELECT
+                            <Search className="h-3 w-3" /> SELECT
+                          </button>
+                          <button
+                            onClick={() => setIsAddPosCustomerOpen(true)}
+                            className="h-10 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-colors"
+                          >
+                            <UserPlus className="h-3 w-3" /> + NEW
                           </button>
                         </div>
                       </div>
@@ -679,14 +796,35 @@ export default function POSPage() {
                       </div>
 
                       {/* Order Summary Mini */}
-                      <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 flex flex-col gap-2">
+                      <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 flex flex-col gap-2.5">
                         <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
                           <FileText className="h-3.5 w-3.5" /> ORDER SUMMARY
                         </p>
                         <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                          <span>Items</span>
-                          <span className="text-slate-800 font-black">{totalItemsCount} unit{totalItemsCount !== 1 ? "s" : ""}</span>
+                          <span>Items Subtotal</span>
+                          <span className="text-slate-800 font-black">Rs. {subtotal.toLocaleString()}</span>
                         </div>
+
+                        {/* Discount Input Field */}
+                        <div className="flex items-center justify-between gap-2 py-1">
+                          <span className="text-xs font-extrabold text-slate-600">Discount (Rs.)</span>
+                          <div className="relative w-28">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">Rs.</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max={subtotal}
+                              value={discountAmount}
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value))
+                                setDiscountAmount(val)
+                              }}
+                              placeholder="0"
+                              className="w-full h-8 pl-7 pr-2 rounded-lg border border-slate-200 bg-white text-xs font-black text-purple-700 text-right focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                            />
+                          </div>
+                        </div>
+
                         <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                           <span>Payment</span>
                           <span className="text-slate-800 font-black">{paymentMethod}</span>
@@ -857,7 +995,7 @@ export default function POSPage() {
                       Transaction Summary
                     </h3>
 
-                    <div className="space-y-4 text-xs font-bold">
+                    <div className="space-y-3.5 text-xs font-bold">
                       <div className="flex justify-between items-center">
                         <span className="text-purple-200">Invoice Ref.</span>
                         <span className="font-mono bg-purple-700/50 px-2 py-1 rounded text-[11px]">{currentInvoiceRef}</span>
@@ -874,6 +1012,16 @@ export default function POSPage() {
                         <span className="text-purple-200">Total Items</span>
                         <span className="text-white">{totalItemsCount}</span>
                       </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-purple-400/30">
+                        <span className="text-purple-200">Subtotal</span>
+                        <span className="text-white">Rs. {subtotal.toLocaleString()}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between items-center text-amber-300">
+                          <span>Discount Applied</span>
+                          <span>- Rs. {discount.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-4 border-t border-purple-400/50 flex items-baseline justify-between">
@@ -890,6 +1038,16 @@ export default function POSPage() {
                     <Download className="h-4 w-4" />
                     <span>{isGeneratingPDF ? "Generating PDF..." : "Download Invoice PDF"}</span>
                   </button>
+
+                  {/* SMS e-bill hint — only shown when a registered customer with a phone number is selected */}
+                  {selectedCustomer && selectedCustomer.id !== "walk-in" && selectedCustomer.phone && selectedCustomer.phone !== "N/A" && (
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
+                      <MessageSquare className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                      <p className="text-[10px] font-bold text-green-700">
+                        E-bill SMS will be sent to <span className="font-black">{selectedCustomer.phone}</span> via text.lk
+                      </p>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <button
@@ -1020,9 +1178,18 @@ export default function POSPage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900 uppercase tracking-wider">Select Customer</h3>
-              <button onClick={() => setIsCustomerModalOpen(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded-full">
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPosCustomerOpen(true)}
+                  className="px-3 py-1 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-extrabold flex items-center gap-1 shadow-sm transition-colors"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> + New Customer
+                </button>
+                <button onClick={() => setIsCustomerModalOpen(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded-full">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="relative">
@@ -1073,6 +1240,120 @@ export default function POSPage() {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: ADD NEW CUSTOMER (POS)                                           */}
+      {/* ========================================================================= */}
+      {isAddPosCustomerOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-xl bg-white/20 flex items-center justify-center">
+                  <UserPlus className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">Add New Customer</h3>
+                  <p className="text-[10px] text-purple-200 font-semibold">Customer will be saved & selected</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setIsAddPosCustomerOpen(false); setNewPosCustomer({ name: "", phone: "", email: "", address: "" }); }}
+                className="h-7 w-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreatePosCustomer} className="p-6 flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Name */}
+                <div className="col-span-2 flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newPosCustomer.name}
+                    onChange={(e) => setNewPosCustomer(p => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. Thaheshan"
+                    required
+                    className="h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 bg-slate-50 transition-all"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="col-span-2 flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newPosCustomer.phone}
+                    onChange={(e) => setNewPosCustomer(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="+94 77 123 4567"
+                    required
+                    className="h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 bg-slate-50 transition-all"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="col-span-1 flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Email</label>
+                  <input
+                    type="email"
+                    value={newPosCustomer.email}
+                    onChange={(e) => setNewPosCustomer(p => ({ ...p, email: e.target.value }))}
+                    placeholder="email@example.com"
+                    className="h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 bg-slate-50 transition-all"
+                  />
+                </div>
+
+                {/* Address */}
+                <div className="col-span-1 flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Address</label>
+                  <input
+                    type="text"
+                    value={newPosCustomer.address}
+                    onChange={(e) => setNewPosCustomer(p => ({ ...p, address: e.target.value }))}
+                    placeholder="City, Street..."
+                    className="h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 bg-slate-50 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setIsAddPosCustomerOpen(false); setNewPosCustomer({ name: "", phone: "", email: "", address: "" }); }}
+                  className="h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs uppercase tracking-wider transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingCustomer}
+                  className="h-11 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-60 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-200 flex items-center justify-center gap-2 transition-colors"
+                >
+                  {isCreatingCustomer ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-3.5 w-3.5" /> Create & Select
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Add Category Modal */}
       {isAddCategoryOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">

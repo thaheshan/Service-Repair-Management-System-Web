@@ -24,6 +24,7 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 interface Role { id: number; name: string; color: string; desc: string }
 const INIT_ROLES: Role[] = [
   { id: 1, name: "Super Admin", color: "#E11D48", desc: "Full system access including billing and branches." },
+  { id: 4, name: "Admin", color: "#E11D48", desc: "Admin level system access." },
   { id: 2, name: "Senior Technician", color: "#4F46E5", desc: "Can manage and reassign all repair tasks." },
   { id: 3, name: "Junior Technician", color: "#059669", desc: "Can view assigned tasks and log time." },
 ]
@@ -43,8 +44,11 @@ import {
 import { useGetRepairsQuery, useUpdateRepairStatusMutation } from "@/services/api/repairsApiSlice"
 import { toast } from "sonner"
 
+import { useSelector } from "react-redux"
+
 export default function StaffManagementPage() {
   const { t } = useTranslation();
+  const { user } = useSelector((state: any) => state.auth);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -121,7 +125,7 @@ export default function StaffManagementPage() {
   const [assignRepairId, setAssignRepairId] = useState("");
 
   // Add form
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "Technician" as StaffRole, branch: "Main Branch", specialties: [] as Specialty[], status: "Available" as StaffStatus })
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "Technician" as StaffRole, branch: "Main Branch", department: "repair", specialties: [] as Specialty[], status: "Available" as StaffStatus })
   const [showPassword, setShowPassword] = useState(false)
 
   const toggle = <T extends string>(val: T, arr: T[], set: (f: (p: T[]) => T[]) => void) =>
@@ -157,30 +161,62 @@ export default function StaffManagementPage() {
   const handleAdd = async () => {
     if (!form.name || !form.email || !form.password) return
     const roleMap: Record<string, string> = {
+      "Super Admin": "ADMIN",
+      "Admin": "ADMIN",
       "Lead Technician": "ADMIN",
       "Senior Technician": "MANAGER",
       "Technician": "TECHNICIAN",
       "Junior Technician": "TECHNICIAN",
       "Manager": "MANAGER",
-      "Receptionist": "RECEPTIONIST"
+      "Receptionist": "RECEPTIONIST",
+      "staff": "TECHNICIAN",
     };
 
+    const nameParts = form.name.trim().split(" ");
+    const firstName = nameParts[0] || form.name;
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     try {
-      await createStaff({
+      const tenantId = (user as any)?.tenantId || (user as any)?.tenant_id;
+      const shopId = (user as any)?.shopCode || (user as any)?.shop_code || (user as any)?.shopId || (user as any)?.shop_id;
+
+      const payload = {
+        // All known name field variants — backend expects snake_case
         name: form.name,
+        full_name: form.name,
+        fullName: form.name,
+        firstName,
+        lastName,
+        // Contact
         email: form.email,
-        phone: form.phone,
+        phone: form.phone || "",
         password: form.password,
+        // Role/permissions
         role: roleMap[form.role] || "TECHNICIAN",
-        specialties: form.specialties
-      }).unwrap()
+        // Additional fields
+        department: form.department,
+        specialties: form.specialties,
+        // Tenant binding — backend expects snake_case shop_id (which validation endpoint resolves as the human shopCode)
+        tenantId,
+        tenant_id: tenantId,
+        shopId,
+        shop_id: shopId,
+      };
+
+      console.log("[Staff] createStaff payload:", payload);
+      await createStaff(payload).unwrap()
       setShowAddModal(false)
       setShowPassword(false)
-      setForm({ name: "", email: "", phone: "", password: "", role: "Technician", branch: "Main Branch", specialties: [], status: "Available" })
+      setForm({ name: "", email: "", phone: "", password: "", role: "Technician", branch: "Main Branch", department: "repair", specialties: [], status: "Available" })
       toast.success("Staff member added successfully!");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to add staff:", err);
-      toast.error("Failed to add staff member.");
+      // Log each validation error path to help diagnose schema issues
+      const errors = err?.data?.errors;
+      if (errors?.length) {
+        errors.forEach((e: any) => console.error(`  → [${e.path?.join(".")}]: ${e.message}`));
+      }
+      toast.error(err?.data?.message || err?.data?.error || "Failed to add staff member.");
     }
   }
 
@@ -503,6 +539,17 @@ export default function StaffManagementPage() {
                   </select>
                 </div>
               </div>
+              <div>
+                <label className="block text-[12px] font-bold text-foreground mb-1.5">Department *</label>
+                <select 
+                  value={form.department} 
+                  onChange={e => setForm(p => ({ ...p, department: e.target.value }))} 
+                  className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card font-semibold"
+                >
+                  <option value="inventory">Inventory Department</option>
+                  <option value="repair">Repair Department</option>
+                </select>
+              </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.specialties') : 'Specialties'}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SPECIALTIES.map(sp => (
@@ -567,6 +614,8 @@ export default function StaffManagementPage() {
                 <button onClick={() => setEditStaff(null)} className="flex-1 h-11 rounded-xl border border-border bg-card text-foreground font-bold hover:bg-muted focus:outline-none">Cancel</button>
                 <button onClick={async () => {
                   const roleMap: Record<string, string> = {
+                    "Super Admin": "ADMIN",
+                    "Admin": "ADMIN",
                     "Lead Technician": "ADMIN",
                     "Senior Technician": "MANAGER",
                     "Technician": "TECHNICIAN",

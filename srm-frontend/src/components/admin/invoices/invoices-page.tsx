@@ -269,7 +269,7 @@ export default function InvoicesManagementPage() {
       return r.sort((a, b) => {
          if (sortKey === "date-new") return new Date(b.date).getTime() - new Date(a.date).getTime()
          if (sortKey === "date-old") return new Date(a.date).getTime() - new Date(a.date).getTime()
-         if (user?.role !== 'TECHNICIAN') {
+         if (user?.role !== 'TECHNICIAN' && (sortKey === "amount-high" || sortKey === "amount-low")) {
             if (sortKey === "amount-high") return b.amount - a.amount
             if (sortKey === "amount-low") return a.amount - b.amount
          }
@@ -371,7 +371,7 @@ export default function InvoicesManagementPage() {
                      {[
                         { id: "All", label: "All Invoices", count: invoicesState.length },
                         { id: "Repair", label: "Repair Invoices", count: invoicesState.filter(i => i.type === 'client_repair').length },
-                        { id: "Inventory", label: "Device Invoices", count: invoicesState.filter(i => i.type === 'inventory_item').length }
+                        { id: "Inventory", label: "POS & Inventory Invoices", count: invoicesState.filter(i => i.type === 'inventory_item').length }
                      ].map(tab => (
                         <button
                            key={tab.id}
@@ -1032,7 +1032,7 @@ export default function InvoicesManagementPage() {
                            <div className="grid grid-cols-2 gap-y-4">
                               <div>
                                  <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Invoice Reference</p>
-                                 <p className="text-[11px] font-black text-[#0F172A] font-mono  ">{viewDocumentTarget.invoiceId ?? '#000000'}</p>
+                                 <p className="text-[11px] font-black text-[#0F172A] font-mono">{viewDocumentTarget.invoiceId ?? '#000000'}</p>
                               </div>
                               <div>
                                  <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Issue Date</p>
@@ -1059,7 +1059,7 @@ export default function InvoicesManagementPage() {
                               </div>
                            </div>
                         </div>
-                        <div className="col-span-1 text-left  h-fit">
+                        <div className="col-span-1 text-left h-fit">
                            <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1 font-black">Total Payable</p>
                            <p className="text-[24px] font-black text-[#0F172A] tracking-tighter leading-none mb-1">
                               <span className="text-[10px] text-slate-400 mr-1.5">Rs.</span>
@@ -1109,16 +1109,61 @@ export default function InvoicesManagementPage() {
                               </div>
                            );
                         })() : (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component material & Bulk sales</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Inventory Sale</p>
-                                 </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</div>
-                              </div>
+                           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                              {(() => {
+                                 const itemsList = viewDocumentTarget.items && viewDocumentTarget.items.length > 0
+                                    ? viewDocumentTarget.items.map((i: any) => ({
+                                       name: i.name || i.description || "Inventory Item",
+                                       qty: i.qty || i.quantity || 1,
+                                       price: i.price || viewDocumentTarget.amount,
+                                       subtotal: (i.qty || i.quantity || 1) * (i.price || viewDocumentTarget.amount)
+                                    }))
+                                    : (() => {
+                                       const notes = viewDocumentTarget.notes || "";
+                                       if (notes.startsWith("POS Sale:")) {
+                                          const clean = notes.replace(/^POS Sale:\s*/, "").split("[Discount:")[0];
+                                          return clean.split(";").map((p: string) => {
+                                             const match = p.trim().match(/^(.*?)\s*x(\d+)\s*@\s*Rs\.?\s*([\d,]+)/i);
+                                             if (match) {
+                                                const name = match[1].trim();
+                                                const qty = parseInt(match[2], 10) || 1;
+                                                const price = parseFloat(match[3].replace(/,/g, "")) || 0;
+                                                return { name, qty, price, subtotal: qty * price };
+                                             }
+                                             return null;
+                                          }).filter(Boolean);
+                                       }
+                                       return [];
+                                    })();
+
+                                 if (itemsList.length > 0) {
+                                    return itemsList.map((itm: any, idx: number) => (
+                                       <div key={idx} className="grid grid-cols-12 items-center pb-3 border-b border-slate-100 last:border-b-0">
+                                          <div className="col-span-6">
+                                             <p className="text-[14px] font-black text-[#0F172A] mb-0.5 capitalize">{itm.name}</p>
+                                             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">POS Inventory Item</p>
+                                          </div>
+                                          <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">{itm.qty}</div>
+                                          <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {itm.price.toLocaleString()}</div>
+                                          <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {itm.subtotal.toLocaleString()}</div>
+                                       </div>
+                                    ));
+                                 }
+
+                                 return (
+                                    <div className="grid grid-cols-12 items-center">
+                                       <div className="col-span-6">
+                                          <p className="text-[14px] font-black text-[#0F172A] mb-1">
+                                             {viewDocumentTarget.notes?.replace(/^POS Sale:\s*/, "") || "Inventory Product Sale"}
+                                          </p>
+                                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Component Ledgers</p>
+                                       </div>
+                                       <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                       <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</div>
+                                       <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(viewDocumentTarget.amount ?? 0).toLocaleString()}</div>
+                                    </div>
+                                 );
+                              })()}
                            </div>
                         )}
 
@@ -1150,15 +1195,18 @@ export default function InvoicesManagementPage() {
                      <div className="mt-20 pt-16 border-t border-slate-100 border-dashed">
                         <p className="text-[12px] font-black text-[#0F172A] mb-8 flex items-center gap-2">
                            <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" />
-                           Thank you for choosing {user?.shopName || "All Fix Private Limited"} for your professional technical needs.
+                           {viewDocumentTarget?.type === "inventory_item"
+                              ? `Thank you for choosing ${user?.shopName || "All Fix Private Limited"} for your product purchase.`
+                              : `Thank you for choosing ${user?.shopName || "All Fix Private Limited"} for your professional technical needs.`}
                         </p>
 
                         <div className="grid grid-cols-2 gap-12">
                            <div>
                               <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-black underline decoration-slate-200 underline-offset-4">General Terms</p>
                               <p className="text-[11px] text-slate-500 font-bold leading-relaxed italic">
-                                 All repairs are covered under a 30-day functional warranty unless otherwise stated.
-                                 Hardware sales include a 1-year manufacturer warranty from the date of purchase.
+                                 {viewDocumentTarget?.type === "inventory_item"
+                                    ? "Hardware & inventory sales include a standard store warranty from the date of purchase. Please retain this receipt for return or exchange verification."
+                                    : "All repairs are covered under a 30-day functional warranty unless otherwise stated. Hardware sales include a 1-year manufacturer warranty from the date of purchase."}
                               </p>
                            </div>
                            <div className="flex flex-col items-end">
@@ -1312,16 +1360,61 @@ export default function InvoicesManagementPage() {
                               </div>
                            );
                         })() : (
-                           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              <div className="grid grid-cols-12 items-center">
-                                 <div className="col-span-6">
-                                    <p className="text-[14px] font-black text-[#0F172A] mb-1">Component material & Bulk sales</p>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Component Ledgers</p>
-                                 </div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
-                                 <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
-                                 <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
-                              </div>
+                           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                              {(() => {
+                                 const itemsList = hiddenInvoiceTarget.items && hiddenInvoiceTarget.items.length > 0
+                                    ? hiddenInvoiceTarget.items.map((i: any) => ({
+                                       name: i.name || i.description || "Inventory Item",
+                                       qty: i.qty || i.quantity || 1,
+                                       price: i.price || hiddenInvoiceTarget.amount,
+                                       subtotal: (i.qty || i.quantity || 1) * (i.price || hiddenInvoiceTarget.amount)
+                                    }))
+                                    : (() => {
+                                       const notes = hiddenInvoiceTarget.notes || "";
+                                       if (notes.startsWith("POS Sale:")) {
+                                          const clean = notes.replace(/^POS Sale:\s*/, "").split("[Discount:")[0];
+                                          return clean.split(";").map((p: string) => {
+                                             const match = p.trim().match(/^(.*?)\s*x(\d+)\s*@\s*Rs\.?\s*([\d,]+)/i);
+                                             if (match) {
+                                                const name = match[1].trim();
+                                                const qty = parseInt(match[2], 10) || 1;
+                                                const price = parseFloat(match[3].replace(/,/g, "")) || 0;
+                                                return { name, qty, price, subtotal: qty * price };
+                                             }
+                                             return null;
+                                          }).filter(Boolean);
+                                       }
+                                       return [];
+                                    })();
+
+                                 if (itemsList.length > 0) {
+                                    return itemsList.map((itm: any, idx: number) => (
+                                       <div key={idx} className="grid grid-cols-12 items-center pb-3 border-b border-slate-100 last:border-b-0">
+                                          <div className="col-span-6">
+                                             <p className="text-[14px] font-black text-[#0F172A] mb-0.5 capitalize">{itm.name}</p>
+                                             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">POS Inventory Item</p>
+                                          </div>
+                                          <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">{itm.qty}</div>
+                                          <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {itm.price.toLocaleString()}</div>
+                                          <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {itm.subtotal.toLocaleString()}</div>
+                                       </div>
+                                    ));
+                                 }
+
+                                 return (
+                                    <div className="grid grid-cols-12 items-center">
+                                       <div className="col-span-6">
+                                          <p className="text-[14px] font-black text-[#0F172A] mb-1">
+                                             {hiddenInvoiceTarget.notes?.replace(/^POS Sale:\s*/, "") || "Inventory Product Sale"}
+                                          </p>
+                                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Professional Component Ledgers</p>
+                                       </div>
+                                       <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">1</div>
+                                       <div className="col-span-2 text-[13px] font-black text-[#0F172A] text-center">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
+                                       <div className="col-span-2 text-right text-[13px] font-black text-[#0F172A]">Rs. {(hiddenInvoiceTarget.amount ?? 0).toLocaleString()}</div>
+                                    </div>
+                                 );
+                              })()}
                            </div>
                         )}
 
@@ -1353,15 +1446,18 @@ export default function InvoicesManagementPage() {
                      <div className="mt-20 pt-16 border-t border-slate-100 border-dashed">
                         <p className="text-[12px] font-black text-[#0F172A] mb-8 flex items-center gap-2">
                            <ArrowUpRight className="h-4 w-4 text-[#4F46E5]" />
-                           Thank you for choosing {user?.shopName || "All Fix Private Limited"} for your professional technical needs.
+                           {hiddenInvoiceTarget?.type === "inventory_item"
+                              ? `Thank you for choosing ${user?.shopName || "All Fix Private Limited"} for your product purchase.`
+                              : `Thank you for choosing ${user?.shopName || "All Fix Private Limited"} for your professional technical needs.`}
                         </p>
 
                         <div className="grid grid-cols-2 gap-12">
                            <div>
                               <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-black underline decoration-slate-200 underline-offset-4">General Terms</p>
                               <p className="text-[11px] text-slate-500 font-bold leading-relaxed italic">
-                                 All repairs are covered under a 30-day functional warranty unless otherwise stated.
-                                 Hardware sales include a 1-year manufacturer warranty from the date of purchase.
+                                 {hiddenInvoiceTarget?.type === "inventory_item"
+                                    ? "Hardware & inventory sales include a standard store warranty from the date of purchase. Please retain this receipt for return or exchange verification."
+                                    : "All repairs are covered under a 30-day functional warranty unless otherwise stated. Hardware sales include a 1-year manufacturer warranty from the date of purchase."}
                               </p>
                            </div>
                            <div className="flex flex-col items-end">
