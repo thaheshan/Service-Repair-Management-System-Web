@@ -74,7 +74,13 @@ export function StatCards({ days = 30 }: { days?: number }) {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 lg:gap-6">
+    <div className={`grid grid-cols-1 sm:grid-cols-2 ${
+      user?.department?.toLowerCase() === 'inventory'
+        ? 'xl:grid-cols-2 max-w-2xl'
+        : user?.role === 'TECHNICIAN'
+        ? 'xl:grid-cols-3'
+        : 'xl:grid-cols-5'
+    } gap-4 lg:gap-6`}>
       {stats
         .filter(stat => {
           if (user?.role === 'TECHNICIAN') {

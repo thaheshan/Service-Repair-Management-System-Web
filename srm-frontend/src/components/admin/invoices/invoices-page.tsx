@@ -47,18 +47,23 @@ const STATUS_STYLE: Record<string, string> = {
    Overdue: "bg-red-50 text-red-600 border-red-200",
 }
 
+import { useRouter } from "next/navigation"
+
 export default function InvoicesManagementPage() {
    const { t } = useTranslation();
+   const router = useRouter();
+   const { user } = useSelector((state: any) => state.auth);
    const [mounted, setMounted] = useState(false);
-   useEffect(() => setMounted(true), []);
+
+   useEffect(() => {
+      setMounted(true)
+   }, []);
 
    const { data: apiResponse, isLoading } = useGetInvoicesQuery({});
    const { data: settingsData } = useGetSettingsQuery({});
    const [createInvoiceMutation, { isLoading: isCreating }] = useCreateInvoiceMutation();
    const [updateInvoiceStatus] = useUpdateInvoiceStatusMutation();
    const [deleteInvoiceMutation] = useDeleteInvoiceMutation();
-
-   const { user } = useSelector((state: any) => state.auth);
 
    const invoicesState = useMemo(() => {
       return (apiResponse?.invoices || []).map((inv: any) => ({
@@ -68,7 +73,14 @@ export default function InvoicesManagementPage() {
    }, [apiResponse]);
 
    const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("list")
-   const [activeTab, setActiveTab] = useState("All")
+   
+   const staffDeptOverride = typeof window !== 'undefined' ? localStorage.getItem('staff_dept') : null;
+   const rawDept = user?.department || user?.dept || user?.departmentName || user?.roleName || staffDeptOverride || "";
+   const userDepartment = typeof rawDept === 'string' ? rawDept.toLowerCase().trim() : "";
+   const isGlobalAdmin = user?.role === 'ADMIN' && (!userDepartment || userDepartment === 'all' || userDepartment === 'super' || userDepartment === 'admin');
+   const isInventoryDept = !isGlobalAdmin && (userDepartment.includes('inventory') || userDepartment === 'inventory');
+
+   const [activeTab, setActiveTab] = useState(isInventoryDept ? "Inventory" : "All")
 
    // Interactive Engines
    const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null)
@@ -92,7 +104,7 @@ export default function InvoicesManagementPage() {
    const [isAddInvoiceOpen, setIsAddInvoiceOpen] = useState(false)
 
    // Create Modal State
-   const [addInvoiceType, setAddInvoiceType] = useState<"client_repair" | "inventory_item">("client_repair")
+   const [addInvoiceType, setAddInvoiceType] = useState<"client_repair" | "inventory_item">(isInventoryDept ? "inventory_item" : "client_repair")
    const [invoiceItems, setInvoiceItems] = useState([{ id: 1, name: "", sku: "", qty: 1, price: 0 }])
    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
@@ -222,20 +234,25 @@ export default function InvoicesManagementPage() {
    const processedInvoices = useMemo(() => {
       let r = [...invoicesState];
 
-      if (searchTerm.trim()) {
-         const q = searchTerm.toLowerCase()
+      if (searchTerm) {
+         const q = searchTerm.toLowerCase();
          r = r.filter(inv =>
-            inv.name.toLowerCase().includes(q) ||
-            inv.invoiceId.toLowerCase().includes(q) ||
-            inv.phone.includes(q)
-         )
+            inv.customerName?.toLowerCase().includes(q) ||
+            inv.invoiceId?.toLowerCase().includes(q) ||
+            inv.id?.toLowerCase().includes(q)
+         );
       }
 
-      if (activeTab === "Repair") {
-         r = r.filter(inv => inv.type === "client_repair")
-      }
-      if (activeTab === "Inventory") {
+      // If user is inventory dept, ALWAYS force them to see only inventory items
+      if (isInventoryDept) {
          r = r.filter(inv => inv.type === "inventory_item")
+      } else {
+         if (activeTab === "Repair") {
+            r = r.filter(inv => inv.type === "client_repair")
+         }
+         if (activeTab === "Inventory") {
+            r = r.filter(inv => inv.type === "inventory_item")
+         }
       }
 
       if (filterTypes.length) {
@@ -278,7 +295,7 @@ export default function InvoicesManagementPage() {
          if (sortKey === "id-az") return a.invoiceId.localeCompare(b.invoiceId)
          return 0
       })
-   }, [invoicesState, searchTerm, activeTab, filterTypes, filterStatuses, filterAmountRange, globalDateRange, sortKey, user?.role])
+   }, [invoicesState, searchTerm, activeTab, filterTypes, filterStatuses, filterAmountRange, globalDateRange, sortKey, user?.role, isInventoryDept])
 
 
    return (
@@ -372,7 +389,12 @@ export default function InvoicesManagementPage() {
                         { id: "All", label: "All Invoices", count: invoicesState.length },
                         { id: "Repair", label: "Repair Invoices", count: invoicesState.filter(i => i.type === 'client_repair').length },
                         { id: "Inventory", label: "POS & Inventory Invoices", count: invoicesState.filter(i => i.type === 'inventory_item').length }
-                     ].map(tab => (
+                     ].filter(tab => {
+                        if (isInventoryDept) {
+                           return tab.id === "Inventory";
+                        }
+                        return true;
+                     }).map(tab => (
                         <button
                            key={tab.id}
                            onClick={() => setActiveTab(tab.id)}
@@ -568,18 +590,20 @@ export default function InvoicesManagementPage() {
 
                      <div className="flex-1 overflow-y-auto custom-scrollbar">
                         <div className="p-8 pb-4">
-                           <div className="flex bg-muted/60 p-1.5 rounded-[20px] mb-8 border border-border">
+                           <div className="flex bg-muted p-1 rounded-[18px] mb-6">
+                              {!isInventoryDept && (
                               <button
                                  onClick={() => setAddInvoiceType("client_repair")}
                                  className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'client_repair' ? 'bg-card text-[#4F46E5] shadow-sm border border-border' : 'text-muted-foreground hover:text-foreground'}`}
                               >
-                                 <Wrench className="h-4 w-4" /> {mounted ? t('invoicesPage.repairIntake') : 'Repair Intake'}
+                                 <Wrench className="h-4 w-4" /> Client Repair
                               </button>
+                              )}
                               <button
                                  onClick={() => setAddInvoiceType("inventory_item")}
                                  className={`flex-1 flex items-center justify-center gap-2.5 h-12 text-[14px] font-black rounded-[16px] transition-all ${addInvoiceType === 'inventory_item' ? 'bg-card text-[#EA580C] shadow-sm border border-border' : 'text-muted-foreground hover:text-foreground'}`}
                               >
-                                 <ShoppingCart className="h-4 w-4" /> {mounted ? t('invoicesPage.bulkSale') : 'Bulk Sale / Inventory'}
+                                 <Box className="h-4 w-4" /> POS / Inventory
                               </button>
                            </div>
 

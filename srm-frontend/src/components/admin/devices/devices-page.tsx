@@ -44,8 +44,11 @@ function WarrantyIcon({ w }: { w: WarrantyStatus }) {
   return <Shield className="h-3 w-3" />
 }
 
+import { useRouter } from "next/navigation"
+
 export default function DevicesManagementPage() {
   const { t } = useTranslation()
+  const router = useRouter()
   const { data: response, isLoading } = useGetDevicesQuery({});
   const [createDevice, { isLoading: isCreating }] = useCreateDeviceMutation()
   const [updateDevice] = useUpdateDeviceMutation();
@@ -58,7 +61,10 @@ export default function DevicesManagementPage() {
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    if (user?.role !== 'ADMIN' && user?.department?.toLowerCase() === 'inventory') {
+      router.replace('/admin/dashboard')
+    }
+  }, [user, router])
 
   const SORT_OPTIONS = [
     { label: mounted ? t('devicesPage.sortOptions.newest') : "Newest First", value: "newest" },

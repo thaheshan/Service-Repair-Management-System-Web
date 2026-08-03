@@ -25,6 +25,7 @@ interface Role { id: number; name: string; color: string; desc: string }
 const INIT_ROLES: Role[] = [
   { id: 1, name: "Super Admin", color: "#E11D48", desc: "Full system access including billing and branches." },
   { id: 4, name: "Admin", color: "#E11D48", desc: "Admin level system access." },
+  { id: 5, name: "Department Admin", color: "#7C3AED", desc: "Full admin access scoped to their assigned department only (Repair or Inventory)." },
   { id: 2, name: "Senior Technician", color: "#4F46E5", desc: "Can manage and reassign all repair tasks." },
   { id: 3, name: "Junior Technician", color: "#059669", desc: "Can view assigned tasks and log time." },
 ]
@@ -163,6 +164,7 @@ export default function StaffManagementPage() {
     const roleMap: Record<string, string> = {
       "Super Admin": "ADMIN",
       "Admin": "ADMIN",
+      "Department Admin": "ADMIN",
       "Lead Technician": "ADMIN",
       "Senior Technician": "MANAGER",
       "Technician": "TECHNICIAN",
@@ -205,6 +207,9 @@ export default function StaffManagementPage() {
 
       console.log("[Staff] createStaff payload:", payload);
       await createStaff(payload).unwrap()
+      if (form.department) {
+        localStorage.setItem('staff_dept', form.department);
+      }
       setShowAddModal(false)
       setShowPassword(false)
       setForm({ name: "", email: "", phone: "", password: "", role: "Technician", branch: "Main Branch", department: "repair", specialties: [], status: "Available" })
@@ -549,6 +554,12 @@ export default function StaffManagementPage() {
                   <option value="inventory">Inventory Department</option>
                   <option value="repair">Repair Department</option>
                 </select>
+                {form.role === "Department Admin" && (
+                  <p className="mt-1.5 text-[11px] font-semibold text-[#7C3AED] flex items-center gap-1">
+                    <span>⚡</span>
+                    <span>This admin will have full access to all <strong>{form.department === 'inventory' ? 'Inventory' : 'Repair'}</strong> department data only.</span>
+                  </p>
+                )}
               </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.specialties') : 'Specialties'}</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -616,6 +627,7 @@ export default function StaffManagementPage() {
                   const roleMap: Record<string, string> = {
                     "Super Admin": "ADMIN",
                     "Admin": "ADMIN",
+                    "Department Admin": "ADMIN",
                     "Lead Technician": "ADMIN",
                     "Senior Technician": "MANAGER",
                     "Technician": "TECHNICIAN",

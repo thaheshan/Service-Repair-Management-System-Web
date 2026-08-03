@@ -61,12 +61,19 @@ const branches = (t: any) => [
   { id: "branch3", name: "Mall Outlet" },
 ]
 
+import { useGetStaffContextQuery } from "@/services/api/staffApiSlice"
+import { useGetMeQuery } from "@/services/api/authApiSlice"
+
 export function DashboardSidebar() {
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
-  const user = useSelector((state: RootState) => state.auth.user)
+  const reduxUser = useSelector((state: RootState) => state.auth.user)
+  const { data: staffContext } = useGetStaffContextQuery(undefined, { skip: !mounted })
+  const { data: meContext } = useGetMeQuery(undefined, { skip: !mounted })
   const { data: settingsData } = useGetSettingsQuery(undefined, { skip: !mounted })
   const featureFlags = settingsData?.settings?.featureFlags || {}
+
+  const user = staffContext?.staff || staffContext?.user || meContext?.user || meContext?.data || meContext || reduxUser
 
   useEffect(() => {
     setMounted(true)
@@ -160,8 +167,9 @@ export function DashboardSidebar() {
                   invoices: true, inventory: true, reports: true, staff: true, logs: false, settings: true
                 },
                 TECHNICIAN: {
+                  // Inventory is false by default for technicians; only shown if dept='inventory'
                   dashboard: true, pos: true, repairs: true, customers: true, devices: true,
-                  invoices: true, inventory: true, reports: false, staff: false, logs: false, settings: true
+                  invoices: true, inventory: false, reports: false, staff: false, logs: false, settings: true
                 }
               };
 
@@ -176,6 +184,12 @@ export function DashboardSidebar() {
                   }
                 }
                 const roleDefault = defaultRoleFlags[userRole] || defaultRoleFlags.TECHNICIAN;
+                // Allow inventory for inventory-dept technicians even if the role default is false
+                if (item.label === 'inventory' && userRole === 'TECHNICIAN') {
+                  const staffDeptCheck = mounted ? localStorage.getItem('staff_dept') : null;
+                  const deptCheck = (user?.department || user?.dept || user?.departmentName || staffDeptCheck || '').toLowerCase().trim();
+                  if (deptCheck.includes('inventory')) return true;
+                }
                 return roleDefault[item.label] !== false;
               })();
 
@@ -183,14 +197,26 @@ export function DashboardSidebar() {
 
               if (item.adminOnly && user?.role !== 'ADMIN') return false;
 
-              // Department filtering for staff/admin
-              const userDepartment = user?.department?.toLowerCase();
-              if (userDepartment && user?.role !== 'ADMIN') {
-                if (userDepartment === 'inventory') {
-                  const allowedInventoryItems = ['dashboard', 'pos', 'inventory', 'reports', 'settings'];
+              // Department filtering (Applies to everyone, even ADMINs if they are assigned a specific department)
+              const staffDeptOverride = mounted ? localStorage.getItem('staff_dept') : null;
+              const rawDept = user?.department || user?.dept || user?.departmentName || (userRole !== 'ADMIN' ? staffDeptOverride : "") || "";
+              const userDepartment = typeof rawDept === 'string' ? rawDept.toLowerCase().trim() : "";
+              const isGlobalAdmin = userRole === 'ADMIN' && (!userDepartment || userDepartment === 'all' || userDepartment === 'super' || userDepartment === 'admin');
+
+              if (!isGlobalAdmin) {
+                if (userDepartment.includes('inventory') || userDepartment === 'inventory') {
+                  // Inventory dept: show only inventory-related items
+                  const allowedInventoryItems = ['dashboard', 'pos', 'inventory', 'customers', 'invoices', 'reports', 'settings'];
+                  if (userRole === 'ADMIN' || userRole === 'MANAGER') allowedInventoryItems.push('staff', 'logs');
                   if (!allowedInventoryItems.includes(item.label)) return false;
-                } else if (userDepartment === 'repair') {
-                  const allowedRepairItems = ['dashboard', 'pos', 'repairs', 'customers', 'devices', 'invoices', 'reports', 'settings'];
+                } else if (userDepartment.includes('repair') || userDepartment === 'repair') {
+                  // Explicit repair dept
+                  const allowedRepairItems = ['dashboard', 'repairs', 'customers', 'devices', 'invoices', 'reports', 'settings'];
+                  if (userRole === 'ADMIN' || userRole === 'MANAGER') allowedRepairItems.push('staff', 'logs');
+                  if (!allowedRepairItems.includes(item.label)) return false;
+                } else if (userRole === 'TECHNICIAN') {
+                  // No department set for a TECHNICIAN → default to repair-side
+                  const allowedRepairItems = ['dashboard', 'repairs', 'customers', 'devices', 'invoices', 'reports', 'settings'];
                   if (!allowedRepairItems.includes(item.label)) return false;
                 }
               }

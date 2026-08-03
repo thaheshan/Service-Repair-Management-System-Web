@@ -1111,12 +1111,25 @@ export default function InventoryManagementPage() {
                                 </div>
                               </td>
                               <td className="px-5 py-5 text-center relative">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === item.code ? null : item.code); }}
-                                  className="h-9 w-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all focus:outline-none"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAdjustStockForm({ itemCode: item.code, action: "add", adjustmentValue: 0 });
+                                      setIsAdjustStockOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold hover:bg-primary/90 transition-colors shadow-sm"
+                                    title="Adjust Stock"
+                                  >
+                                    <RefreshCw className="h-3.5 w-3.5" /> Adjust Stock
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === item.code ? null : item.code); }}
+                                    className="h-9 w-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all focus:outline-none"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </button>
+                                </div>
                                 {activeMenuId === item.code && (
                                   <div className="absolute right-0 top-full mt-2 w-48 bg-card rounded-2xl shadow-2xl border border-border p-1.5 z-[100] animate-in fade-in zoom-in-95 origin-top-right">
                                     <button
