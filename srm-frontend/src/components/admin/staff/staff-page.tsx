@@ -509,7 +509,7 @@ export default function StaffManagementPage() {
                 <label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.fullName') : 'Full Name *'}</label>
                 <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="John Doe" className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.email') : 'Email *'}</label><input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} type="email" placeholder="john@srm.lk" className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
                 <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.phone') : 'Phone'}</label><input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+94 77 ..." className="w-full h-10 rounded-lg border border-border bg-card px-3 text-[13px] focus:outline-none focus:border-[#4F46E5]" /></div>
               </div>
@@ -532,7 +532,7 @@ export default function StaffManagementPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-[12px] font-bold text-foreground mb-1.5">{mounted ? t('staffPage.role') : 'Role'}</label>
                   <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as StaffRole }))} className="w-full h-10 rounded-lg border border-border px-3 text-[13px] focus:outline-none focus:border-[#4F46E5] bg-card">
                     {roles.map(r => <option key={r.id || r.name} value={r.name}>{r.name}</option>)}
@@ -562,7 +562,7 @@ export default function StaffManagementPage() {
                 )}
               </div>
               <div><label className="block text-[12px] font-bold text-[#0F172A] mb-2">{mounted ? t('staffPage.specialties') : 'Specialties'}</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SPECIALTIES.map(sp => (
                     <label key={sp} onClick={e => { e.preventDefault(); setForm(p => ({ ...p, specialties: p.specialties.includes(sp) ? p.specialties.filter(x => x !== sp) : [...p.specialties, sp] })) }} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-[12px] font-medium transition-colors ${form.specialties.includes(sp) ? "bg-primary/10 border-primary text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
                       {form.specialties.includes(sp) && <Check className="h-3 w-3 shrink-0" />}{sp}
