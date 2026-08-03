@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, UserPlus, Calendar, X, Search } from "lucide-react"
+import { Plus, UserPlus, Calendar, X, Search, ShoppingCart } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useGetCustomersQuery, useCreateCustomerMutation } from "@/services/api/customersApiSlice"
@@ -51,7 +51,13 @@ export function ActionButtons() {
   const [addCustomerModalOpen, setAddCustomerModalOpen] = useState(false)
   const [newQuickCustomer, setNewQuickCustomer] = useState({ name: "", phone: "", email: "" })
 
-  const isInventoryDept = user?.department?.toLowerCase() === 'inventory'
+  const staffDeptOverride = typeof window !== 'undefined' ? localStorage.getItem('staff_dept') : null;
+  const userRole = user?.role || 'TECHNICIAN';
+  const rawDept = user?.department || user?.dept || user?.departmentName || (userRole !== 'ADMIN' ? staffDeptOverride : "") || ""
+  const deptStr = typeof rawDept === 'string' ? rawDept.toLowerCase().trim() : ""
+  
+  const isGlobalAdmin = userRole === 'ADMIN' && (!deptStr || deptStr === 'all' || deptStr === 'super' || deptStr === 'admin')
+  const isInventoryDept = !isGlobalAdmin && (deptStr.includes('inventory') || deptStr === 'inventory')
 
   const filteredCustomers = (customersData?.data || customersData?.customers || []).filter((c: any) => {
     if (!customerSearchText.trim()) return false;
@@ -175,36 +181,54 @@ export function ActionButtons() {
 
   return (
     <>
-      <div className={`grid w-full grid-cols-1 ${isInventoryDept ? 'sm:grid-cols-2' : 'sm:grid-cols-4'} gap-3 sm:gap-4`}>
-        {!isInventoryDept && (
-          <Link href="/admin/repairs/new" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-white transition-colors hover:bg-primary/90 shadow-sm">
-            <Plus className="h-4 w-4 shrink-0" />
-            <span>{mounted ? t('dashboard.actions.addRepair') : 'New Repair'}</span>
-          </Link>
-        )}
+      <div className={`grid w-full grid-cols-1 ${isInventoryDept ? 'sm:grid-cols-3' : 'sm:grid-cols-4'} gap-3 sm:gap-4`}>
+        {isInventoryDept ? (
+          <>
+            <button
+              onClick={() => setOpen(true)}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#4F46E5] px-5 font-bold text-white transition-colors hover:bg-[#4338CA] shadow-sm"
+            >
+              <UserPlus className="h-4 w-4 shrink-0" />
+              <span>Add Customer</span>
+            </button>
+            <Link href="/admin/inventory" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#10B981] px-5 font-bold text-white transition-colors hover:bg-[#059669] shadow-sm">
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>Manage Inventory</span>
+            </Link>
+            <Link href="/admin/pos" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 font-bold text-foreground transition-colors hover:bg-muted shadow-sm">
+              <ShoppingCart className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>Open POS</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link href="/admin/repairs/new" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-white transition-colors hover:bg-primary/90 shadow-sm">
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>{mounted ? t('dashboard.actions.addRepair') : 'New Repair'}</span>
+            </Link>
 
-        {!isInventoryDept && (
-          <button 
-            onClick={() => setQuickRepairOpen(true)}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 font-semibold text-white transition-colors hover:bg-emerald-700 shadow-sm"
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            <span>Add Quick Repair</span>
-          </button>
-        )}
-        
-        <button 
-          onClick={() => setOpen(true)}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 font-semibold text-foreground transition-colors hover:bg-muted shadow-sm"
-        >
-          <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span>{mounted ? t('dashboard.actions.newCustomer') : 'Add Customer'}</span>
-        </button>
+            <button
+              onClick={() => setQuickRepairOpen(true)}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 font-semibold text-white transition-colors hover:bg-emerald-700 shadow-sm"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>Add Quick Repair</span>
+            </button>
 
-        <Link href="/admin/schedule" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 font-semibold text-foreground transition-colors hover:bg-muted shadow-sm focus:outline-none">
-          <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span>{mounted ? t('dashboard.actions.viewSchedule') : 'View Schedule'}</span>
-        </Link>
+            <button
+              onClick={() => setOpen(true)}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 font-semibold text-foreground transition-colors hover:bg-muted shadow-sm"
+            >
+              <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>{mounted ? t('dashboard.actions.newCustomer') : 'Add Customer'}</span>
+            </button>
+
+            <Link href="/admin/schedule" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 font-semibold text-foreground transition-colors hover:bg-muted shadow-sm focus:outline-none">
+              <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>{mounted ? t('dashboard.actions.viewSchedule') : 'View Schedule'}</span>
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Quick Repair Modal */}

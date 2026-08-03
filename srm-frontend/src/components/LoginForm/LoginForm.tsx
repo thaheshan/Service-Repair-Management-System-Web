@@ -35,6 +35,10 @@ export default function LoginForm() {
         accessToken: result.accessToken,
       }));
 
+      if (result?.user?.department || result?.user?.dept) {
+        localStorage.setItem('staff_dept', result.user.department || result.user.dept);
+      }
+
       // Role-based routing
       const role = result.user.role;
       if (role === 'ADMIN') {
@@ -42,7 +46,8 @@ export default function LoginForm() {
       } else if (role === 'MANAGER') {
         window.location.href = '/manager/dashboard';
       } else if (role === 'TECHNICIAN') {
-        window.location.href = '/technician/dashboard';
+        const dept = (result.user.department || result.user.dept || 'repair').toLowerCase();
+        window.location.href = `/technician/${dept}/dashboard`;
       } else if (role === 'CUSTOMER') {
         window.location.href = '/customer/dashboard';
       } else {

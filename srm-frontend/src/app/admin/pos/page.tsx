@@ -382,8 +382,7 @@ export default function POSPage() {
       
       if (isRegisteredCust) {
         // Build the e-bill URL (public invoice page)
-        const origin = typeof window !== "undefined" ? window.location.origin : ""
-        const eBillUrl = `${origin}/invoice/${savedInvoiceRef}`
+        const eBillUrl = `https://www.allfix.space/invoice/${savedInvoiceRef}`
 
         // Build item lines for the SMS
         const itemLines = cart

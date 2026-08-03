@@ -39,13 +39,20 @@ import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 
 export default function CustomerManagementPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const user = useSelector((state: RootState) => state.auth.user)
-  useEffect(() => setMounted(true), []);
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  useEffect(() => {
+    setMounted(true)
+    if (user?.role !== 'ADMIN' && user?.department?.toLowerCase() === 'inventory') {
+      router.replace('/admin/dashboard')
+    }
+  }, [user, router]);
 
   const { data: response, isLoading } = useGetCustomersQuery({});
   const [createCustomer] = useCreateCustomerMutation();
-  const router = useRouter();
+
 
   const customers = useMemo(() => {
     const apiCustomers = response?.customers || [];

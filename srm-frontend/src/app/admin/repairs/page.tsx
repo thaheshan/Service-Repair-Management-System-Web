@@ -28,10 +28,22 @@ const colors = ["bg-[#4F46E5]", "bg-[#F59E0B]", "bg-[#10B981]", "bg-[#6366F1]", 
 
 import { ChevronRight } from "lucide-react"
 
+import { useSelector } from "react-redux"
+import { useRouter } from "next/navigation"
+import { RootState } from "@/store/store"
+
 export default function RepairsPage() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    setMounted(true)
+    if (user?.role !== 'ADMIN' && user?.department?.toLowerCase() === 'inventory') {
+      router.replace('/admin/dashboard')
+    }
+  }, [user, router]);
 
   const { data: response, isLoading } = useGetRepairsQuery({});
   const { data: staffResponse } = useGetStaffListQuery({});

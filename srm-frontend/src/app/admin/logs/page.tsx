@@ -51,6 +51,24 @@ const ROLE_BADGE: Record<string, string> = {
   TECHNICIAN: "bg-amber-100 text-amber-800",
 };
 
+/** Derives a human-readable display name from a log entry.
+ *  Priority: fullName > name > email local-part (capitalised words) */
+function getDisplayName(log: any): string {
+  if (log.fullName && log.fullName.trim()) return log.fullName.trim();
+  if (log.userFullName && log.userFullName.trim()) return log.userFullName.trim();
+  if (log.staffName && log.staffName.trim()) return log.staffName.trim();
+  if (log.name && log.name.trim()) return log.name.trim();
+  // Fall back: derive from email local part, e.g. "john.doe@..." → "John Doe"
+  if (log.userName && log.userName.includes("@")) {
+    const local = log.userName.split("@")[0];
+    return local
+      .replace(/[._\-]/g, " ")
+      .replace(/\b\w/g, (c: string) => c.toUpperCase())
+      .trim();
+  }
+  return log.userName ?? "Unknown";
+}
+
 function generateHumanReadableDetails(log: any): string[] {
   const body = log.details?.body || {};
   if (Object.keys(body).length === 0) return [];
@@ -125,9 +143,10 @@ export default function LogsPage() {
   // Export as CSV
   const handleExport = useCallback(() => {
     if (!logs.length) return;
-    const headers = ["Date & Time", "Staff Name", "Role", "Action", "Entity", "Entity ID", "Amount", "Amount Label"];
+    const headers = ["Date & Time", "Staff Name", "Email", "Role", "Action", "Entity", "Entity ID", "Amount", "Amount Label"];
     const rows = logs.map((l) => [
       format(new Date(l.createdAt), "yyyy-MM-dd HH:mm:ss"),
+      getDisplayName(l),
       l.userName,
       l.userRole,
       l.action,
@@ -359,12 +378,19 @@ export default function LogsPage() {
 
                         {/* Staff Member */}
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs flex-shrink-0">
-                              {log.userName?.charAt(0)?.toUpperCase() ?? "?"}
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs flex-shrink-0 border border-primary/20">
+                              {getDisplayName(log).charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <p className="font-semibold text-foreground leading-none">{log.userName}</p>
+                            <div className="min-w-0">
+                              <p className="font-bold text-foreground text-[13px] leading-tight truncate">
+                                {getDisplayName(log)}
+                              </p>
+                              {log.userName && log.userName.includes("@") && (
+                                <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                                  {log.userName}
+                                </p>
+                              )}
                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 inline-block ${ROLE_BADGE[log.userRole] ?? "bg-gray-100 text-gray-700"}`}>
                                 {log.userRole}
                               </span>
