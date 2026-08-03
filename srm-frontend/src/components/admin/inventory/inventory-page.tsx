@@ -10,6 +10,7 @@ import { generateInventoryAssetPDF, generateInventoryAssetsPDF, generatePOInvoic
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { useSearchParams } from "next/navigation"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared/date-range-picker"
 import { ImageUploadModal } from "./ImageUploadModal"
 
@@ -111,6 +112,9 @@ export default function InventoryManagementPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const { data: settingsData } = useGetSettingsQuery({});
+  const shopLogoUrl = settingsData?.logoUrl || settingsData?.settings?.appearance?.logoUrl || settingsData?.data?.logoUrl || user?.shopLogoUrl || user?.logoUrl || "/all-fix-logo-black.png";
 
   const [createInventoryItem] = useCreateInventoryItemMutation();
   const [updateInventoryItem] = useUpdateInventoryItemMutation();
@@ -1428,7 +1432,7 @@ export default function InventoryManagementPage() {
                   <div className="flex justify-between items-start mb-20">
                     <div>
                       <div className="flex items-center gap-2.5 mb-2">
-                        <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                        <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
                         <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                           {user?.shopName || "All Fix Private Limited"}
                         </h2>
@@ -1590,7 +1594,7 @@ export default function InventoryManagementPage() {
               <div className="flex justify-between items-start mb-20">
                 <div>
                   <div className="flex items-center gap-2.5 mb-2">
-                    <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                    <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
                     <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                       {user?.shopName || "All Fix Private Limited"}
                     </h2>
@@ -2733,7 +2737,7 @@ export default function InventoryManagementPage() {
             <div className="flex justify-between items-start mb-16">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <img src="/all-fix-logo-black.png" alt="Shop Logo" style={{ height: 48, width: 'auto', objectFit: 'contain' }} />
+                  <img src={shopLogoUrl} alt="Shop Logo" style={{ height: 48, width: 'auto', objectFit: 'contain', maxHeight: 48 }} />
                   <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">
                     {user?.shopName || "All Fix Private Limited"}
                   </h2>
@@ -2843,7 +2847,7 @@ export default function InventoryManagementPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48, paddingBottom: 24, borderBottom: '2px solid #0f172a' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <img src="/all-fix-logo-black.png" alt="Shop Logo" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
+                      <img src={shopLogoUrl} alt="Shop Logo" style={{ height: 44, width: 'auto', objectFit: 'contain', maxHeight: 44 }} />
                       <span style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.5px' }}>{user?.shopName || "All Fix Private Limited"}</span>
                     </div>
                     <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px' }}>Purchase Order</p>

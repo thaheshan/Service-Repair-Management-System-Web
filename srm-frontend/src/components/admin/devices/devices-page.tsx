@@ -13,6 +13,7 @@ import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-updat
 import { useGetDevicesQuery, useCreateDeviceMutation, useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/services/api/devicesApiSlice"
 import { Autocomplete } from "@/components/ui/autocomplete"
 import { useGetCustomersQuery } from "@/services/api/customersApiSlice"
+import { useGetSettingsQuery } from "@/services/api/settingsApiSlice"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { toast } from "sonner"
@@ -54,6 +55,8 @@ export default function DevicesManagementPage() {
   const [deleteDeviceMutation] = useDeleteDeviceMutation();
   const { user } = useSelector((state: RootState) => state.auth);
   const { data: customersResponse } = useGetCustomersQuery({});
+  const { data: settingsData } = useGetSettingsQuery({});
+  const shopLogoUrl = settingsData?.logoUrl || settingsData?.settings?.appearance?.logoUrl || settingsData?.data?.logoUrl || user?.shopLogoUrl || user?.logoUrl || "/all-fix-logo-black.png";
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -829,7 +832,7 @@ export default function DevicesManagementPage() {
                     <div className="flex justify-between items-start mb-20">
                         <div>
                            <div className="flex items-center gap-2.5 mb-2">
-                             <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                             <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto object-contain" />
                              <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                                {user?.shopName || "All Fix Private Limited"}
                              </h2>
@@ -1023,7 +1026,7 @@ export default function DevicesManagementPage() {
               <div className="flex justify-between items-start mb-20">
                   <div>
                      <div className="flex items-center gap-2.5 mb-2">
-                       <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-10 w-auto object-contain" />
+                       <img src={shopLogoUrl} alt="Shop Logo" className="h-10 w-auto max-h-12 object-contain" />
                        <h2 className="text-[26px] font-black text-[#0F172A] tracking-tighter uppercase">
                          {user?.shopName || "All Fix Private Limited"}
                        </h2>
@@ -1180,7 +1183,7 @@ export default function DevicesManagementPage() {
           <div className="flex justify-between items-start mb-16">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <img src="/all-fix-logo-black.png" alt="Shop Logo" className="h-12 w-auto object-contain" />
+                <img src={shopLogoUrl} alt="Shop Logo" className="h-12 w-auto max-h-14 object-contain" />
                 <h2 className="text-[32px] font-black text-[#0F172A] tracking-tighter uppercase">
                   {user?.shopName || "All Fix Private Limited"}
                 </h2>

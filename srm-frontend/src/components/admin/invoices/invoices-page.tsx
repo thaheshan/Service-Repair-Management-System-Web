@@ -151,7 +151,11 @@ export default function InvoicesManagementPage() {
    const hiddenPrintRef = useRef<HTMLDivElement>(null)
    const [hiddenInvoiceTarget, setHiddenInvoiceTarget] = useState<any | null>(null)
 
-   // Resolves the shop's logo
+   // Resolves the shop's logo: a per-invoice override, then the logged-in
+   // user's stored logo, then whatever the settings API returned (checking
+   // the couple of shapes that endpoint has been seen to return), finally
+   // a generic placeholder. No redux-store introspection needed since
+   // useGetSettingsQuery already gives us the data directly.
    const getResolvedLogo = (invoiceTarget: any) => {
       return (
          invoiceTarget?.shopLogoUrl ||
@@ -187,6 +191,9 @@ export default function InvoicesManagementPage() {
    const handleDownloadPDF = async (inv?: any) => {
       setIsGeneratingPDF(true)
 
+      // If 'inv' looks like a real invoice record, use it directly. Otherwise
+      // (e.g. it's a React SyntheticEvent from onClick={handleDownloadPDF})
+      // fall back to whichever invoice is currently open.
       const isInvoiceObj = inv && typeof inv === 'object' && ('invoiceId' in inv || 'id' in inv || 'amount' in inv) && !('nativeEvent' in inv) && !('target' in inv);
       const targetInv = isInvoiceObj ? inv : (viewDocumentTarget || hiddenInvoiceTarget);
       if (!targetInv) {
