@@ -12,6 +12,7 @@ import { DateRangePicker, DateRange, makeRange } from "@/components/admin/shared
 import { DeviceStatusUpdateModal } from "@/components/admin/devices/status-update-modal"
 import { useGetDevicesQuery, useCreateDeviceMutation, useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/services/api/devicesApiSlice"
 import { Autocomplete } from "@/components/ui/autocomplete"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useGetCustomersQuery } from "@/services/api/customersApiSlice"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
@@ -170,7 +171,6 @@ export default function DevicesManagementPage() {
   const [viewDevice, setViewDevice] = useState<Device | null>(null)
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{ id: string, status: DeviceStatus } | null>(null)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [customBrand, setCustomBrand] = useState("")
   const [form, setForm] = useState({ model: "", brand: "Apple", type: "Mobile Phone" as DeviceType, imei: "", serialNo: "", price: "" as string | number })
   const [editForm, setEditForm] = useState({ model: "", brand: "Apple", type: "Mobile Phone" as DeviceType, imei: "", serialNo: "", price: "" as string | number })
@@ -293,7 +293,6 @@ export default function DevicesManagementPage() {
       }).unwrap();
       setPendingStatusUpdate(null)
       setIsStatusModalOpen(false)
-      setActiveDropdown(null)
     } catch (err) {
       console.error("Failed to update status", err)
     }
@@ -493,18 +492,20 @@ export default function DevicesManagementPage() {
                       <div className="flex justify-between text-[12px]"><span className="text-muted-foreground font-medium">Registered</span><span className="font-semibold text-foreground">{d.registered}</span></div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="relative">
-                        <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === d.id ? null : d.id) }} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${STATUS_STYLE[d.status]} hover:bg-opacity-80`}>
-                          <StatusIcon s={d.status} />{STATUSES.find(s => s.value === d.status)?.label || d.status} <ChevronDown className="h-3 w-3 opacity-50" />
-                        </button>
-                        {activeDropdown === d.id && (
-                          <div className="absolute bottom-full left-0 mb-2 w-36 bg-card border border-border rounded-xl shadow-xl z-[60] py-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
-                            {STATUSES.map(st => (
-                              <button key={st.value} onClick={() => { setPendingStatusUpdate({ id: d.id, status: st.value as DeviceStatus }); setIsStatusModalOpen(true); setActiveDropdown(null) }} className={`w-full px-4 py-2.5 text-left text-[11px] font-bold hover:bg-muted/50 transition-colors ${d.status === st.value ? "text-[#4F46E5] bg-primary/10" : "text-foreground"}`}>{st.label}</button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${STATUS_STYLE[d.status]} hover:bg-opacity-80 focus:outline-none`}>
+                            <StatusIcon s={d.status} />{STATUSES.find(s => s.value === d.status)?.label || d.status} <ChevronDown className="h-3 w-3 opacity-50" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-36 rounded-xl p-1 z-[100] border-border bg-card shadow-xl">
+                          {STATUSES.map(st => (
+                            <DropdownMenuItem key={st.value} onSelect={() => { setPendingStatusUpdate({ id: d.id, status: st.value as DeviceStatus }); setIsStatusModalOpen(true); }} className={`w-full px-4 py-2.5 text-[11px] font-bold cursor-pointer rounded-lg transition-colors focus:bg-muted/50 ${d.status === st.value ? "text-[#4F46E5] bg-primary/10" : "text-foreground"}`}>
+                              {st.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <div className="flex items-center gap-2">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${WARRANTY_STYLE[d.warranty.status]}`}><WarrantyIcon w={d.warranty.status} />{d.warranty.status}</span>
                       </div>
@@ -537,18 +538,20 @@ export default function DevicesManagementPage() {
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${WARRANTY_STYLE[d.warranty.status]}`}><WarrantyIcon w={d.warranty.status} />{d.warranty.status}</span>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="relative">
-                            <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === d.id ? null : d.id) }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black border transition-colors ${STATUS_STYLE[d.status]} hover:shadow-sm`}>
-                              <StatusIcon s={d.status} />{STATUSES.find(s => s.value === d.status)?.label || d.status} <ChevronDown className="h-3 w-3 opacity-60" />
-                            </button>
-                            {activeDropdown === d.id && (
-                              <div className="absolute top-full left-0 mt-2 w-36 bg-card border border-border rounded-xl shadow-2xl z-[60] py-1 animate-in fade-in slide-in-from-top-2 duration-150">
-                                {STATUSES.map(st => (
-                                  <button key={st.value} onClick={() => { setPendingStatusUpdate({ id: d.id, status: st.value as DeviceStatus }); setIsStatusModalOpen(true); setActiveDropdown(null) }} className={`w-full px-4 py-2.5 text-left text-[11px] font-bold hover:bg-muted/50 transition-colors ${d.status === st.value ? "text-[#4F46E5] bg-primary/10" : "text-foreground"}`}>{st.label}</button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black border transition-colors ${STATUS_STYLE[d.status]} hover:shadow-sm focus:outline-none`}>
+                                <StatusIcon s={d.status} />{STATUSES.find(s => s.value === d.status)?.label || d.status} <ChevronDown className="h-3 w-3 opacity-60" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-36 rounded-xl p-1 z-[100] border-border bg-card shadow-2xl">
+                              {STATUSES.map(st => (
+                                <DropdownMenuItem key={st.value} onSelect={() => { setPendingStatusUpdate({ id: d.id, status: st.value as DeviceStatus }); setIsStatusModalOpen(true); }} className={`w-full px-4 py-2.5 text-[11px] font-bold cursor-pointer rounded-lg transition-colors focus:bg-muted/50 ${d.status === st.value ? "text-[#4F46E5] bg-primary/10" : "text-foreground"}`}>
+                                  {st.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                         <td className="px-5 py-4 text-center"><div className="flex items-center justify-center gap-1">
                           <button onClick={() => setViewDevice(d)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#4F46E5] hover:bg-muted transition-colors focus:outline-none"><Eye className="h-3.5 w-3.5" /></button>
